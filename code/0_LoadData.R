@@ -15,7 +15,6 @@ df_uptodate <- fromJSON(rawToChar(res_uptodate$content)) # time-series from 2021
 
 # C. PCR positivity rate
 pcr_rate <- gsheet2tbl('https://docs.google.com/spreadsheets/d/13j9SZ01F4ATJT9PEPaVEKhAhouuU6Wo_/edit#gid=1001738166')[,1:3]
-tail(pcr_rate)
 
 # D. Seroprevalence
 # snapshot over the past 2 years, surveillance at Nov 2021
