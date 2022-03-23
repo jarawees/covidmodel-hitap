@@ -3,7 +3,6 @@ if(!require(pacman)) install.packages("pacman")
 library(pacman)
 p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr)
 
-
 ## Load required data
 # A. Covid-19 deaths
 # B. Covid-19 cases/hospitalisations
@@ -70,7 +69,7 @@ if(!file.exists(paste0("data/sars-cov-2-variants-dmsc.csv"))){
 # update the data file from COLAB-2 if the time difference is greater than a week
 if(as.numeric(abs(as.Date(file.info(paste0("data/sars-cov-2-variants-dmsc.csv"))$mtime) -
                   as.Date(Sys.time()))) > 7){
-  download.file("https://data.go.th/dataset/5b1fb1cf-7ddf-4194-89be-c2658fdcd7a8/resource/152ed762-3c69-465e-a5ae-e592540559d8/download/sars-cov-2-variants-dmsc_080365.csv",
+  download.file("https://data.go.th/dataset/5b1fb1cf-7ddf-4194-89be-c2658fdcd7a8/resource/152ed762-3c69-465e-a5ae-e592540559d8/download/",
                 paste0("data/sars-cov-2-variants-dmsc.csv"))
 }
 
