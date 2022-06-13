@@ -10,7 +10,7 @@ p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr)
 
 # res_round1to2 <- GET("https://covid19.ddc.moph.go.th/api/Cases/round-1to2-all")
 # df_round1to2 <- fromJSON(rawToChar(res_round1to2$content)) 
-# write.csv(df_round1to2, file = "epi_round1to2.csv", row.names = F)
+# write.csv(df_round1to2, file = "data/epi_round1to2.csv", row.names = F)
 epi_round1to <- fread("data/epi_round1to2.csv") # snapshot from 2020-01-12 to 2021-03-31
 
 # download the data file from DDC MOPH TH if it doesn't exist in your directory
