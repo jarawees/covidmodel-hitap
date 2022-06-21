@@ -3,6 +3,7 @@ if(!require(pacman)) install.packages("pacman")
 library(pacman)
 p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr)
 
+
 ## Load required data
 # A. Covid-19 deaths
 # B. Covid-19 cases/hospitalisations
@@ -10,7 +11,7 @@ p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr)
 
 # res_round1to2 <- GET("https://covid19.ddc.moph.go.th/api/Cases/round-1to2-all")
 # df_round1to2 <- fromJSON(rawToChar(res_round1to2$content)) 
-# write.csv(df_round1to2, file = "data/epi_round1to2.csv", row.names = F)
+# write.csv(df_round1to2, file = "epi_round1to2.csv", row.names = F)
 epi_round1to <- fread("data/epi_round1to2.csv") # snapshot from 2020-01-12 to 2021-03-31
 
 # download the data file from DDC MOPH TH if it doesn't exist in your directory
@@ -35,6 +36,27 @@ epi <- bind_rows(epi_round1to, epi_update) %>%
 
 rm(epi_round1to, epi_update)
 
+# B. Covid-19 hospitalisation
+# home isolation policy were proclaimed on 4 Jan 2022, thus, new cases afterwards were mixed between hospitalised and home isolated.
+
+# download the data file from djay github if it doesn't exist in your directory
+if(!file.exists(paste0("data/moph_dashboard.csv"))){
+  download.file("https://practical-ritchie-cca141.netlify.app/api/moph_dashboard.csv",
+                paste0("data/moph_dashboard.csv"))
+}
+
+# update the data file from djay github if the time difference is greater than a week
+if(as.numeric(abs(as.Date(file.info(paste0("data/moph_dashboard.csv"))$mtime) -
+                  as.Date(Sys.time()))) > 7){
+  download.file("https://practical-ritchie-cca141.netlify.app/api/moph_dashboard.csv",
+                paste0("data/moph_dashboard.csv"))
+}
+
+# data from github are available from 25 Oct 2020
+epi_hos <- fread("data/moph_dashboard.csv") %>%
+  select(starts_with("Date")|starts_with("Hospitalized")) %>%
+  mutate_at(vars(Date), ~ymd(.))
+
 # C. PCR positivity rate
 # download the data file from COLAB-2 if it doesn't exist in your directory
 if(!file.exists(paste0("data/thailand_covid-19_testing_data.csv"))){
@@ -51,12 +73,13 @@ if(as.numeric(abs(as.Date(file.info(paste0("data/thailand_covid-19_testing_data.
 
 pcr_rate <- fread("data/thailand_covid-19_testing_data.csv")[,1:3] %>%
   filter(!is.na(positive)) %>%
-  mutate_at(vars(Date), ~lubridate::dmy(.)) %>%
+  mutate_at(vars(Date), ~lubridate::dmy(.)) %>% # first row is "date not specify", so cannot be converted to datatype "date"
   rename("total_test" = "Total Testing") %>%
   mutate(pos_rate = positive/total_test)
 
 # D. Seroprevalence
 # snapshot over the past 2 years, surveillance at Nov 2021
+# vaccine coverage and seroprevalance in region 13 (Bangkok) exceed 100% as they also include people living in other regions but using the health service in Bangkok
 sero <- fread("data/serosurveillance65.csv")
 
 # E. Genotype frequencies
@@ -82,6 +105,7 @@ geno_freq <- fread("data/sars-cov-2-variants-dmsc.csv")[,1:6] %>%
   filter(!is.na(Alpha))
 
 # F. Vaccine uptake
+# cumulative vaccinations
 # download the data file from owid if it doesn't exist in your directory
 if(!file.exists(paste0("data/vaccinations.csv"))){
   download.file("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv",
@@ -95,8 +119,25 @@ if(as.numeric(abs(as.Date(file.info(paste0("data/vaccinations.csv"))$mtime) -
                 paste0("data/vaccinations.csv"))
 }
 
-owid_vac <- fread("data/vaccinations.csv") %>%
+vac_cum <- fread("data/vaccinations.csv") %>%
   filter(location == "Thailand")
+
+# vaccine products
+# download the data file from djay github if it doesn't exist in your directory
+if(!file.exists(paste0("data/vac_timeline.csv"))){
+  download.file("https://practical-ritchie-cca141.netlify.app/api/vac_timeline.csv",
+                paste0("data/vac_timeline.csv"))
+}
+
+# update the data file from djay github if the time difference is greater than a week
+if(as.numeric(abs(as.Date(file.info(paste0("data/vac_timeline.csv"))$mtime) -
+                  as.Date(Sys.time()))) > 7){
+  download.file("https://practical-ritchie-cca141.netlify.app/api/vac_timeline.csv",
+                paste0("data/vac_timeline.csv"))
+}
+
+vac_product <- fread("data/vac_timeline.csv")[,c(1,46:60)] %>%
+  mutate_at(vars(Date), ~ymd(.))
 
 # G. Contact matrices
 load("data/contact_all.rdata")
@@ -149,4 +190,4 @@ popTH <- popTH %>%
   mutate(age_group = age %/% 5,
          age = paste0(age_group * 5, "-", age_group * 5 + 4),
          age = replace(age, age_group>=18, "90+"),
-         age = factor(age, levels = limits_to_agegroups(seq(0, 90, by = 5))))
+         age = factor(age, levels = limits_to_agegroups(seq(0, 90, by = 5)))) # edit it to be 16 groups
