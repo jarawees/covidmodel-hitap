@@ -189,5 +189,5 @@ popTH <- popTH %>%
   mutate_at(vars(pop), ~as.numeric(gsub("[^\\d]+", "", ., perl=TRUE))) %>%
   mutate(age_group = age %/% 5,
          age = paste0(age_group * 5, "-", age_group * 5 + 4),
-         age = replace(age, age_group>=18, "90+"),
-         age = factor(age, levels = limits_to_agegroups(seq(0, 90, by = 5)))) # edit it to be 16 groups
+         age = replace(age, age_group>=16, "75+"),
+         age = factor(age, levels = limits_to_agegroups(seq(0, 79, by = 5))))
