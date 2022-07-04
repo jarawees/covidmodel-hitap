@@ -46,11 +46,17 @@ public:
     Matrix cm;          // contact matrix
 
     Discrete dE;
-    Discrete dEv;
-    Discrete dEv2;
-    Discrete dIp;       // TODO: any need for these to be age-specific?
+    Discrete dEv_l;
+    Discrete dEv_m;
+    Discrete dIp;       
     Discrete dIa;
     Discrete dIs;
+    Discrete dIp_l;       
+    Discrete dIa_l;
+    Discrete dIs_l;
+    Discrete dIp_m;       
+    Discrete dIa_m;
+    Discrete dIs_m;
     Discrete dC;
 
     vector<double> size;
@@ -60,23 +66,23 @@ public:
     vector<double> contact_mult;
     vector<double> contact_lowerto;
     vector<double> u;
-    vector<double> uv; // susceptibility in vaccinees
-    vector<double> uv2; // susceptibility in second dose vaccinees
+    vector<double> uv_l; // susceptibility in vaccinees
+    vector<double> uv_m; // susceptibility in second dose vaccinees
     vector<double> fIp;
     vector<double> fIa;
     vector<double> fIs;
     vector<double> y;
-    vector<double> yv; // symptomatic rate in vaccinees
-    vector<double> yv2; // symptomatic rate in vaccinees
+    vector<double> yv_l; // symptomatic rate in vaccinees
+    vector<double> yv_m; // symptomatic rate in vaccinees
     vector<double> omega;
     vector<double> rho;
     vector<double> tau;
     vector<double> v;
-    vector<double> v2;
+    // vector<double> v2;
     vector<double> ev;
-    vector<double> ev2;
+    // vector<double> ev2;
     vector<double> wn;
-    vector<double> wv;
+    vector<double> wv_ml;
     vector<double> A;
     vector<double> B;
     vector<double> D;
