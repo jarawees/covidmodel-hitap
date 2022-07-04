@@ -98,11 +98,17 @@ bool PopulationParameters::Set(Parameters* parent, string& name, Rcpp::RObject& 
 
     if (false) {}
     _CheckSet(dE)
-    _CheckSet(dEv)
-    _CheckSet(dEv2)
+    _CheckSet(dEv_l)
+    _CheckSet(dEv_m)
     _CheckSet(dIp)
     _CheckSet(dIa)
     _CheckSet(dIs)
+    _CheckSet(dIp_l)
+    _CheckSet(dIa_l)
+    _CheckSet(dIs_l)
+    _CheckSet(dIp_m)
+    _CheckSet(dIa_m)
+    _CheckSet(dIs_m)
     _CheckSet(dC)
     _CheckSet(size)
     _CheckSet(imm0)
@@ -111,23 +117,23 @@ bool PopulationParameters::Set(Parameters* parent, string& name, Rcpp::RObject& 
     _CheckSet(contact_mult)
     _CheckSet(contact_lowerto)
     _CheckSet(u)
-    _CheckSet(uv)
-    _CheckSet(uv2)
+    _CheckSet(uv_l)
+    _CheckSet(uv_m)
     _CheckSet(fIp)
     _CheckSet(fIa)
     _CheckSet(fIs)
     _CheckSet(y)
-    _CheckSet(yv)
-    _CheckSet(yv2)
+    _CheckSet(yv_l)
+    _CheckSet(yv_m)
     _CheckSet(omega)
     _CheckSet(rho)
     _CheckSet(tau)
     _CheckSet(v)
     _CheckSet(ev)
-    _CheckSet(v2)
-    _CheckSet(ev2)
+    //_CheckSet(v2)
+    //_CheckSet(ev2)
     _CheckSet(wn)
-    _CheckSet(wv)
+    _CheckSet(wv_ml)
     _CheckSet(A)
     _CheckSet(B)
     _CheckSet(D)
@@ -167,11 +173,17 @@ bool PopulationParameters::Set(Parameters* parent, string& name, vector<double>&
 
     if (false) {}
     _CheckSet(dE)
-    _CheckSet(dEv)
-    _CheckSet(dEv2)
+    _CheckSet(dEv_l)
+    _CheckSet(dEv_m)
     _CheckSet(dIp)
     _CheckSet(dIa)
     _CheckSet(dIs)
+    _CheckSet(dIp_l)
+    _CheckSet(dIa_l)
+    _CheckSet(dIs_l)
+    _CheckSet(dIp_m)
+    _CheckSet(dIa_m)
+    _CheckSet(dIs_m)
     _CheckSet(dC)
     _CheckSet(size)
     _CheckSet(imm0)
@@ -180,14 +192,14 @@ bool PopulationParameters::Set(Parameters* parent, string& name, vector<double>&
     _CheckSet(contact_mult)
     _CheckSet(contact_lowerto)
     _CheckSet(u)
-    _CheckSet(uv)
-    _CheckSet(uv2)
+    _CheckSet(uv_l)
+    _CheckSet(uv_m)
     _CheckSet(fIp)
     _CheckSet(fIa)
     _CheckSet(fIs)
     _CheckSet(y)
-    _CheckSet(yv)
-    _CheckSet(yv2)
+    _CheckSet(yv_l)
+    _CheckSet(yv_m)
     _CheckSet(omega)
     _CheckSet(rho)
     _CheckSet(tau)
@@ -267,21 +279,33 @@ void SetParameters(Parameters& P, Rcpp::List list, Randomizer& Rand)
             Rcpp::List popi = Rcpp::as<Rcpp::List>(populations[i]);
 
             ParamPopAssign(vector<double>, dE, i);
-            ParamPopAssign(vector<double>, dEv, i);
-            ParamPopAssign(vector<double>, dEv2, i);
+            ParamPopAssign(vector<double>, dEv_l, i);
+            ParamPopAssign(vector<double>, dEv_m, i);
             ParamPopAssign(vector<double>, dIp, i);
             ParamPopAssign(vector<double>, dIa, i);
             ParamPopAssign(vector<double>, dIs, i);
+            ParamPopAssign(vector<double>, dIp_l, i);
+            ParamPopAssign(vector<double>, dIa_l, i);
+            ParamPopAssign(vector<double>, dIs_l, i);
+            ParamPopAssign(vector<double>, dIp_m, i);
+            ParamPopAssign(vector<double>, dIa_m, i);
+            ParamPopAssign(vector<double>, dIs_m, i);
             ParamPopAssign(vector<double>, dC, i);
 
             if (P.fast_multinomial)
             {
                 P.pop[i].dE.mn_approx.Set(P, Rand, P.pop[i].dE.weights);
-                P.pop[i].dEv.mn_approx.Set(P, Rand, P.pop[i].dEv.weights);
-                P.pop[i].dEv2.mn_approx.Set(P, Rand, P.pop[i].dEv2.weights);
+                P.pop[i].dEv.mn_approx.Set(P, Rand, P.pop[i].dEv_l.weights);
+                P.pop[i].dEv2.mn_approx.Set(P, Rand, P.pop[i].dEv_m.weights);
                 P.pop[i].dIp.mn_approx.Set(P, Rand, P.pop[i].dIp.weights);
                 P.pop[i].dIa.mn_approx.Set(P, Rand, P.pop[i].dIa.weights);
                 P.pop[i].dIs.mn_approx.Set(P, Rand, P.pop[i].dIs.weights);
+                P.pop[i].dIp_l.mn_approx.Set(P, Rand, P.pop[i].dIp_l.weights);
+                P.pop[i].dIa_l.mn_approx.Set(P, Rand, P.pop[i].dIa_l.weights);
+                P.pop[i].dIs_l.mn_approx.Set(P, Rand, P.pop[i].dIs_l.weights);
+                P.pop[i].dIp_m.mn_approx.Set(P, Rand, P.pop[i].dIp_m.weights);
+                P.pop[i].dIa_m.mn_approx.Set(P, Rand, P.pop[i].dIa_m.weights);
+                P.pop[i].dIs_m.mn_approx.Set(P, Rand, P.pop[i].dIs_m.weights);
                 P.pop[i].dC.mn_approx.Set(P, Rand, P.pop[i].dC.weights);
             }
 
@@ -303,23 +327,23 @@ void SetParameters(Parameters& P, Rcpp::List list, Randomizer& Rand)
             ParamPopAssign(vector<double>, contact_mult, i);
             ParamPopAssign(vector<double>, contact_lowerto, i);
             ParamPopAssign(vector<double>, u, i);
-            ParamPopAssign(vector<double>, uv, i);
-            ParamPopAssign(vector<double>, uv2, i);
+            ParamPopAssign(vector<double>, uv_l, i);
+            ParamPopAssign(vector<double>, uv_m, i);
             ParamPopAssign(vector<double>, fIp, i);
             ParamPopAssign(vector<double>, fIa, i);
             ParamPopAssign(vector<double>, fIs, i);
             ParamPopAssign(vector<double>, y, i);
-            ParamPopAssign(vector<double>, yv, i);
-            ParamPopAssign(vector<double>, yv2, i);
+            ParamPopAssign(vector<double>, yv_l, i);
+            ParamPopAssign(vector<double>, yv_m, i);
             ParamPopAssign(vector<double>, omega, i);
             ParamPopAssign(vector<double>, rho, i);
             ParamPopAssign(vector<double>, tau, i);
             ParamPopAssign(vector<double>, v, i);
             ParamPopAssign(vector<double>, ev, i);
-            ParamPopAssign(vector<double>, v2, i);
-            ParamPopAssign(vector<double>, ev2, i);
+            // ParamPopAssign(vector<double>, v2, i);
+            // ParamPopAssign(vector<double>, ev2, i);
             ParamPopAssign(vector<double>, wn, i);
-            ParamPopAssign(vector<double>, wv, i);
+            ParamPopAssign(vector<double>, wv_ml, i);
             ParamPopAssign(vector<double>, A, i);
             ParamPopAssign(vector<double>, B, i);
             ParamPopAssign(vector<double>, D, i);
