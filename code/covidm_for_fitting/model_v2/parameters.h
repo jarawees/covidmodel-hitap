@@ -77,10 +77,10 @@ public:
     vector<double> omega;
     vector<double> rho;
     vector<double> tau;
-    vector<double> v;
-    // vector<double> v2;
-    vector<double> ev;
-    // vector<double> ev2;
+    vector<double> v_p;
+    vector<double> v_b;
+    vector<double> ev_p;
+    vector<double> ev_b;
     vector<double> wn;
     vector<double> wv_ml;
     vector<double> A;

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <vector>
 
+// why do we not need all compartments here?
 enum SourceID
 {
     srcS = 1000000,
@@ -54,6 +55,7 @@ const map<string,SourceID> processSourceMap = {
     {"Ip_m",srcIp_m},
     {"Is_m",srcIs_m},
     {"Ia_m",srcIa_m},
+    // what is I?
     {"I",srcI},
     {"cases_reported", srcCasesReported}
 };
