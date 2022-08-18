@@ -374,21 +374,21 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         double nIa_R = Ia[a].Mature();
         R[a] += nIa_R;
         
-        // (33) Is -> R
-        double nIs_l_R = Is_l[a].Mature();
-        Rv_l[a] += nIs_l_R;
+        // (33) Is_l -> R_l
+        double nIs_l_Rv_l = Is_l[a].Mature();
+        Rv_l[a] += nIs_l_Rv_l;
         
-        // (26) Ia -> R
-        double nIa_l_R = Ia_l[a].Mature();
-        Rv_l[a] += nIa_l_R;
+        // (26) Ia_l -> R_l
+        double nIa_l_Rv_l = Ia_l[a].Mature();
+        Rv_l[a] += nIa_l_Rv_l;
         
-        // (36) Is -> R
-        double nIs_m_R = Is_m[a].Mature();
-        Rv_m[a] += nIs_m_R;
+        // (36) Is_m -> R_m
+        double nIs_m_Rv_m = Is_m[a].Mature();
+        Rv_m[a] += nIs_m_Rv_m;
         
-        // (27) Ia -> R
-        double nIa_m_R = Ia_m[a].Mature();
-        Rv_m[a] += nIa_m_R;
+        // (27) Ia_m -> R_m
+        double nIa_m_Rv_m = Ia_m[a].Mature();
+        Rv_m[a] += nIa_m_Rv_m;
 
         // 2. User-specified processes
         // assert: processes are ordered such that when iterating
@@ -405,36 +405,93 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
             double n_entering = 0.;
             switch (process.source_id)
             {
-                case srcS:
-                    n_entering = nS_E; break;
-                case srcE:
-                    n_entering = nE_Ipa; break;
-                case srcEv:
-                    n_entering = nEv_Ipa; break;
-                case srcEv2:
-                    n_entering = nEv2_Ipa; break;
-                case srcEp:
-                    n_entering = nE_Ip; break;
-                case srcEvp:
-                    n_entering = nEv_Ip; break;
-                case srcEv2p:
-                    n_entering = nEv2_Ip; break;
-                case srcEa:
-                    n_entering = nE_Ia; break;
-                case srcEva:
-                    n_entering = nEv_Ia; break;
-                case srcEv2a:
-                    n_entering = nEv2_Ia; break;
-                case srcIp:
-                    n_entering = nIp_Is; break;
-                case srcIs:
-                    n_entering = nIs_R; break;
-                case srcIa:
-                    n_entering = nIa_R; break;
+                // (1) S -> E
+            case srcS:
+                n_entering = nS_E; break;
+                
+                //(31) R -> E
+            case srcR:
+                n_entering = nR_E; break;
+                
+                // (10) Sv_l -> Ev_l
+            case srcSv_l:
+                n_entering = nSv_l_Ev_l; break;
+                
+                //(34) Rv_l -> Ev_l
+            case srcRv_l:
+                n_entering = nRv_l_Ev_l; break;
+                
+                // (11) Sv_m -> Ev_m
+            case srcSv_m:
+                n_entering = nSv_m_Ev_m; break;
+                // (37) Rv_m -> Ev_m
+            case srcRv_m:
+                n_entering = nRv_m_Ev_m; break;
+                
+                // (13)-(14) E -> Ip and E -> Ia
+            case srcE:
+                n_entering = nE_Ipa; break;
+                // (15)-(16) Ev_l -> Ip_l and Ev_l -> Ia_l
+            case srcEv_l:
+                n_entering = nEv_l_Ipa; break;
+                // (17)-(18) Ev_m -> Ip_m and Ev_m -> Ia_m
+            case srcEv_m:
+                n_entering = nEv_m_Ipa; break;
+                
+                //(13) E -> Ip
+            case srcE_Ip:
+                n_entering = nE_Ip; break;
+                //(14) E -> Ia
+            case srcE_Ia:
+                n_entering = nE_Ia; break;
+                //(15) Ev_l -> Ip_l
+            case srcEv_l_Ip:
+                n_entering = nEv_l_Ip; break;
+                //(16) EV_l -> Ia_l
+            case srcEv_l_Ia:
+                n_entering = nEv_l_Ia
+                //(17) Ev_m -> Ip_m
+            case srcEv_m_Ip:
+                n_entering = nEv_m_Ip; break;
+                // (18) EV_m -> Ia_m
+            case srcEv_m_Ia:
+                n_entering = nEv_m_Ia; break;
+                
+                //(21) Ip -> Is
+            case srcIp_Is:
+                n_entering = nIp_Is; break;
+                //(22) Ip_l -> Is_l
+            case srcIp_l_Is_l:
+                n_entering = nIp_l_Is_l; break;
+                //(23) Ip_m -> Is_m
+            case srcIp_m_Is_m:
+                n_entering = nIp_m_Is_m; break;
+                
+                //reported cases
+            case srcCasesReported:
+                n_entering = n_to_report; break;
+            
+                // (25) Ia -> R
+            case srcIa_R:
+                n_entering = nIa_R; break;
+                // (26) Ia_l -> R_l
+            case srcIa_l_R:
+                n_entering = nIa_l_R; break;
+                // (27) Ia_m -> R_m
+            case src_Ia_m_R:
+                n_entering = nIa_m_R; break;
+                
+                // (30) Is -> R
+            case srcIs_R:
+                n_entering = nIs_R; break;
+                // (33) Is_l -> R_l
+            case src_Is_l_R_l:
+                n_entering = nIs_l_R_l
+                // (36) Is_m -> R_m
+
                 case srcI:
                     n_entering = nIs_R + nIa_R; break;
-                case srcCasesReported:
-                    n_entering = n_to_report; break;
+
                 default:
                     if (pco[process.source_id] < 0) {
                         pco[process.source_id] = pc[process.source_id][a].Mature();
