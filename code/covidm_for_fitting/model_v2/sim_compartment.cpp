@@ -38,8 +38,8 @@ Population::Population(Parameters& P, unsigned int pindex)
     // Sw = vector<double>(S.size(), 0.);
     // vaccinated & R (1 and 2 dose)
     R  = vector<double>(S.size(), 0.);
-    Rl = vector<double>(S.size(), 0.);
-    Rm = vector<double>(S.size(), 0.);
+    Rv_l = vector<double>(S.size(), 0.);
+    Rv_m = vector<double>(S.size(), 0.);
 
     // Initial immunity
     for (unsigned int a = 0; a < S.size(); ++a) {
@@ -305,68 +305,90 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         // Rv2[a] += nRv_Rv2;
 
         // Infecting
-        // (1) S -> E
+        // (1) S -> E and (31) R -> E
         double nS_E = binomial(S[a], 1.0 - exp(-P.pop[p].u[a]*lambda[a] * P.time_step));
+        double nR_E = binomial(R[a], 1.0 - exp(-P.pop[p].ur[a]*lambda[a] * P.time_step));
         S[a] -= nS_E;
-        E[a].Add(P, Rand, nS_E, P.pop[p].dE);
+        R[a] -= nR_E;
+        E[a].Add(P, Rand, nS_E + nR_E, P.pop[p].dE);
         
-        // (10) Sv_l -> EV_l
+        // (10) Sv_l -> Ev_l and (34) Rv_l -> Ev_l
         double nSv_l_Ev_l = binomial(Sv_l[a], 1.0 - exp(-P.pop[p].uv_l[a]*lambda[a] * P.time_step));
+        double nRv_l_Ev_l = binomial(Rv_l[a], 1.0 - exp(-P.pop[p].uvr_l[a]*lambda[a] * P.time_step));
         Sv_l[a] -= nSv_l_Ev_l;
-        Ev_l[a].Add(P, Rand, nSv_l_Ev_l, P.pop[p].dEv_l);
+        Rv_l[a] -= nRv_l_Ev_l;
+        Ev_l[a].Add(P, Rand, nSv_l_Ev_l + nRv_l_Ev_l, P.pop[p].dEv_l);
 
-        // (11) Sv_m -> Ev_m
+        // (11) Sv_m -> Ev_m and (37) Rv_m -> Ev_m
         double nSv_m_Ev_m = binomial(Sv_m[a], 1.0 - exp(-P.pop[p].uv_m[a]*lambda[a] * P.time_step));
+        double nRv_m_Ev_m = binomial(Rv_m[a], 1.0 - exp(-P.pop[p].uvr_m[a]*lambda[a] * P.time_step));
         Sv_m[a] -= nSv_m_Ev_m;
-        Ev_m[a].Add(P, Rand, nSv_m_Ev_m, P.pop[p].dEv_m);
+        Rv_m[a] -= nRv_m_Ev_m;
+        Ev_m[a].Add(P, Rand, nSv_m_Ev_m + nRv_m_Ev_m, P.pop[p].dEv_m);
     
         // progressing from infection
         // (13)-(14) E -> Ip and E -> Is
         double nE_Ipa = E[a].Mature();
         double nE_Ip = binomial(nE_Ipa, P.pop[p].y[a]);
         double nE_Ia = nE_Ipa - nE_Ip;
+        Ip[a].Add(P, Rand, nE_Ip, P.pop[p].dIp);
+        Ia[a].Add(P, Rand, nE_Ia, P.pop[p].dIa);
         
         // (15)-(16) Ev_l -> Ip_l and Ev_l -> Is_l 
+        double nEv_l_Ipa = Ev_l[a].Mature();
+        double nEv_l_Ip = binomial(nEv_l_Ipa, P.pop[p].yv_l[a]);
+        double nEv_l_Ia = nEv_l_Ipa - nEv_l_Ip;
+        Ip_l[a].Add(P, Rand, nEv_l_Ip, P.pop[p].dIp_l);
+        Ia_l[a].Add(P, Rand, nEv_l_Ia, P.pop[p].dIa_l);
         
-        double nEv_Ipa = Ev[a].Mature();
-        //double nEv_Ip = binomial(nEv_Ipa*0.62, P.pop[p].yv[a]);
-        //double nEv_Ia = nEv_Ipa*0.62 - nEv_Ip;
-        //double nEv_Rv  = nEv_Ipa*0.38;
+        // (17)-(18) Ev_m -> Ip_m and Ev_m -> Is_m
+        double nEv_m_Ipa = Ev_m[a].Mature();
+        double nEv_m_Ip = binomial(nEv_m_Ipa, P.pop[p].yv_m[a]);
+        double nEv_m_Ia = nEv_m_Ipa - nEv_m_Ip;
+        Ip_m[a].Add(P, Rand, nEv_m_Ip, P.pop[p].dIp_m);
+        Ia_m[a].Add(P, Rand, nEv_m_Ia, P.pop[p].dIa_m);
         
-        double nEv_Ip = binomial(nEv_Ipa, P.pop[p].yv[a]);
-        double nEv_Ia = nEv_Ipa - nEv_Ip;
-
-        double nEv2_Ipa = Ev2[a].Mature();
-        // double nEv2_Ip = binomial(nEv2_Ipa*0.5, P.pop[p].yv2[a]);
-        // double nEv2_Ia = nEv2_Ipa*0.5 - nEv2_Ip;
-        // double nEv2_Rv2  = nEv2_Ipa*0.5;
-        
-        double nEv2_Ip = binomial(nEv2_Ipa, P.pop[p].yv2[a]);
-        double nEv2_Ia = nEv2_Ipa - nEv2_Ip;
-
-        Ip[a].Add(P, Rand, nE_Ip + nEv_Ip + nEv2_Ip, P.pop[p].dIp);
-        Ia[a].Add(P, Rand, nE_Ia + nEv_Ia + nEv2_Ia, P.pop[p].dIa);
-        // Rv[a]  += nEv_Rv;
-        // Rv2[a]  += nEv2_Rv2;
-
-        // Ip -> Is -- also, true case onsets
+        // (21) Ip -> Is
         double nIp_Is = Ip[a].Mature();
         Is[a].Add(P, Rand, nIp_Is, P.pop[p].dIs);
-
+        
+        // (22) Ip_l -> Is_l
+        double nIp_l_Is_l = Ip_l[a].Mature();
+        Is_l[a].Add(P, Rand, nIp_l_Is_l, P.pop[p].dIs_l);
+        
+        // (23) Ip_m -> Is_m
+        double nIp_m_Is_m = Ip_m[a].Mature();
+        Is_m[a].Add(P, Rand, nIp_m_Is_m, P.pop[p].dIs_m);
+        
         // Reported cases
-        double n_to_report = binomial(nIp_Is, P.pop[p].rho[a]);
+        double n_to_report = binomial(nIp_Is + nIp_l_Is_l + nIp_m_Is_m, P.pop[p].rho[a]);
         C[a].Add(P, Rand, n_to_report, P.pop[p].dC);
         double n_reported = C[a].Mature();
-
-        // N.B. assuming that infected vaccines do not become Rv
-
-        // Is -> R
+        
+        // removal
+        // (30) Is -> R
         double nIs_R = Is[a].Mature();
         R[a] += nIs_R;
 
-        // Ia -> R
+        // (25) Ia -> R
         double nIa_R = Ia[a].Mature();
         R[a] += nIa_R;
+        
+        // (33) Is -> R
+        double nIs_l_R = Is_l[a].Mature();
+        Rv_l[a] += nIs_l_R;
+        
+        // (26) Ia -> R
+        double nIa_l_R = Ia_l[a].Mature();
+        Rv_l[a] += nIa_l_R;
+        
+        // (36) Is -> R
+        double nIs_m_R = Is_m[a].Mature();
+        Rv_m[a] += nIs_m_R;
+        
+        // (27) Ia -> R
+        double nIa_m_R = Ia_m[a].Mature();
+        Rv_m[a] += nIa_m_R;
 
         // 2. User-specified processes
         // assert: processes are ordered such that when iterating
