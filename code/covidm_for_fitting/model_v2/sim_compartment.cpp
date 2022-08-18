@@ -223,11 +223,15 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         // initial vaccination campaign, primary doses
         
         // (2) S -> Sv_l
+        // the 0.5 here should be replaced by proportion moving to Sv_l after one dose
+        // and should be informed by the literature review
         double nS_Sv_l = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * S[a] * 0.5 / primary_dose_eligible * P.time_step));
         S[a] -= nS_Sv_l;
         Sv_l[a] += nS_Sv_l;
         
         // (3) S -> Sv_m
+        // the 0.5 here should be replaced by proportion moving to Sv_m after one dose
+        // and should be informed by the literature review
         double nS_Sv_m = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * S[a] * 0.5 / primary_dose_eligible * P.time_step));
         S[a] -= nS_Sv_m;
         Sv_m[a] += nS_Sv_m;
@@ -300,28 +304,30 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         // Rv[a]  += nR_Rv - nRv_Rv2;
         // Rv2[a] += nRv_Rv2;
 
-        // infection things
-        // S -> E; Sv -> Ev; Sv2 -> Ev2; Sw -> E
+        // Infecting
+        // (1) S -> E
         double nS_E = binomial(S[a], 1.0 - exp(-P.pop[p].u[a]*lambda[a] * P.time_step));
         S[a] -= nS_E;
-        double nSw_E = binomial(Sw[a], 1.0 - exp(-P.pop[p].u[a]*lambda[a] * P.time_step));
-        Sw[a] -= nSw_E;
+        E[a].Add(P, Rand, nS_E, P.pop[p].dE);
         
-        E[a].Add(P, Rand, nS_E + nSw_E, P.pop[p].dE);
+        // (10) Sv_l -> EV_l
+        double nSv_l_Ev_l = binomial(Sv_l[a], 1.0 - exp(-P.pop[p].uv_l[a]*lambda[a] * P.time_step));
+        Sv_l[a] -= nSv_l_Ev_l;
+        Ev_l[a].Add(P, Rand, nSv_l_Ev_l, P.pop[p].dEv_l);
 
-        double nSv_Ev = binomial(Sv[a], 1.0 - exp(-P.pop[p].uv[a]*lambda[a] * P.time_step));
-        Sv[a] -= nSv_Ev;
-        Ev[a].Add(P, Rand, nSv_Ev, P.pop[p].dEv);
-
-        double nSv2_Ev2 = binomial(Sv2[a], 1.0 - exp(-P.pop[p].uv2[a]*lambda[a] * P.time_step));
-        Sv2[a] -= nSv2_Ev2;
-        Ev2[a].Add(P, Rand, nSv2_Ev2, P.pop[p].dEv2);
-
-        // E -> Ip/Ia
+        // (11) Sv_m -> Ev_m
+        double nSv_m_Ev_m = binomial(Sv_m[a], 1.0 - exp(-P.pop[p].uv_m[a]*lambda[a] * P.time_step));
+        Sv_m[a] -= nSv_m_Ev_m;
+        Ev_m[a].Add(P, Rand, nSv_m_Ev_m, P.pop[p].dEv_m);
+    
+        // progressing from infection
+        // (13)-(14) E -> Ip and E -> Is
         double nE_Ipa = E[a].Mature();
         double nE_Ip = binomial(nE_Ipa, P.pop[p].y[a]);
         double nE_Ia = nE_Ipa - nE_Ip;
-
+        
+        // (15)-(16) Ev_l -> Ip_l and Ev_l -> Is_l 
+        
         double nEv_Ipa = Ev[a].Mature();
         //double nEv_Ip = binomial(nEv_Ipa*0.62, P.pop[p].yv[a]);
         //double nEv_Ia = nEv_Ipa*0.62 - nEv_Ip;
