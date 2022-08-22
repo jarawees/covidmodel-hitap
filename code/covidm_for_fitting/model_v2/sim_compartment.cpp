@@ -417,7 +417,7 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
             case srcSv_l:
                 n_entering = nSv_l_Ev_l; break;
                 
-                //(34) Rv_l -> Ev_l
+                // (34) Rv_l -> Ev_l
             case srcRv_l:
                 n_entering = nRv_l_Ev_l; break;
                 
@@ -466,32 +466,31 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
                 //(23) Ip_m -> Is_m
             case srcIp_m_Is_m:
                 n_entering = nIp_m_Is_m; break;
-                
-                //reported cases
-            case srcCasesReported:
-                n_entering = n_to_report; break;
             
                 // (25) Ia -> R
             case srcIa_R:
                 n_entering = nIa_R; break;
                 // (26) Ia_l -> R_l
-            case srcIa_l_R:
-                n_entering = nIa_l_R; break;
+            case srcIa_l_Rv_l:
+                n_entering = nIa_l_Rv_l; break;
                 // (27) Ia_m -> R_m
-            case src_Ia_m_R:
-                n_entering = nIa_m_R; break;
+            case srcIa_m_Rv_m:
+                n_entering = nIa_m_Rv_m; break;
                 
                 // (30) Is -> R
             case srcIs_R:
                 n_entering = nIs_R; break;
                 // (33) Is_l -> R_l
-            case src_Is_l_R_l:
-                n_entering = nIs_l_R_l
+            case srcIs_l_Rv_l:
+                n_entering = nIs_l_Rv_l; break;
                 // (36) Is_m -> R_m
-
-                case srcI:
-                    n_entering = nIs_R + nIa_R; break;
-
+            case srcIs_m_Rv_m:
+                n_entering = nIs_m_Rv_m; break;
+                
+                //reported cases
+            case srcCasesReported:
+                n_entering = n_to_report; break;
+                
                 default:
                     if (pco[process.source_id] < 0) {
                         pco[process.source_id] = pc[process.source_id][a].Mature();
