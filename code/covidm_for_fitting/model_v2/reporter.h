@@ -20,21 +20,57 @@ using namespace std;
 
 enum ReportIndex
 {
-    riS = 0, riE, riIp, riIs, riIa, riR,
-    ricases, ricases_reported, risubclinical,
+    riS = 0, //1
+    riSv_l,
+    riSv_m,
+    riE, 
+    riEv_l, //5
+    riEv_m,
+    riIp, 
+    riIp_l,
+    riIp_m,
+    riIs, //10
+    riIs_l,
+    riIs_m,
+    riIa, 
+    riIa_l,
+    riIa_m, //15
+    riR,
+    riRv_l,
+    riRv_m,
+    ricases, 
+    ricases_reported, //20
+    risubclinical,
     rilambda,
-    riSv, riEv, riRv, rilambdav,
-    riSv2, riEv2, riRv2, rilambdav2,
-    riSw
+    rilambdav_l,
+    rilambdav_m //24
 };
 
 const vector<string> ref_col_names = {
-    "S", "E", "Ip", "Is", "Ia", "R",
-    "cases", "cases_reported", "subclinical",
+    "S",  //1
+    "Sv_l",
+    "Sv_m",
+    "E", 
+    "Ev_l", //5
+    "Ev_m",
+    "Ip", 
+    "Ip_l",
+    "Ip_m",
+    "Is", //10
+    "Is_l",
+    "Is_m",
+    "Ia", 
+    "Ia_l",
+    "Ia_m", //15
+    "R",
+    "Rv_l",
+    "Rv_m",
+    "cases", 
+    "cases_reported", //20
+    "subclinical",
     "foi",
-    "Sv", "Ev", "Rv", "foiv",
-    "Sv2", "Ev2", "Rv2", "foiv2",
-    "Sw"
+    "foiv_l",
+    "foiv_m" //24
 };
 
 // For reporting results

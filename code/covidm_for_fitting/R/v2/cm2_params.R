@@ -78,10 +78,10 @@ population_requirements <- lapply(list(
     "omega" = "non_negative(omega) & same_length(omega, size)",
     "rho" = "non_negative(rho) & same_length(rho, size)",
     "tau" = "non_negative(tau) & same_length(tau, size)",
-    "v" = "non_negative(v) & same_length(v, size)",
-    "ev" = "is_proportion(ev) & same_length(ev, size)",
+    "v_p" = "non_negative(v_p) & same_length(v_p, size)",
+    "ev_p" = "is_proportion(ev_p) & same_length(ev_p, size)",
     "wn" = "non_negative(wn) & same_length(wn, size)",
-    "wv" = "non_negative(wv) & same_length(wv, size)",
+    "wv_ml" = "non_negative(wv_ml) & same_length(wv_ml, size)",
     "A" = "non_negative(A) & same_length(A, size)",
     "B" = "non_negative(B) & same_length(B, size)",
     "D" = "non_negative(D) & same_length(D, size)",
@@ -94,25 +94,52 @@ population_requirements <- lapply(list(
 ), function(exp) parse(text = exp))
 
 population_optionals <- lapply(list(
-    "dEv" = "some_positive(dEv)",
-    "dEv2" = "some_positive(dEv2)",
-    "uv" = "non_negative(uv) & same_length(uv, size)",
-    "uv2" = "non_negative(uv2) & same_length(uv2, size)",
-    "yv" = "non_negative(yv) & same_length(yv, size)",
-    "yv2" = "non_negative(yv2) & same_length(yv2, size)",
-    "v2" =  "non_negative(v2) & same_length(v2, size)",
-    "ev2" = "non_negative(ev2) & same_length(ev2, size)"
+    "dEv_l" = "some_positive(dEv_l)",
+    "dEv_m" = "some_positive(dEv_m)",
+    "dIp_l" = "some_positive(dIp_l)",
+    "dIs_l" = "some_positive(dIs_l)",
+    "dIa_l" = "some_positive(dIa_l)",
+    "dIp_m" = "some_positive(dIp_m)",
+    "dIs_m" = "some_positive(dIs_m)",
+    "dIa_m" = "some_positive(dIa_m)",
+    
+    "uv_l" = "non_negative(uv_l) & same_length(uv_l, size)",
+    "uv_m" = "non_negative(uv_m) & same_length(uv_m, size)",
+    "ur" = "non_negative(ur) & same_length(ur, size)",
+    "uvr_l" = "non_negative(uvr_l) & same_length(uvr_l, size)",
+    "uvr_m" = "non_negative(uvr_m) & same_length(uvr_m, size)",
+    
+    "yv_l" = "non_negative(yv_l) & same_length(yv_l, size)",
+    "yv_m" = "non_negative(yv_m) & same_length(yv_m, size)",
+    
+    "v_b" =  "non_negative(v_b) & same_length(v_b, size)",
+    "ev_b" = "non_negative(ev_b) & same_length(ev_b, size)"
 ), function(exp) parse(text = exp))
 
 optional_substitutes <- c(
-    "dEv" = "dE",
-    "dEv2" = "dE",
-    "uv" = "u",
-    "uv2" = "u",
-    "yv" = "y",
-    "yv2" = "y",
-    "v2" = "v",
-    "ev2" = "ev"
+    "dEv_l" = "dE",
+    "dEv_m" = "dE",
+    
+    "dIp_l" = "dIp",
+    "dIp_m" = "dIp",
+    
+    "dIs_l" = "dIs",
+    "dIs_m" = "dIs",
+    
+    "dIa_l" = "dIa",
+    "dIa_m" = "dIa",
+    
+    "uv_l" = "u",
+    "uv_m" = "u",
+    "ur" = "u",
+    "uvr_l" = "u",
+    "uvr_m" = "u",
+    
+    "yv_l" = "y",
+    "yv_m" = "y",
+    
+    "v_b" = "v_p",
+    "ev_b" = "ev_p"
 )
 
 req = function(
@@ -316,10 +343,10 @@ cm_base_pop_SEI3R = function(
     omega = rep(0, n_groups),
     rho = rep(1, n_groups),
     tau = rep(1, n_groups),
-    v = rep(0, n_groups),
-    ev = rep(1, n_groups),
+    v_p = rep(0, n_groups),
+    ev_p = rep(1, n_groups),
     wn = rep(0, n_groups),
-    wv = rep(0, n_groups),
+    wv_ml = rep(0, n_groups),
     A = rep(0, n_groups),
     B = rep(0, n_groups),
     D = rep(0, n_groups),
@@ -339,7 +366,7 @@ cm_base_pop_SEI3R = function(
 ) {
     # cannot use {} notation here, since creates a sub-environment
     for (key in c(
-        "u", "y", "fIp", "fIs", "fIa", "omega", "rho", "tau", "v", "ev", "wn", "wv", "A", "B", "D"
+        "u", "y", "fIp", "fIs", "fIa", "omega", "rho", "tau", "v_p", "ev_p", "wn", "wv_ml", "A", "B", "D"
     )) if (
         length(get(key)) == 1
     ) assign(key, rep(get(key), n_groups)) else if (

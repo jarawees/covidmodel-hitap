@@ -93,7 +93,7 @@ void Population::Contagiousness(Parameters& P, Randomizer& Rand, double t, vecto
 
     // Calculate contagiousness from this population
     for (unsigned int a = 0; a < contag.size(); ++a)
-        contag[a] = (N[a] == 0) ? 0 : (P.pop[p].fIp[a] * Ip[a].Size() + P.pop[p].fIa[a] * Ia[a].Size() + P.pop[p].fIs[a] * Is[a].Size() + P.pop[p].fIp[a] * Ip_l[a].Size() + P.pop[p].fIa[a] * Ia_l[a].Size() + P.pop[p].fIs[a] * Is_l[a].Size() + P.pop[p].fIp[a] * Ip_m[a].Size() + P.pop[p].fIa_m[a] * Ia[a].Size() + P.pop[p].fIs_m[a] * Is[a].Size()) / N[a];
+        contag[a] = (N[a] == 0) ? 0 : (P.pop[p].fIp[a] * Ip[a].Size() + P.pop[p].fIa[a] * Ia[a].Size() + P.pop[p].fIs[a] * Is[a].Size() + P.pop[p].fIp[a] * Ip_l[a].Size() + P.pop[p].fIa[a] * Ia_l[a].Size() + P.pop[p].fIs[a] * Is_l[a].Size() + P.pop[p].fIp[a] * Ip_m[a].Size() + P.pop[p].fIa[a] * Ia[a].Size() + P.pop[p].fIs[a] * Is[a].Size()) / N[a];
 }
 
 // Execute one time step's events
@@ -172,7 +172,6 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
             rep(t, p, a, riS)    = S[a];
             rep(t, p, a, riSv_l)  = Sv_l[a];
             rep(t, p, a, riSv_m)  = Sv_m[a];
-            // rep(t, p, a, riSw) = Sw[a];
             
             rep(t, p, a, riE)    = E[a].Size();
             rep(t, p, a, riEv_l) = Ev_l[a].Size();
@@ -215,10 +214,10 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         // first or second dose
         // N[a] - first_dose_pop - Sv2[a] - Rv2[a];
         
-        double primary_dose_eligible = S[a] + E[a].Size() + Ip[a].Size() + Is[a].Size() + R[a]
-        double booster_dose_eligible_l = Sv_l[a] + Ev_l.Size() + Ip_l[a].Size() + Is_l[a].Size() + Rv_l[a]
-        double booster_dose_eligible_m = Sv_m[a] + Ev_m.Size() + Ip_m[a].Size() + Is_m[a].Size() + Rv_m[a]
-        double booster_dose_eligible = booster_dose_eligible_l + booster_dose_eligible_m
+        double primary_dose_eligible = S[a] + E[a].Size() + Ip[a].Size() + Is[a].Size() + R[a];
+        double booster_dose_eligible_l = Sv_l[a] + Ev_l[a].Size() + Ip_l[a].Size() + Is_l[a].Size() + Rv_l[a];
+        double booster_dose_eligible_m = Sv_m[a] + Ev_m[a].Size() + Ip_m[a].Size() + Is_m[a].Size() + Rv_m[a];
+        double booster_dose_eligible = booster_dose_eligible_l + booster_dose_eligible_m;
 
         // initial vaccination campaign, primary doses
         
@@ -251,12 +250,12 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
 
         // waning of vaccine induced protection
         // (5) Sv_m -> Sv_l
-        double nSv_m_Sv_l = binomial(Sv_m[a], 1.0 - exp(-P.pop[p].wv_ml[a] * P.time_step))
+        double nSv_m_Sv_l = binomial(Sv_m[a], 1.0 - exp(-P.pop[p].wv_ml[a] * P.time_step));
         Sv_m[a] -= nSv_m_Sv_l;
         Sv_l[a] += nSv_m_Sv_l;
         
         // (44) Rv_m -> Rv_l
-        double nRv_m_Rv_l = binomial(Rv_m[a], 1.0 - exp(-P.pop[p].wv_ml[a] * P.time_step))
+        double nRv_m_Rv_l = binomial(Rv_m[a], 1.0 - exp(-P.pop[p].wv_ml[a] * P.time_step));
         Rv_m[a] -= nRv_m_Rv_l;
         Rv_l[a] += nRv_m_Rv_l;
         
@@ -449,7 +448,7 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
                 n_entering = nEv_l_Ip; break;
                 //(16) EV_l -> Ia_l
             case srcEv_l_Ia:
-                n_entering = nEv_l_Ia
+                n_entering = nEv_l_Ia; break;
                 //(17) Ev_m -> Ip_m
             case srcEv_m_Ip:
                 n_entering = nEv_m_Ip; break;
@@ -557,78 +556,94 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
 
         // Deaths
         double death_prob = 1.0 - exp(-P.pop[p].D[a] * P.time_step);
-        double DS  = binomial(S [a],        death_prob);
-        double DSv = binomial(Sv[a],        death_prob);
-        double DSv2 = binomial(Sv2[a],        death_prob);
-        double DSw = binomial(Sw[a],        death_prob);
+        double DS   = binomial(S[a],        death_prob);
+        double DSv_l  = binomial(Sv_l[a],        death_prob);
+        double DSv_m = binomial(Sv_m[a],        death_prob);
 
-        double DR  = binomial(R [a],        death_prob);
-        double DRv = binomial(Rv[a],        death_prob);
-        double DRv2 = binomial(Rv2[a],        death_prob);
+        double DR    = binomial(R[a],        death_prob);
+        double DRv_l = binomial(Rv_l[a],        death_prob);
+        double DRv_m = binomial(Rv_m[a],        death_prob);
 
         // Changes
         N[a] += B;
         S[a] += B;
 
         S[a]  -= DS;
-        Sv[a] -= DSv;
-        Sv2[a] -= DSv2;
-        Sw[a] -= DSw;
+        Sv_l[a] -= DSv_l;
+        Sv_m[a] -= DSv_m;
+        
         R[a]  -= DR;
-        Rv[a] -= DRv;
-        Rv2[a] -= DRv2;
+        Rv_l[a] -= DRv_l;
+        Rv_m[a] -= DRv_m;
 
         // NB - RemoveProb also takes care of removal, so no -= needed
         double DE  = E[a] .RemoveProb(P, Rand, death_prob);
-        double DEv = Ev[a].RemoveProb(P, Rand, death_prob);
-        double DEv2 = Ev2[a].RemoveProb(P, Rand, death_prob);
-        double DIp = Ip[a].RemoveProb(P, Rand, death_prob);
+        double DEv_l = Ev_l[a].RemoveProb(P, Rand, death_prob);
+        double DEv_m = Ev_m[a].RemoveProb(P, Rand, death_prob);
+        
+        double DIp   = Ip[a].RemoveProb(P, Rand, death_prob);
+        double DIp_l = Ip_l[a].RemoveProb(P, Rand, death_prob);
+        double DIp_m = Ip_m[a].RemoveProb(P, Rand, death_prob);
+        
         double DIa = Ia[a].RemoveProb(P, Rand, death_prob);
+        double DIa_l = Ia_l[a].RemoveProb(P, Rand, death_prob);
+        double DIa_m = Ia_m[a].RemoveProb(P, Rand, death_prob);
+        
         double DIs = Is[a].RemoveProb(P, Rand, death_prob);
-
+        double DIs_l = Is_l[a].RemoveProb(P, Rand, death_prob);
+        double DIs_m = Is_m[a].RemoveProb(P, Rand, death_prob);
 
         N[a]  -=
-            DS + DSv + DSv2 + DSw +
-            DE + DEv + DEv2 +
-            DIp + DIa + DIs +
-            DR + DRv + DRv2;
+            DS + DSv_l + DSv_m +
+            DE + DEv_l + DEv_m +
+            DIp + DIp_l + DIp_m +
+            DIa + DIa_l + DIa_m +
+            DIs + DIs_l + DIs_m +
+            DR  + DRv_l + DRv_m;
 
         // Agings
         if (a != lambda.size() - 1)
         {
             double age_prob = 1.0 - exp(-P.pop[p].A[a] * P.time_step);
-            double AS  = binomial(S [a],        age_prob);
-            double ASv = binomial(Sv[a],        age_prob);
-            double ASv2 = binomial(Sv2[a],        age_prob);
-            double ASw = binomial(Sw[a],        age_prob);
-            double AR  = binomial(R [a],        age_prob);
-            double ARv = binomial(Rv[a],        age_prob);
-            double ARv2 = binomial(Rv2[a],        age_prob);
+            double AS    = binomial(S[a],        age_prob);
+            double ASv_l = binomial(Sv_l[a],        age_prob);
+            double ASv_m = binomial(Sv_m[a],        age_prob);
+            double AR    = binomial(R[a],        age_prob);
+            double ARv_l = binomial(Rv_l[a],        age_prob);
+            double ARv_m = binomial(Rv_m[a],        age_prob);
 
-            S[a]      -= AS;
-            S[a + 1]  += AS;
-            Sv[a]     -= ASv;
-            Sv[a + 1] += ASv;
-            Sv2[a]     -= ASv2;
-            Sv2[a + 1] += ASv2;
-            Sw[a]     -= ASw;
-            Sw[a + 1] += ASw;
-            R[a]      -= AR;
-            R[a + 1]  += AR;
-            Rv[a]     -= ARv;
-            Rv[a + 1] += ARv;
-            Rv2[a]     -= ARv2;
-            Rv2[a + 1] += ARv2;
+            S[a]        -= AS;
+            S[a + 1]    += AS;
+            Sv_l[a]     -= ASv_l;
+            Sv_l[a + 1] += ASv_l;
+            Sv_m[a]     -= ASv_m;
+            Sv_m[a + 1] += ASv_m;
 
-            double AE  = E[a] .MoveProb(E [a + 1], P, Rand, age_prob);
-            double AEv = Ev[a].MoveProb(Ev[a + 1], P, Rand, age_prob);
-            double AEv2 = Ev2[a].MoveProb(Ev2[a + 1], P, Rand, age_prob);
-            double AIp = Ip[a].MoveProb(Ip[a + 1], P, Rand, age_prob);
-            double AIa = Ia[a].MoveProb(Ia[a + 1], P, Rand, age_prob);
-            double AIs = Is[a].MoveProb(Is[a + 1], P, Rand, age_prob);
+            R[a]        -= AR;
+            R[a + 1]    += AR;
+            Rv_l[a]     -= ARv_l;
+            Rv_l[a + 1] += ARv_l;
+            Rv_m[a]     -= ARv_m;
+            Rv_m[a + 1] += ARv_m;
 
-            N[a]      -= AS + ASv + ASv2 + ASw + AE + AEv + AEv2 + AIp + AIa + AIs + AR + ARv + ARv2;
-            N[a + 1]  += AS + ASv + ASv2 + ASw + AE + AEv + AEv2 + AIp + AIa + AIs + AR + ARv + ARv2;
+            double AE    = E[a] .MoveProb(E [a + 1], P, Rand, age_prob);
+            double AEv_l = Ev_l[a].MoveProb(Ev_l[a + 1], P, Rand, age_prob);
+            double AEv_m = Ev_m[a].MoveProb(Ev_m[a + 1], P, Rand, age_prob);
+            
+            double AIp   = Ip[a].MoveProb(Ip[a + 1], P, Rand, age_prob);
+            double AIp_l = Ip_l[a].MoveProb(Ip_l[a + 1], P, Rand, age_prob);
+            double AIp_m = Ip_m[a].MoveProb(Ip_m[a + 1], P, Rand, age_prob);
+            
+            double AIa   = Ia[a].MoveProb(Ia[a + 1], P, Rand, age_prob);
+            double AIa_l = Ia_l[a].MoveProb(Ia_l[a + 1], P, Rand, age_prob);
+            double AIa_m = Ia_m[a].MoveProb(Ia_m[a + 1], P, Rand, age_prob);
+            
+            double AIs   = Is[a].MoveProb(Is[a + 1], P, Rand, age_prob);
+            double AIs_l = Is_l[a].MoveProb(Is_l[a + 1], P, Rand, age_prob);
+            double AIs_m = Is_m[a].MoveProb(Is_m[a + 1], P, Rand, age_prob);
+
+            N[a]      -= AS + ASv_l + ASv_m + AE + AEv_l + AEv_m + AIp + AIp_l + AIp_m + AIa + AIa_l + AIa_m + AIs + AIs_l + AIs_m + AR + ARv_l + ARv_m;
+            N[a + 1]  += AS + ASv_l + ASv_m + AE + AEv_l + AEv_m + AIp + AIp_l + AIp_m + AIa + AIa_l + AIa_m + AIs + AIs_l + AIs_m + AR + ARv_l + ARv_m;
         }
 
         if (a == 0)
@@ -656,19 +671,31 @@ void Population::DebugPrint() const
 
     vecprint(lambda, "lambda");
     vecprint(N, "N");
+
     vecprint(S, "S");
+    vecprint(Sv_l, "Sv_l");
+    vecprint(Sv_m, "Sv_m");
+    
     vecprint(R, "R");
-    vecprint(Sv, "Sv");
-    vecprint(Sv2, "Sv2");
-    vecprint(Sw, "Sw");
-    vecprint(Rv, "Rv");
-    vecprint(Rv2, "Rv2");
+    vecprint(Rv_l, "Rv_l");
+    vecprint(Rv_m, "Rv_m");
+    
     comprint(E, "E");
-    comprint(Ev, "Ev");
-    comprint(Ev2, "Ev2");
+    comprint(Ev_l, "Ev_l");
+    comprint(Ev_m, "Ev_m");
+    
     comprint(Ip, "Ip");
+    comprint(Ip_l, "Ip_l");
+    comprint(Ip_m, "Ip_m");
+    
     comprint(Ia, "Ia");
+    comprint(Ia_l, "Ia_l");
+    comprint(Ia_m, "Ia_m");
+    
     comprint(Is, "Is");
+    comprint(Is_l, "Is_l");
+    comprint(Is_m, "Is_m");
+    
     comprint(C, "C");
     cout << "seed_row " << seed_row << " p " << p << "\n";
     for (auto& c : pc)

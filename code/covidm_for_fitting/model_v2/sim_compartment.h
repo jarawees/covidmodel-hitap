@@ -33,10 +33,10 @@ public:
 
 //private:
     vector<double> lambda;
-    vector<double> N, S, R;                     // Total number, Susceptible, recovered
-    vector<double> Vl, Rl;                      // Susceptible and vaccinated, recovered and vaccinated
-    vector<double> Vm, Rm;                    // 2-dose: Susceptible and vaccinated, recovered and vaccinated
-    // vector<double> Sw;                          // waned first dose individuals
+    vector<double> N;                     // Total number, Susceptible, recovered
+    vector<double> S, Sv_l, Sv_m;
+    vector<double> R, Rv_l, Rv_m;
+    vector<double> Vm, Rm;
     vector<Compartment> E, Ev_l, Ev_m, Ip, Ia, Is, C, Ip_l, Ia_l, Is_l,Ip_m, Ia_m, Is_m;   // Exposed (Exposed-and-vaccinated, & 2dosed), presymptomatic, asymptomatic, symptomatic, cases (reported)
     unsigned int seed_row;                      // Which seed event is next
     unsigned int p;                             // Which population this is

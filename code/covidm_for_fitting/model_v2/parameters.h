@@ -48,14 +48,14 @@ public:
     Discrete dE;
     Discrete dEv_l;
     Discrete dEv_m;
-    Discrete dIp;       
+    Discrete dIp;
+    Discrete dIp_l;
+    Discrete dIp_m;
     Discrete dIa;
-    Discrete dIs;
-    Discrete dIp_l;       
     Discrete dIa_l;
-    Discrete dIs_l;
-    Discrete dIp_m;       
     Discrete dIa_m;
+    Discrete dIs;
+    Discrete dIs_l;
     Discrete dIs_m;
     Discrete dC;
 
@@ -68,6 +68,9 @@ public:
     vector<double> u;
     vector<double> uv_l; // susceptibility in vaccinees
     vector<double> uv_m; // susceptibility in second dose vaccinees
+    vector<double> ur;
+    vector<double> uvr_l;
+    vector<double> uvr_m;
     vector<double> fIp;
     vector<double> fIa;
     vector<double> fIs;
