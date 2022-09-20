@@ -1,7 +1,15 @@
 ## Load required packages
 if(!require(pacman)) install.packages("pacman")
 library(pacman)
-p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr)
+p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr,
+       lubridate, mgcv)
+
+##### load covidm #####
+cm_path <- "code/covidm_for_fitting/"
+cm_force_rebuild <- F
+cm_build_verbose <- T
+cm_version <- 2
+source(paste0(cm_path, "/R/covidm.R"))
 
 ## Load required data
 # A. Covid-19 deaths
@@ -57,7 +65,7 @@ pcr_rate <- fread("data/thailand_covid-19_testing_data.csv")[,1:3] %>%
 
 # D. Seroprevalence
 # snapshot over the past 2 years, surveillance at Nov 2021
-sero <- fread("data/serosurveillance65.csv")
+# sero <- fread("data/serosurveillance65.csv")
 
 # E. Genotype frequencies
 # download the data file from COLAB-2 if it doesn't exist in your directory
@@ -82,71 +90,29 @@ geno_freq <- fread("data/sars-cov-2-variants-dmsc.csv")[,1:6] %>%
   filter(!is.na(Alpha))
 
 # F. Vaccine uptake
-# download the data file from owid if it doesn't exist in your directory
-if(!file.exists(paste0("data/vaccinations.csv"))){
-  download.file("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv",
-                paste0("data/vaccinations.csv"))
-}
-
-# update the data file from owid if the time difference is greater than a week
-if(as.numeric(abs(as.Date(file.info(paste0("data/vaccinations.csv"))$mtime) -
-                  as.Date(Sys.time()))) > 7){
-  download.file("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv",
-                paste0("data/vaccinations.csv"))
-}
-
-owid_vac <- fread("data/vaccinations.csv") %>%
-  filter(location == "Thailand")
+source("code/0_3_Vaccinations.R")
 
 # G. Contact matrices
 load("data/contact_all.rdata")
 contact_all <- contact_all["THA"]
 
-# H. Google mobility data
-# download the data file from Google if it doesn't exist in your directory
-if(!file.exists(paste0("data/gm.csv"))){
-  download.file("https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv",
-                paste0("data/gm.csv"))
-}
-
-# update the data file from google if the time difference is greater than a week
-if(as.numeric(abs(as.Date(file.info(paste0("data/gm.csv"))$mtime) -
-                  as.Date(Sys.time()))) > 7){
-  download.file("https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv",
-                paste0("data/gm.csv"))
-}
-
-gm <- fread("data/gm.csv") %>%
-  filter(country_region == "Thailand")
-
 # I. Stringency index
-# let’s go with containment and health index or the stringency index
-
-# download the data file from OxCGRT if it doesn't exist in your directory
-if(!file.exists(paste0("data/OxCGRT_latest.csv"))){
-  download.file("https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv",
-                paste0("data/OxCGRT_latest.csv"))
-}
-
-# update the data file from OxCGRT if the time difference is greater than a week
-if(as.numeric(abs(as.Date(file.info(paste0("data/OxCGRT_latest.csv"))$mtime) -
-                  as.Date(Sys.time()))) > 7){
-  download.file("https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv",
-                paste0("data/OxCGRT_latest.csv"))
-}
-
-oxcgrt <- fread("data/OxCGRT_latest.csv") %>%
-  select(-c(RegionName,RegionCode)) %>%
-  filter(CountryName == "Thailand") %>%
-  mutate_at(vars(Date), ~lubridate::ymd(.))
+source("code/0_1_StringencyIndex.R")
+# H. Google mobility data
+source("code/0_2_Mobility.R")
 
 # J. Population structure
-popTH <- fread("data/pop_str_2021.csv")
+# popTH <- fread("data/pop_str_2021.csv")
 
-popTH <- popTH %>%
-  gather(key = "sex", value = "pop", male, female, both) %>%
-  mutate_at(vars(pop), ~as.numeric(gsub("[^\\d]+", "", ., perl=TRUE))) %>%
-  mutate(age_group = age %/% 5,
-         age = paste0(age_group * 5, "-", age_group * 5 + 4),
-         age = replace(age, age_group>=18, "90+"),
-         age = factor(age, levels = limits_to_agegroups(seq(0, 90, by = 5))))
+# popTH <- popTH %>%
+#   gather(key = "sex", value = "pop", male, female, both) %>%
+#   mutate_at(vars(pop), ~as.numeric(gsub("[^\\d]+", "", ., perl=TRUE))) %>%
+#   mutate(age_group = age %/% 5,
+#          age = paste0(age_group * 5, "-", age_group * 5 + 4),
+#          age = replace(age, age_group>=18, "90+"),
+#          age = factor(age, levels = limits_to_agegroups(seq(0, 90, by = 5))))
+
+#### K. Epi parameters ####
+source("code/0_4_EpiParams.r")
+
+#### L. Burden processes #### 

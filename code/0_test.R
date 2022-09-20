@@ -4,13 +4,22 @@
 
 # require(tidyverse)
 
-##### load covidm #####
-cm_path <- "code/covidm_for_fitting/"
-cm_force_rebuild <- T
-cm_build_verbose <- T
-cm_version <- 2
-source(paste0(cm_path, "/R/covidm.R"))
+
 
 #### Simple example ####
 params <- cm_parameters_SEI3R("Thailand") 
+params$pop[[1]]$ur <- rep(0, 16)
 res <- cm_simulate(params)
+
+res$dynamics |>
+  filter(!compartment %in% c("cases", "cases_reported", "foi","foiv_l", "foiv_m", "subclinical")) |> 
+  # filter(compartment %in% c("S","E", "Ia","Ip","Is","R")) |> 
+  group_by(t, compartment) |> summarise(value = sum(value)) |> 
+  # group_by(t) |> 
+  # summarise(value = sum(value)) |> 
+  # ggplot(aes(x = t, y = value)) + geom_line()
+  ggplot(aes(x = t, y = value, group = compartment, color = compartment, fill = compartment)) +
+  # geom_line() +
+  geom_bar(position = "stack", stat = "identity")
+
+unique(res$dynamics$compartment)
