@@ -7,7 +7,9 @@
 
 
 #### Simple example ####
-params <- cm_parameters_SEI3R("Thailand") 
+params <- gen_country_basics("Thailand",
+                             processes = burden_processes_az) 
+
 params$pop[[1]]$ur <- rep(0, 16)
 res <- cm_simulate(params)
 

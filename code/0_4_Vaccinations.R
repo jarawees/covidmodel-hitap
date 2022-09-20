@@ -41,31 +41,6 @@ data.table(ve_i_o = c(0.7, 0.75),
          ve_critical_condition = 1 - (1-ve_critical)/(1-ve_i_o),
          ve_mort_condition = 1 - (1-ve_mort)/(1-ve_i_o)) -> ve_az
 
-#### SA: VE low ####
-data.table(ve_i_o = c(0.55, 0.7),
-           ve_d_o = c(0.55, 0.85),
-           ve_severe = c(0.75, 0.9),
-           ve_critical = c(0.73, 0.93),
-           ve_mort = c(0.7, 0.95)) %>% 
-  # the following lines do not explicit reflect existing changes in infection
-  # which has been explicitly modelled as changes in u
-  mutate(ve_d = 1 - (1-ve_d_o)/((1-ve_i_o)),
-         ve_severe_condition = 1 - (1-ve_severe)/((1-ve_i_o)),
-         ve_critical_condition = 1 - (1-ve_critical)/((1-ve_i_o)),
-         ve_mort_condition = 1 - (1-ve_mort)/((1-ve_i_o))) -> ve_pfizer_low
-
-data.table(ve_i_o = c(0.55, 0.65),
-           ve_d_o = c(0.55, 0.7),
-           ve_severe = c(0.75, 0.8),
-           ve_critical = c(0.75, 0.78),
-           ve_mort = c(0.75, 0.75)) %>% 
-  # the following lines do not explicit reflect existing changes in infection
-  # which has been explicitly modelled as changes in u
-  mutate(ve_d = 1 - (1-ve_d_o)/((1-ve_i_o)),
-         ve_severe_condition = 1 - (1-ve_severe)/(1-ve_i_o),
-         ve_critical_condition = 1 - (1-ve_critical)/(1-ve_i_o),
-         ve_mort_condition = 1 - (1-ve_mort)/(1-ve_i_o)) -> ve_az_low
-
 owid_vac <- fread("data/vaccinations.csv") %>%
   filter(location == "Thailand") |> 
   arrange(date) |> 

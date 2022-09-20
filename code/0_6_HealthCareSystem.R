@@ -72,6 +72,4 @@ gen_burden_processes <- function(VE){
 
 burden_processes_pfizer <- gen_burden_processes(VE = ve_pfizer)
 burden_processes_az <- gen_burden_processes(VE = ve_az)
-burden_processes_pfizer_low <- gen_burden_processes(VE = ve_pfizer_low)
-burden_processes_az_low <- gen_burden_processes(VE = ve_az_low)
 

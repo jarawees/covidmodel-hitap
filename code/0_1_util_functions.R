@@ -1,3 +1,25 @@
+cm_multinom_process <- function(
+    src, outcomes, delays,
+    report = ""
+) {
+  if ("null" %in% names(outcomes)) {
+    if (length(report) != length(outcomes)) report <- rep(report, length(outcomes))
+    report[which(names(outcomes)=="null")] <- ""
+    if (!("null" %in% names(delays))) {
+      delays$null <- c(1, rep(0, length(delays[[1]])-1))
+    }
+  } else if (!all(rowSums(outcomes)==1)) {
+    report <- c(rep(report, length(outcomes)), "")
+    outcomes$null <- 1-rowSums(outcomes)
+    delays$null <- c(1, rep(0, length(delays[[1]])-1))
+  }
+  nrow <- length(outcomes)
+  list(
+    source = src, type="multinomial", names=names(outcomes), report = report,
+    prob = t(as.matrix(outcomes)), delays = t(as.matrix(delays))
+  )
+}
+
 gen_country_basics <- function(country,
                                waning_nat = 52*7*3,
                                R0_assumed  = 2.7,
