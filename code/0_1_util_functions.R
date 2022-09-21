@@ -92,3 +92,29 @@ gen_country_basics <- function(country,
   
   return(para)
 }
+
+update_vac_char <- function(para,
+                            ve_i_l  = NULL, # infection blocking VE among V_l
+                            ve_i_m  = NULL, # infection blocking VE among V_m
+                            ve_d_l  = NULL, # disease reducing VE among E_l
+                            ve_d_m  = NULL, # disease reducing VE among E_m 
+                            period_wn  = NULL, # duration, waning of natural immunity
+                            period_wv_ml = NULL # duration, waning from medium to low levels vaccine induced 
+){
+  
+  n_age <- length(para$pop[[1]]$size)
+  
+  # key parameters on infection and disease blocking mechanisms
+  para$pop[[1]]$uv_l  <- para$pop[[1]]$u * (1 - ve_i_l)
+  para$pop[[1]]$uv_m <- para$pop[[1]]$u * (ve_i_m)
+  para$pop[[1]]$yv_l  <- para$pop[[1]]$y * (1 - ve_d_l)
+  para$pop[[1]]$yv_m <- para$pop[[1]]$y * (1 - ve_d_m)
+  
+  # waning vaccine-induced immunity
+  para$pop[[1]]$wn <- rep(1/period_wn, n_age)
+  para$pop[[1]]$wv_ml <-  rep(1/period_wv_ml, n_age)
+  
+  # return results
+  return(para)
+}
+ 

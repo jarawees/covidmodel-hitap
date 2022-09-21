@@ -8,7 +8,10 @@
 
 #### Simple example ####
 params <- gen_country_basics("Thailand",
-                             processes = burden_processes_az) 
+                             processes = burden_processes_az) %>% 
+  update_vac_char(., 
+                  ve_i = ve_az$ve_i_o[1],
+                  )
 
 params$pop[[1]]$ur <- rep(0, 16)
 res <- cm_simulate(params)
