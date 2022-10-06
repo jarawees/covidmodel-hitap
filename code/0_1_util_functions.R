@@ -121,7 +121,7 @@ efficacy_weights_test |>
 # (1) VOC emergences related to changes in susceptibility and clinical fraction
 # (2) different vaccine efficacy values intput at different time steps due to 
 # composition of vaccines
-update_u_y <- function(para,
+update_u_y <- function(para = NULL,
                        date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
                        rc_u = c(1, 1.5, 0.5), # relative changes in u
                        rc_y = c(1, 0.5, 0.5), # relative changes in y
@@ -207,122 +207,117 @@ update_u_y <- function(para,
 # this function is reduced now to only make changes to only modify the health
 # system burden processes changed as a result of emerging VOC
 
-# emerge_VOC_burden <- function(
-#     para = NULL,
-#     rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
-#     VE = NULL,
-# ){
-#   
-#   burden_processes_new <- 
-#     # mortality cases
-#     list(
-#       cm_multinom_process("E",       
-#                           data.frame(death_voc1 = P.death*rc_severity[1]),                   
-#                           delays = data.frame(death_voc1 = delay_2death), 
-#                           report = "o"),
-#       cm_multinom_process("E",       
-#                           data.frame(death_voc2 = P.death*prod(rc_severity[1:2])),                   
-#                           delays = data.frame(death_voc2 = delay_2death), 
-#                           report = "o"),
-#       cm_multinom_process("E",       
-#                           data.frame(death_voc3 = P.death*prod(rc_severity[1:3])),                   
-#                           delays = data.frame(death_voc3 = delay_2death), 
-#                           report = "o"),
-#       
-#       cm_multinom_process("Ev",      
-#                           data.frame(death_voc1 = P.death*(1-VE$ve_mort_condition[1])*(rc_severity[1])), 
-#                           delays = data.frame(death_voc1 = delay_2death), 
-#                           report = "o"),
-#       cm_multinom_process("Ev",      
-#                           data.frame(death_voc2 = P.death*(1-VE$ve_mort_condition[1])*prod(rc_severity[1:2])), 
-#                           delays = data.frame(death_voc2 = delay_2death), 
-#                           report = "o"),
-#       cm_multinom_process("Ev",      
-#                           data.frame(death_voc3 = P.death*(1-VE$ve_mort_condition[1])*prod(rc_severity[1:3])), 
-#                           delays = data.frame(death_voc3 = delay_2death), 
-#                           report = "o"),
-#       
-#       cm_multinom_process("Ev2",     
-#                           data.frame(death_voc1 = P.death*(1-VE$ve_mort_condition[2])*(rc_severity[1])), 
-#                           delays = data.frame(death_voc1 = delay_2death), 
-#                           report = "o"),
-#       cm_multinom_process("Ev2",     
-#                           data.frame(death_voc2 = P.death*(1-VE$ve_mort_condition[2])*prod(rc_severity[1:2])), 
-#                           delays = data.frame(death_voc2 = delay_2death),
-#                           report = "o"),
-#       cm_multinom_process("Ev2",
-#                           data.frame(death_voc3 = P.death*(1-VE$ve_mort_condition[2])*prod(rc_severity[1:3])), 
-#                           delays = data.frame(death_voc3 = delay_2death), 
-#                           report = "o"),
-#       
-#       # severe cases
-#       cm_multinom_process("E",       
-#                           data.frame(to_severe_voc1 = P.severe*(rc_severity[1]),
-#                                      to_critical_voc1 = P.critical*(rc_severity[1])),                  
-#                           delays = data.frame(to_severe_voc1 = delay_2severe,
-#                                               to_critical_voc1 = delay_2severe)),
-#       cm_multinom_process("E",       
-#                           data.frame(to_severe_voc2 = P.severe*prod(rc_severity[1:2]),
-#                                      to_critical_voc2 = P.critical*prod(rc_severity[1:2])),                  
-#                           delays = data.frame(to_severe_voc2 = delay_2severe,
-#                                               to_critical_voc2 = delay_2severe)),
-#       cm_multinom_process("E",       
-#                           data.frame(to_severe_voc3 = P.severe*prod(rc_severity[1:3]),
-#                                      to_critical_voc3 = P.critical*prod(rc_severity[1:3])),                  
-#                           delays = data.frame(to_severe_voc3 = delay_2severe,
-#                                               to_critical_voc3 = delay_2severe)),
-#       
-#       cm_multinom_process("Ev",      
-#                           data.frame(to_severe_voc1 = P.severe*(1-VE$ve_severe_condition[1])*(rc_severity[1]),
-#                                      to_critical_voc1 = P.critical*(1-VE$ve_critical_condition[1])*(rc_severity[1])),   
-#                           delays = data.frame(to_severe_voc1 = delay_2severe,
-#                                               to_critical_voc1 = delay_2severe)),
-#       cm_multinom_process("Ev",      
-#                           data.frame(to_severe_voc2 = P.severe*(1-VE$ve_severe_condition[1])*prod(rc_severity[1:2]),
-#                                      to_critical_voc2 = P.critical*(1-VE$ve_critical_condition[1])*prod(rc_severity[1:2])),   
-#                           delays = data.frame(to_severe_voc2 = delay_2severe,
-#                                               to_critical_voc2 = delay_2severe)),
-#       cm_multinom_process("Ev",      
-#                           data.frame(to_severe_voc3 = P.severe*(1-VE$ve_severe_condition[1])*prod(rc_severity[1:3]),
-#                                      to_critical_voc3 = P.critical*(1-VE$ve_critical_condition[1])*prod(rc_severity[1:3])),   
-#                           delays = data.frame(to_severe_voc3 = delay_2severe,
-#                                               to_critical_voc3 = delay_2severe)),
-#       
-#       cm_multinom_process("Ev2",     
-#                           data.frame(to_severe_voc1 = P.severe*(1-VE$ve_severe_condition[2])*(rc_severity[1]),
-#                                      to_critical_voc1 = P.critical*(1-VE$ve_critical_condition[2])*(rc_severity[1])),   
-#                           delays = data.frame(to_severe_voc1 = delay_2severe,
-#                                               to_critical_voc1 = delay_2severe)),
-#       cm_multinom_process("Ev2",     
-#                           data.frame(to_severe_voc2 = P.severe*(1-VE$ve_severe_condition[2])*prod(rc_severity[1:2]),
-#                                      to_critical_voc2 = P.critical*(1-VE$ve_critical_condition[2])*prod(rc_severity[1:2])),   
-#                           delays = data.frame(to_severe_voc2 = delay_2severe,
-#                                               to_critical_voc2 = delay_2severe)),
-#       cm_multinom_process("Ev2",     
-#                           data.frame(to_severe_voc3 = P.severe*(1-VE$ve_severe_condition[2])*prod(rc_severity[1:3]),
-#                                      to_critical_voc3 = P.critical*(1-VE$ve_critical_condition[2])*prod(rc_severity[1:3])),   
-#                           delays = data.frame(to_severe_voc3 = delay_2severe,
-#                                               to_critical_voc3 = delay_2severe)),
-#       
-#       cm_multinom_process("to_severe_voc1", data.frame(severe_voc1 = rep(1,16)),                          
-#                           delays = data.frame(severe_voc1 = delay_2hosp),   report = "ip"),
-#       cm_multinom_process("to_severe_voc2", data.frame(severe_voc2 = rep(1,16)),                          
-#                           delays = data.frame(severe_voc2 = delay_2hosp),   report = "ip"),
-#       cm_multinom_process("to_severe_voc3", data.frame(severe_voc3 = rep(1,16)),                          
-#                           delays = data.frame(severe_voc3 = delay_2hosp),   report = "ip"),
-#       
-#       cm_multinom_process("to_critical_voc1", data.frame(critical_voc1 = rep(1,16)),                          
-#                           delays = data.frame(critical_voc1 = delay_2hosp_critical),   report = "ip"),
-#       cm_multinom_process("to_critical_voc2", data.frame(critical_voc2 = rep(1,16)),                          
-#                           delays = data.frame(critical_voc2 = delay_2hosp_critical),   report = "ip"),
-#       cm_multinom_process("to_critical_voc3", data.frame(critical_voc3 = rep(1,16)),                          
-#                           delays = data.frame(critical_voc3 = delay_2hosp_critical),   report = "ip")
-#     )
-#   
-#   burden_updated <- c(para$processes, burden_processes_new)
-#   para$processes <- burden_updated
-#   
-#   return(para)
-# }
+emerge_VOC_burden <- function(
+    para = NULL,
+    rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
+    efficacy_baseline = NULL){
+  
+  # debug
+  # para = params
+  # rc_severity = c(1, 1.5,1.5)
+  # efficacy_baseline = ve_az
+  
+  # set up
+  n_voc = length(rc_severity)
+  compartments_E <- c("E", "Ev_l", "EV_m")
+  
+  # generate death processes
+  generate_death_processes <- function(source_compartment = NULL,
+                                       voc_index = NULL){
+    multiplier1 <- prod(rc_severity[1:voc_index])
+    if(source_compartment == "E") multiplier2 <- 1
+    if(source_compartment == "Ev_l") multiplier2 <- 1 - efficacy_baseline$ve_mort_condition[1]
+    if(source_compartment == "Ev_m") multiplier2 <- 1 - efficacy_baseline$ve_mort_condition[2]
+    tmp_var <- paste0("death_voc", voc_index)
+    
+    tmp_process <- cm_multinom_process(source_compartment,
+                                       data.frame(P.death*multiplier1*multiplier2) |> setNames(tmp_var),
+                                       delays = data.frame(delay_2death) |> setNames(tmp_var),
+                                       report = "o")
+    
+    return(tmp_process)
+  }
+  
+  output_table <- data.table::CJ(source_compartment = compartments_E,
+                                voc_index = 1:n_voc)
+  
+  death_processes <- lapply(1:nrow(output_table), 
+                            function(x) {generate_death_processes(source_compartment = output_table$source_compartment[x],
+                                                                   voc_index = output_table$voc_index[x])}
+                            )
+  
+  # generate severe and critical, intermediate processes
+  generate_intermediate_processes <- function(source_compartment = NULL,
+                                              voc_index = NULL){
+    multiplier1 <- prod(rc_severity[1:voc_index])
+    
+    if(source_compartment == "E") {
+      multiplier2_severe <- multiplier2_critical <- 1
+    }
+    
+    if(source_compartment == "Ev_l") {
+      multiplier2_severe <- 1 - efficacy_baseline$ve_severe_condition[1]
+      multiplier2_critical <- 1 - efficacy_baseline$ve_critical_condition[1]
+      
+    }
+    
+    if(source_compartment == "Ev_m") {
+      multiplier2_severe <- 1 - efficacy_baseline$ve_severe_condition[2]
+      multiplier2_critical <- 1 - efficacy_baseline$ve_critical_condition[2]
+    }
+    
+    tmp_var_to_severe <- paste0("to_severe_voc", voc_index)
+    tmp_var_to_critical <- paste0("to_critical_voc", voc_index)
+    tmp_var_severe <- paste0("severe_voc", voc_index)
+    tmp_var_critical <- paste0("critical_voc", voc_index)
+    
+    tmp_process <-
+      cm_multinom_process(source_compartment,
+                          data.frame(var_to_severe = P.severe*multiplier1*multiplier2_severe,
+                                     var_to_critical = P.critical*multiplier1*multiplier2_critical) |> 
+                            setNames(c(tmp_var_to_severe, tmp_var_to_critical)),
+                          delays = data.frame(var_to_severe = delay_2severe,
+                                              var_to_critical = delay_2severe) |> 
+                            setNames(c(tmp_var_to_severe, tmp_var_to_critical)))
+      
+
+    return(tmp_process)
+  }
+  
+  intermediate_processes <- lapply(1:nrow(output_table), 
+                                   function(x) {generate_death_processes(source_compartment = output_table$source_compartment[x],
+                                                                         voc_index = output_table$voc_index[x])}
+  ) 
+  
+  intermediate_processes_agg <- list()
+  
+  for(i in 1:n_voc){
+    tmp_var_to_severe <- paste0("to_severe_voc", i)
+    tmp_var_to_critical <- paste0("to_critical_voc", i)
+    tmp_var_severe <- paste0("severe_voc", i)
+    tmp_var_critical <- paste0("critical_voc", i)
+    
+    list(  
+      cm_multinom_process(tmp_var_to_severe, 
+                          data.frame(rep(1,16)) |> setNames(tmp_var_severe),
+                          delays = data.frame(delay_2hosp)|> 
+                            setNames(tmp_var_severe),   report = "ip"),
+      
+      cm_multinom_process(tmp_var_to_critical,
+                          data.frame(rep(1,16))|> setNames(tmp_var_critical),
+                          delays = data.frame(delay_2hosp_critical)|> 
+                            setNames(tmp_var_critical),   report = "ip")
+    ) -> intermediate_processes_agg[[i]]
+  }
+  
+  intermediate_processes_agg |> purrr::flatten() -> intermediate_processes_agg
+  to_attach <- c(death_processes, 
+                 intermediate_processes,
+                 intermediate_processes_agg)
+  
+  para$processes <- c(para$processes, to_attach)
+
+  return(para)
+}
 
  
