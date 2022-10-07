@@ -196,7 +196,7 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
             rep(t, p, a, rilambda)    = P.pop[p].u[a]*lambda[a];
             rep(t, p, a, rilambdav_l) = P.pop[p].uv_l[a]*lambda[a];
             rep(t, p, a, rilambdav_m) = P.pop[p].uv_m[a]*lambda[a];
-
+            
             // User-specified processes
             for (size_t i=0;
                  i < P.processes.prevalence_states.size();
@@ -247,7 +247,7 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
           
         // double nS_Sv = min(S[a], num(P.pop[p].v[a] * P.pop[p].ev[a] * S[a] / first_dose_eligible * P.time_step));
         // double nR_Rv = min(R[a], num(P.pop[p].v[a] * P.pop[p].ev[a] * R[a] / first_dose_eligible * P.time_step));
-
+        
         // waning of vaccine induced protection
         // (5) Sv_m -> Sv_l
         double nSv_m_Sv_l = binomial(Sv_m[a], 1.0 - exp(-P.pop[p].wv_ml[a] * P.time_step));

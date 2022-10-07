@@ -30,31 +30,40 @@ params <- gen_country_basics(country = "Thailand",
                   rc_ve = c(1, 0.9, 0.7),
                   efficacy_baseline = ve_az, 
                   efficacy_weights = efficacy_weights_test
-                  )
+                  ) %>%
+  emerge_VOC_burden(para = .,
+    rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
+    efficacy_baseline = ve_az) %>%
+  vaccinate_primary() # %>%
+  # vaccinate_booster()
+
+
 
 # plot(x = params$schedule$yv_l_scaler$times,
 #      y = params$schedule$yv_l_scaler$values[[1]],
 #      type = "l")
 
-params$pop[[1]]$ur <- rep(0, 16)
-res <- cm_simulate(params)
-
+# params$pop[[1]]$ur <- rep(0, 16)
+res <- cm_simulate(params) 
+print(unique(res$dynamics$compartment))
+# res$dynamics |>
+#   # filter(!compartment %in% c("cases", "cases_reported", "foi","foiv_l", "foiv_m", "subclinical")) |>
+#   filter(compartment %in% compartment_labels) |>
+#   group_by(t, compartment) |> summarise(value = sum(value)) |>
+#   # group_by(t) |>
+#   # summarise(value = sum(value)) |>
+#   # ggplot(aes(x = t, y = value)) + geom_line()
+#   ggplot(aes(x = t, y = value, group = compartment, color = compartment, fill = compartment)) +
+#   # geom_line() +
+#   geom_bar(position = "stack", stat = "identity")
+# # 
 res$dynamics |>
+  # filter(compartment %in% compartment_labels) |>
+  # filter(compartment %in% c("Sv_l", "Sv_m")) |>
   # filter(!compartment %in% c("cases", "cases_reported", "foi","foiv_l", "foiv_m", "subclinical")) |>
-  filter(compartment %in% compartment_labels) |>
-  group_by(t, compartment) |> summarise(value = sum(value)) |>
-  # group_by(t) |>
-  # summarise(value = sum(value)) |>
-  # ggplot(aes(x = t, y = value)) + geom_line()
-  ggplot(aes(x = t, y = value, group = compartment, color = compartment, fill = compartment)) +
-  # geom_line() +
-  geom_bar(position = "stack", stat = "identity")
-# 
-res$dynamics |>
-  # filter(!compartment %in% c("cases", "cases_reported", "foi","foiv_l", "foiv_m", "subclinical")) |>
-  filter(compartment %in% outcome_labels[c(1, 4:6)])|>
+  # filter(compartment %in% outcome_labels[c(1, 4:6)])|>
   group_by(t, compartment) |> summarise(value = sum(value)) |>
   ggplot(aes(x = t, y = value, group = compartment, color = compartment, fill = compartment)) +
+  # geom_bar(position = "stack", stat = "identity")
   geom_line() +
   facet_wrap(~compartment, scales = "free")
-

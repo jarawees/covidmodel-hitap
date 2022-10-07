@@ -43,7 +43,7 @@ enum ReportIndex
     risubclinical,
     rilambda,
     rilambdav_l,
-    rilambdav_m //24
+    rilambdav_m//24
 };
 
 const vector<string> ref_col_names = {
@@ -70,7 +70,7 @@ const vector<string> ref_col_names = {
     "subclinical",
     "foi",
     "foiv_l",
-    "foiv_m" //24
+    "foiv_m"//24
 };
 
 // For reporting results

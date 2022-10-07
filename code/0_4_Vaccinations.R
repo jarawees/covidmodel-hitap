@@ -76,31 +76,41 @@ owid_vac |>
 
 #### look for the transition time between primary dose and booster campaign ####
 
-# lapply(seq(0,1,0.1),
-#        function(x){
-#          smooth.spline(x = owid_vac$date_numeric,
-#                        y = owid_vac$people_fully_vaccinated,
-#                        spar = x)
-#        }) |> 
-#   map(predict,
-#       deriv = 2) |> 
-#   map(function(x) {x["y"]}) |> 
-#   bind_cols() |> 
-#   setNames(paste0("spar_",seq(0,1,0.1))) |> 
-#   bind_cols(owid_vac[,"date"]) |> 
-#   pivot_longer(starts_with("spar")) -> splines_all
+lapply(seq(0,1,0.1),
+       function(x){
+         smooth.spline(x = owid_vac$date_numeric,
+                       y = owid_vac$people_fully_vaccinated,
+                       spar = x)
+       }) |>
+  map(predict,
+      deriv = 2) |>
+  map(function(x) {x["y"]}) |>
+  bind_cols() |>
+  setNames(paste0("spar_",seq(0,1,0.1))) |>
+  bind_cols(owid_vac[,"date"]) |>
+  pivot_longer(starts_with("spar")) -> splines_all
 
 # we can see that spar = 0-0.3 doesn't really make sense because of too much
-# permutation, the transition between initial vaccination and booster dose 
+# permutation, the transition between initial vaccination and booster dose
 # occurred in the first two weeks of October
 # 2021-09-30 ~ 2021-10-17
 
-# splines_all %>% 
-#   data.table |> 
-#   split(by = "name") |> 
-#   map(filter, value < 0 & date >= "2021-08-01") |> 
-#   map(filter, date == min(date, na.rm = T)) |> 
-#   bind_rows()
-#   ggplot(aes(x = date, y = value, group = name, color = name)) +
-#   geom_line() +
-#   facet_wrap(~name)
+splines_all %>%
+  data.table |>
+  # split(by = "name") |>
+  # map(filter, value < 0 & date >= "2021-08-01") |>
+  # map(filter, date == min(date, na.rm = T)) |>
+  # bind_rows() |> 
+  ggplot(aes(x = date, y = value, group = name, color = name)) +
+  geom_line() +
+  facet_wrap(~name)
+
+#### daily new vaccines
+owid_vac |> 
+  filter(date <= "2022-06-01" & date >= "2021-01-15") |> 
+  ggplot(aes(x = date, y = people_fully_vaccinated)) +
+  geom_line() +
+  geom_smooth(method = "lm")
+
+lm(people_fully_vaccinated ~ date, data = owid_vac) |> summary()
+owid_vac$people_fully_vaccinated |> tail(1)

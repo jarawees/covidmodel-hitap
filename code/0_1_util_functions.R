@@ -65,6 +65,16 @@ gen_country_basics <- function(country,
     current_R0 = cm_calc_R0(para, i); # calculate R0 in population i of params
     para$pop[[i]]$u = para$pop[[i]]$u * R0_assumed / current_R0
     
+    # update all copies of u and y to begin with
+    para$pop[[i]]$uv_l  <- para$pop[[i]]$u
+    para$pop[[i]]$uv_m  <- para$pop[[i]]$u
+    para$pop[[i]]$ur    <- 0.3*para$pop[[i]]$u
+    para$pop[[i]]$uvr_l <- 0.3*para$pop[[i]]$u
+    para$pop[[i]]$uvr_m <- 0.3*para$pop[[i]]$u
+    
+    para$pop[[i]]$yv_l <- para$pop[[i]]$y
+    para$pop[[i]]$yv_m <- para$pop[[i]]$y
+
     # natural waning
     para$pop[[i]]$wn <- rep((1/period_wn), 
                             n_age_groups)
@@ -142,8 +152,10 @@ update_u_y <- function(para = NULL,
                   lubridate::ymd(para$date0) + para$time1)
   t_range <- c(para$time0:para$time1)
   targets <- data.frame(scaler_label = c("uv_l_scaler", "uv_m_scaler",
+                                         "uvr_l_scaler", "uvr_m_scaler",
                                          "yv_l_scaler", "yv_m_scaler"),
                         variable_label = c("uv_l", "uv_m",
+                                           "uvr_l", "uvr_m",
                                            "yv_l", "yv_m"))
   n_age_groups <- para$pop[[1]]$n_groups
   
@@ -169,6 +181,8 @@ update_u_y <- function(para = NULL,
               by = "date") |> 
     mutate(uv_l_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
            uv_m_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
+           uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
+           uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
            yv_l_scaler = rc_y_prod*(1 - efficacy_baseline$ve_d[1]*weights_ve_d_l*rc_ve_prod),
            yv_m_scaler = rc_y_prod*(1 - efficacy_baseline$ve_d[2]*weights_ve_d_m*rc_ve_prod)) -> modifier
 
@@ -219,7 +233,7 @@ emerge_VOC_burden <- function(
   
   # set up
   n_voc = length(rc_severity)
-  compartments_E <- c("E", "Ev_l", "EV_m")
+  compartments_E <- c("E", "Ev_l", "Ev_m")
   
   # generate death processes
   generate_death_processes <- function(source_compartment = NULL,
@@ -285,7 +299,7 @@ emerge_VOC_burden <- function(
   }
   
   intermediate_processes <- lapply(1:nrow(output_table), 
-                                   function(x) {generate_death_processes(source_compartment = output_table$source_compartment[x],
+                                   function(x) {generate_intermediate_processes(source_compartment = output_table$source_compartment[x],
                                                                          voc_index = output_table$voc_index[x])}
   ) 
   
@@ -320,4 +334,41 @@ emerge_VOC_burden <- function(
   return(para)
 }
 
+vaccinate_primary <- function(para = NULL){
+  n_age_groups <- length(para$pop[[1]]$size)
+  tmp_time <- c(0,
+                as.numeric(ymd("2021-05-15") - ymd(para$date0)),
+                as.numeric(ymd("2021-10-15") - ymd(para$date0)))
+  
+  para$schedule[["primary_course"]] <- list(
+    parameter = "v_p",
+    pops = numeric(),
+    mode = "assign",
+    values = list(rep(0, n_age_groups),
+                  rep(c(0,7500), c(4, n_age_groups - 4)),
+                  rep(0, n_age_groups)),
+    times = tmp_time
+  )
+  return(para)
+}
+
+vaccinate_booster <- function(para = NULL,
+                              program_start = NULL,
+                              program_end = NULL){
+  n_age_groups <- length(para$pop[[1]]$size)
+  tmp_time <- c(0,
+                as.numeric(ymd(program_start) - ymd(para$date0)),
+                as.numeric(ymd(program_end) - ymd(para$date0)))
+  
+  para$schedule[["booster"]] <- list(
+    parameter = "v_b",
+    pops = numeric(),
+    mode = "assign",
+    values = list(rep(0, n_age_groups),
+                  rep(c(0,7500), c(4, n_age_groups - 4)),
+                  rep(0, n_age_groups)),
+    times = tmp_time
+  )
+  return(para)
+}
  
