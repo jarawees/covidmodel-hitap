@@ -84,6 +84,7 @@ public:
     vector<double> v_b;
     vector<double> ev_p;
     vector<double> ev_b;
+    vector<double> vt_l;
     vector<double> wn;
     vector<double> wv_ml;
     vector<double> A;

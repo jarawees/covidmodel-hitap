@@ -77,6 +77,8 @@ void Change::Capture(Parameters& P)
     // booster dose, boosting vaccination campaign
     ParamCapture(v_b,       PVector)
     ParamCapture(ev_b,      PVector)
+    // proportion transition to low level of protection by vaccines
+    ParamCapture(vt_l,      PVector)
     ParamCapture(wn,      PVector)
     ParamCapture(wv_ml,      PVector)
     ParamCapture(A,       PVector)

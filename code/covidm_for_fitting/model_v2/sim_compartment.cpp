@@ -221,30 +221,22 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
 
         // initial vaccination campaign, primary doses
         
-        // (2) S -> Sv_l
-        // the 0.5 here should be replaced by proportion moving to Sv_l after one dose
-        // and should be informed by the literature review
-        double nS_Sv_l = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * S[a] * 0.5 / primary_dose_eligible * P.time_step));
-        S[a] -= nS_Sv_l;
-        Sv_l[a] += nS_Sv_l;
-        
-        // (3) S -> Sv_m
-        // the 0.5 here should be replaced by proportion moving to Sv_m after one dose
-        // and should be informed by the literature review
-        double nS_Sv_m = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * S[a] * 0.5 / primary_dose_eligible * P.time_step));
+        // (2-3) S -> Sv_m; S -> Sv_l; (46-47) R -> Rv_m; R -> Rv_l
+        double nS_Sv_l = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (S[a] * P.pop[p].vt_l[a] / primary_dose_eligible) * P.time_step));
+        double nS_Sv_m = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (S[a] * (1-P.pop[p].vt_l[a]) / primary_dose_eligible) * P.time_step));
+        double nR_Rv_l = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (R[a] * P.pop[p].vt_l[a] / primary_dose_eligible) * P.time_step));
+        double nR_Rv_m = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (R[a] * (1-P.pop[p].vt_l[a]) / primary_dose_eligible) * P.time_step));
+       
         S[a] -= nS_Sv_m;
+        S[a] -= nS_Sv_l;
         Sv_m[a] += nS_Sv_m;
-        
-        // (46) R -> Rv_l
-        double nR_Rv_l = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * R[a] * 0.5 / primary_dose_eligible * P.time_step));
+        Sv_l[a] += nS_Sv_l;
+
+        R[a] -= nR_Rv_m;
         R[a] -= nR_Rv_l;
+        Rv_m[a] += nR_Rv_m;
         Rv_l[a] += nR_Rv_l;
         
-        // (47) R -> Rv_m
-        double nR_Rv_m = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * R[a] * 0.5 / primary_dose_eligible * P.time_step));
-        R[a] -= nR_Rv_m;
-        Rv_m[a] += nR_Rv_m;
-          
         // double nS_Sv = min(S[a], num(P.pop[p].v[a] * P.pop[p].ev[a] * S[a] / first_dose_eligible * P.time_step));
         // double nR_Rv = min(R[a], num(P.pop[p].v[a] * P.pop[p].ev[a] * R[a] / first_dose_eligible * P.time_step));
         
@@ -262,13 +254,13 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         // double nSv_Sw  = binomial(Sv[a], 1.0 - exp(-P.pop[p].wv[a] * P.time_step));
         
         // booster vaccination campaign, booster doses
-        // (8) Sv_l -> Sv_m
+        // (8) Sv_l -> Sv_m; (41) Rv_l -> Rv_m
         double nSv_l_Sv_m = min(Sv_l[a], num(P.pop[p].v_b[a] * P.pop[p].ev_b[a] * Sv_l[a] / booster_dose_eligible * P.time_step));
+        double nRv_l_Rv_m = min(Rv_l[a], num(P.pop[p].v_b[a] * P.pop[p].ev_b[a] * Rv_l[a] / booster_dose_eligible * P.time_step));
+        
         Sv_l[a] -= nSv_l_Sv_m;
         Sv_m[a] += nSv_l_Sv_m;
         
-        // (41) Rv_l -> Rv_m
-        double nRv_l_Rv_m = min(Rv_l[a], num(P.pop[p].v_b[a] * P.pop[p].ev_b[a] * Rv_l[a] / booster_dose_eligible * P.time_step));
         Rv_l[a] -= nRv_l_Rv_m;
         Rv_m[a] += nRv_l_Rv_m;
         

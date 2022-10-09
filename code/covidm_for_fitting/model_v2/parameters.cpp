@@ -135,6 +135,7 @@ bool PopulationParameters::Set(Parameters* parent, string& name, Rcpp::RObject& 
     _CheckSet(ev_p)
     _CheckSet(v_b)
     _CheckSet(ev_b)
+    _CheckSet(vt_l)
     _CheckSet(wn)
     _CheckSet(wv_ml)
     _CheckSet(A)
@@ -213,6 +214,7 @@ bool PopulationParameters::Set(Parameters* parent, string& name, vector<double>&
     _CheckSet(ev_p)
     _CheckSet(v_b)
     _CheckSet(ev_b)
+    _CheckSet(vt_l)
     _CheckSet(wn)
     _CheckSet(wv_ml)
     _CheckSet(A)
@@ -351,6 +353,7 @@ void SetParameters(Parameters& P, Rcpp::List list, Randomizer& Rand)
             ParamPopAssign(vector<double>, ev_p, i);
             ParamPopAssign(vector<double>, v_b, i);
             ParamPopAssign(vector<double>, ev_b, i);
+            ParamPopAssign(vector<double>, vt_l, i);
             ParamPopAssign(vector<double>, wn, i);
             ParamPopAssign(vector<double>, wv_ml, i);
             ParamPopAssign(vector<double>, A, i);

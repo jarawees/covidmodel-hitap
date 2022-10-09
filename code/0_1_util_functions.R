@@ -28,6 +28,7 @@ gen_country_basics <- function(country,
                                contact = contact_schedule,
                                period_wn  = 3*365, # duration, waning of natural immunity
                                period_wv_ml = 1*365, # duration, waning from medium to low levels vaccine induced 
+                               prob_v_p_l = 0.5,
                                deterministic = TRUE){
   
   require(countrycode)
@@ -54,12 +55,14 @@ gen_country_basics <- function(country,
                                                   t_max = 15, t_step = 0.25)$p,
                              deterministic = deterministic)
   
+
   n_age_groups <- length(para$pop[[1]]$size)
   
   for(i in 1:length(para$pop)){
     
     para$pop[[i]]$y <- cf
     para$pop[[i]]$u <- sus
+    para$pop[[i]]$vt_l <- rep(prob_v_p_l, 16)
     
     # scale u (susceptibility) to achieve desired R0
     current_R0 = cm_calc_R0(para, i); # calculate R0 in population i of params
@@ -365,7 +368,7 @@ vaccinate_booster <- function(para = NULL,
     pops = numeric(),
     mode = "assign",
     values = list(rep(0, n_age_groups),
-                  rep(c(0,7500), c(4, n_age_groups - 4)),
+                  rep(c(0,10000), c(4, n_age_groups - 4)),
                   rep(0, n_age_groups)),
     times = tmp_time
   )

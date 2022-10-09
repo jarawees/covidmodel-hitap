@@ -21,15 +21,15 @@ source("code/0_1_util_functions.R")
 # df_round1to2 <- fromJSON(rawToChar(res_round1to2$content)) 
 # write.csv(df_round1to2, file = "data/epi_round1to2.csv", row.names = F)
 epi_round1to <- fread("data/epi_round1to2.csv") # snapshot from 2020-01-12 to 2021-03-31
-# 
-# # download the data file from DDC MOPH TH if it doesn't exist in your directory
+
+# download the data file from DDC MOPH TH if it doesn't exist in your directory
 # if(!file.exists(paste0("data/epi_update.csv"))){
 #   res_update <- GET("https://covid19.ddc.moph.go.th/api/Cases/timeline-cases-all")
 #   df_update <- fromJSON(rawToChar(res_update$content))[,1:9] 
 #   write.csv(df_update, file = "data/epi_update.csv", row.names = F)
 # }
-# 
-# # update the data file from DDC MOPH TH if the time difference is greater than a week
+ 
+# update the data file from DDC MOPH TH if the time difference is greater than a week
 # if(as.numeric(abs(as.Date(file.info(paste0("data/epi_update.csv"))$mtime) -
 #                   as.Date(Sys.time()))) > 7){
 #   res_update <- GET("https://covid19.ddc.moph.go.th/api/Cases/timeline-cases-all")
