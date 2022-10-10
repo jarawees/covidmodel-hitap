@@ -48,15 +48,19 @@ public:
     Discrete dE;
     Discrete dEv_l;
     Discrete dEv_m;
+    Discrete dEv_h;
     Discrete dIp;
     Discrete dIp_l;
     Discrete dIp_m;
+    Discrete dIp_h;
     Discrete dIa;
     Discrete dIa_l;
     Discrete dIa_m;
+    Discrete dIa_h;
     Discrete dIs;
     Discrete dIs_l;
     Discrete dIs_m;
+    Discrete dIs_h;
     Discrete dC;
 
     vector<double> size;
@@ -66,17 +70,20 @@ public:
     vector<double> contact_mult;
     vector<double> contact_lowerto;
     vector<double> u;
-    vector<double> uv_l; // susceptibility in vaccinees
-    vector<double> uv_m; // susceptibility in second dose vaccinees
+    vector<double> uv_l; // 
+    vector<double> uv_m; //
+    vector<double> uv_h; //
     vector<double> ur;
     vector<double> uvr_l;
     vector<double> uvr_m;
+    vector<double> uvr_h;
     vector<double> fIp;
     vector<double> fIa;
     vector<double> fIs;
     vector<double> y;
     vector<double> yv_l; // symptomatic rate in vaccinees
     vector<double> yv_m; // symptomatic rate in vaccinees
+    vector<double> yv_h; // symptomatic rate in vaccinees
     vector<double> omega;
     vector<double> rho;
     vector<double> tau;
@@ -84,9 +91,12 @@ public:
     vector<double> v_b;
     vector<double> ev_p;
     vector<double> ev_b;
-    vector<double> vt_l;
+    vector<double> v_p_2l;
+    vector<double> v_p_2m;
+    vector<double> v_b_l2m;
     vector<double> wn;
-    vector<double> wv_ml;
+    vector<double> wv_m2l;
+    vector<double> wv_h2m;
     vector<double> A;
     vector<double> B;
     vector<double> D;
