@@ -168,7 +168,6 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         {
             // TODO magic number code smell
             // Built-in states
-            // does ordering matter in this section?
             rep(t, p, a, riS)    = S[a];
             rep(t, p, a, riSv_l)  = Sv_l[a];
             rep(t, p, a, riSv_m)  = Sv_m[a];
@@ -196,6 +195,7 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
             rep(t, p, a, rilambda)    = P.pop[p].u[a]*lambda[a];
             rep(t, p, a, rilambdav_l) = P.pop[p].uv_l[a]*lambda[a];
             rep(t, p, a, rilambdav_m) = P.pop[p].uv_m[a]*lambda[a];
+    
             
             // User-specified processes
             for (size_t i=0;
@@ -215,17 +215,18 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         // N[a] - first_dose_pop - Sv2[a] - Rv2[a];
         
         double primary_dose_eligible = S[a] + E[a].Size() + Ip[a].Size() + Is[a].Size() + R[a];
-        double booster_dose_eligible_l = Sv_l[a] + Ev_l[a].Size() + Ip_l[a].Size() + Is_l[a].Size() + Rv_l[a];
-        double booster_dose_eligible_m = Sv_m[a] + Ev_m[a].Size() + Ip_m[a].Size() + Is_m[a].Size() + Rv_m[a];
+        double booster_dose_eligible_l = Sv_l[a] + Ev_l[a].Size() + Ip_l[a].Size() + Ia_l[a].Size() + Rv_l[a];
+        double booster_dose_eligible_m = Sv_m[a] + Ev_m[a].Size() + Ip_m[a].Size() + Ia_m[a].Size() + Rv_m[a];
         double booster_dose_eligible = booster_dose_eligible_l + booster_dose_eligible_m;
 
         // initial vaccination campaign, primary doses
         
         // (2-3) S -> Sv_m; S -> Sv_l; (46-47) R -> Rv_m; R -> Rv_l
-        double nS_Sv_l = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (S[a] * P.pop[p].vt_l[a] / primary_dose_eligible) * P.time_step));
-        double nS_Sv_m = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (S[a] * (1-P.pop[p].vt_l[a]) / primary_dose_eligible) * P.time_step));
-        double nR_Rv_l = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (R[a] * P.pop[p].vt_l[a] / primary_dose_eligible) * P.time_step));
-        double nR_Rv_m = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (R[a] * (1-P.pop[p].vt_l[a]) / primary_dose_eligible) * P.time_step));
+        // min S[a] potentially problematic, used twice when doses > humans
+        double nS_Sv_l = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (S[a] / primary_dose_eligible) * P.time_step * P.pop[p].vt_l[a]));
+        double nS_Sv_m = min(S[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (S[a] / primary_dose_eligible) * P.time_step * (1-P.pop[p].vt_l[a])));
+        double nR_Rv_l = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (R[a] / primary_dose_eligible) * P.time_step * P.pop[p].vt_l[a]));
+        double nR_Rv_m = min(R[a], num(P.pop[p].v_p[a] * P.pop[p].ev_p[a] * (R[a] / primary_dose_eligible) * P.time_step * (1-P.pop[p].vt_l[a])));
        
         S[a] -= nS_Sv_m;
         S[a] -= nS_Sv_l;

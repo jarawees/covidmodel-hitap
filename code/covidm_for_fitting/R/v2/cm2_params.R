@@ -81,6 +81,7 @@ population_requirements <- lapply(list(
     "v_p" = "non_negative(v_p) & same_length(v_p, size)",
     "wn" = "non_negative(wn) & same_length(wn, size)",
     "wv_ml" = "non_negative(wv_ml) & same_length(wv_ml, size)",
+    "vt_l" = "is_proportion(vt_l) & same_length(vt_l, size)",
     "A" = "non_negative(A) & same_length(A, size)",
     "B" = "non_negative(B) & same_length(B, size)",
     "D" = "non_negative(D) & same_length(D, size)",
@@ -366,7 +367,7 @@ cm_base_pop_SEI3R = function(
 ) {
     # cannot use {} notation here, since creates a sub-environment
     for (key in c(
-        "u", "y", "fIp", "fIs", "fIa", "omega", "rho", "tau", "v_p", "ev_p", "wn", "wv_ml", "A", "B", "D"
+        "u", "y", "fIp", "fIs", "fIa", "omega", "rho", "tau", "v_p", "ev_p", "wn", "wv_ml", "vt_l","A", "B", "D"
     )) if (
         length(get(key)) == 1
     ) assign(key, rep(get(key), n_groups)) else if (

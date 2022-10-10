@@ -44,6 +44,7 @@ enum ReportIndex
     rilambda,
     rilambdav_l,
     rilambdav_m//24
+
 };
 
 const vector<string> ref_col_names = {

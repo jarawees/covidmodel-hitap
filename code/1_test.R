@@ -23,7 +23,7 @@ params <- gen_country_basics(country = "Thailand",
                              period_wn = 3*365,
                              period_wv_ml = 1*365,
                              processes = burden_processes_az,
-                             prob_v_p_l = 0.999999) %>%
+                             prob_v_p_l = 1) %>%
   update_u_y(para = .,
                   date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
                   rc_u = c(1, 1.5, 0.5), # relative changes in u
@@ -49,16 +49,17 @@ res <- cm_simulate(params)
 # params$pop[[1]]$ur <- rep(0, 16)
 
 # print(unique(res$dynamics$compartment))
-# res$dynamics |>
-#   # filter(!compartment %in% c("cases", "cases_reported", "foi","foiv_l", "foiv_m", "subclinical")) |>
-#   filter(compartment %in% compartment_labels) |>
-#   group_by(t, compartment) |> summarise(value = sum(value)) |>
-#   # group_by(t) |>
-#   # summarise(value = sum(value)) |>
-#   # ggplot(aes(x = t, y = value)) + geom_line()
-#   ggplot(aes(x = t, y = value, group = compartment, color = compartment, fill = compartment)) +
-#   # geom_line() +
-#   geom_bar(position = "stack", stat = "identity")
+res$dynamics |>
+  filter(grepl("foiv_l", compartment)) |> 
+  # filter(!compartment %in% c("cases", "cases_reported", "foi","foiv_l", "foiv_m", "subclinical")) |>
+  # filter(compartment %in% compartment_labels) |>
+  group_by(t, compartment) |> summarise(value = sum(value)) |>
+  # group_by(t) |>
+  # summarise(value = sum(value)) |>
+  # ggplot(aes(x = t, y = value)) + geom_line()
+  ggplot(aes(x = t, y = value, group = compartment, color = compartment, fill = compartment)) +
+  # geom_line() +
+  geom_bar(position = "stack", stat = "identity")
 # # # 
 # res$dynamics |>
 #   # filter(compartment %in% compartment_labels) |>
