@@ -28,7 +28,9 @@ gen_country_basics <- function(country,
                                contact = contact_schedule,
                                period_wn  = 3*365, # duration, waning of natural immunity
                                period_wv_ml = 1*365, # duration, waning from medium to low levels vaccine induced 
-                               prob_v_p_l = 0.5,
+                               prob_v_p_2l = 0.5,
+                               prob_v_p_2m = 0.3,
+                               prob_v_b_l2m = 0.5,
                                deterministic = TRUE){
   
   require(countrycode)
@@ -62,7 +64,9 @@ gen_country_basics <- function(country,
     
     para$pop[[i]]$y <- cf
     para$pop[[i]]$u <- sus
-    para$pop[[i]]$vt_l <- rep(prob_v_p_l, 16)
+    para$pop[[i]]$v_p_2l <- rep(prob_v_p_2l, 16)
+    para$pop[[i]]$v_p_2m <- rep(prob_v_p_2m, 16)
+    para$pop[[i]]$v_b_l2m <- rep(prob_v_b_l2m, 16)
     
     # scale u (susceptibility) to achieve desired R0
     current_R0 = cm_calc_R0(para, i); # calculate R0 in population i of params
@@ -355,6 +359,9 @@ vaccinate_primary <- function(para = NULL){
   return(para)
 }
 
+# multiple booster campaigns is it a one time thing?
+# duration of interval; the start of the first booster campaign; age prioritisation
+# booster vaccine characteristics; 
 vaccinate_booster <- function(para = NULL,
                               program_start = NULL,
                               program_end = NULL){

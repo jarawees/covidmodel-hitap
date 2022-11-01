@@ -6,7 +6,7 @@ p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr,
 
 ##### load covidm #####
 cm_path <- "code/covidm_for_fitting/"
-cm_force_rebuild <- F
+cm_force_rebuild <- T
 cm_build_verbose <- T
 cm_version <- 2
 source(paste0(cm_path, "/R/covidm.R"))

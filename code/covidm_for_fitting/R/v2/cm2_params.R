@@ -71,17 +71,23 @@ population_requirements <- lapply(list(
     "contact_mult" = "(length(contact_mult) == 0) | (non_negative(contact_mult) & same_length(contact_mult, matrices))",
     "contact_lowerto" = "(length(contact_lowerto) == 0) | (non_negative(contact_lowerto) & same_length(contact_lowerto, matrices))",
     "u" = "non_negative(u) & same_length(u, size)",
-    "y" = "non_negative(y) & same_length(y, size)",
     "fIp" = "non_negative(fIp) & same_length(fIp, size)",
     "fIa" = "non_negative(fIa) & same_length(fIa, size)",
     "fIs" = "non_negative(fIs) & same_length(fIs, size)",
+    "y" = "non_negative(y) & same_length(y, size)",
     "omega" = "non_negative(omega) & same_length(omega, size)",
     "rho" = "non_negative(rho) & same_length(rho, size)",
     "tau" = "non_negative(tau) & same_length(tau, size)",
     "v_p" = "non_negative(v_p) & same_length(v_p, size)",
+    "v_b" = "non_negative(v_b) & same_length(v_b, size)",
+    "ev_p" =  "non_negative(ev_p) & same_length(ev_p, size)",
+    "ev_b" = "non_negative(ev_b) & same_length(ev_b, size)",
+    "v_p_2l" = "is_proportion(v_p_2l) & same_length(v_p_2l, size)",
+    "v_p_2m" = "is_proportion(v_p_2m) & same_length(v_p_2m, size)",
+    "v_b_l2m" = "is_proportion(v_b_l2m) & same_length(v_b_l2m, size)",
     "wn" = "non_negative(wn) & same_length(wn, size)",
-    "wv_ml" = "non_negative(wv_ml) & same_length(wv_ml, size)",
-    "vt_l" = "is_proportion(vt_l) & same_length(vt_l, size)",
+    "wv_m2l" = "non_negative(wv_m2l) & same_length(wv_m2l, size)",
+    "wv_h2m" = "non_negative(wv_h2m) & same_length(wv_h2m, size)",
     "A" = "non_negative(A) & same_length(A, size)",
     "B" = "non_negative(B) & same_length(B, size)",
     "D" = "non_negative(D) & same_length(D, size)",
@@ -96,50 +102,59 @@ population_requirements <- lapply(list(
 population_optionals <- lapply(list(
     "dEv_l" = "some_positive(dEv_l)",
     "dEv_m" = "some_positive(dEv_m)",
+    "dEv_h" = "some_positive(dEv_h)",
     "dIp_l" = "some_positive(dIp_l)",
     "dIs_l" = "some_positive(dIs_l)",
     "dIa_l" = "some_positive(dIa_l)",
     "dIp_m" = "some_positive(dIp_m)",
     "dIs_m" = "some_positive(dIs_m)",
     "dIa_m" = "some_positive(dIa_m)",
-    
+    "dIp_h" = "some_positive(dIp_h)",
+    "dIs_h" = "some_positive(dIs_h)",
+    "dIa_h" = "some_positive(dIa_h)",
     "uv_l" = "non_negative(uv_l) & same_length(uv_l, size)",
     "uv_m" = "non_negative(uv_m) & same_length(uv_m, size)",
+    "uv_h" = "non_negative(uv_h) & same_length(uv_h, size)",
     "ur" = "non_negative(ur) & same_length(ur, size)",
     "uvr_l" = "non_negative(uvr_l) & same_length(uvr_l, size)",
     "uvr_m" = "non_negative(uvr_m) & same_length(uvr_m, size)",
-    
+    "uvr_h" = "non_negative(uvr_h) & same_length(uvr_h, size)",
     "yv_l" = "non_negative(yv_l) & same_length(yv_l, size)",
     "yv_m" = "non_negative(yv_m) & same_length(yv_m, size)",
+    "yv_h" = "non_negative(yv_h) & same_length(yv_h, size)"
     
-    "v_b" =  "non_negative(v_b) & same_length(v_b, size)",
-    "ev_b" = "non_negative(ev_b) & same_length(ev_b, size)"
+
 ), function(exp) parse(text = exp))
 
 optional_substitutes <- c(
     "dEv_l" = "dE",
     "dEv_m" = "dE",
-    
+    "dEv_h" = "dE",
+
     "dIp_l" = "dIp",
     "dIp_m" = "dIp",
+    "dIp_h" = "dIp",
     
     "dIs_l" = "dIs",
     "dIs_m" = "dIs",
+    "dIs_h" = "dIs",
     
     "dIa_l" = "dIa",
     "dIa_m" = "dIa",
+    "dIa_h" = "dIa",
     
     "uv_l" = "u",
     "uv_m" = "u",
+    "uv_h" = "u",
+    
     "ur" = "u",
     "uvr_l" = "u",
     "uvr_m" = "u",
+    "uvr_h" = "u",
     
     "yv_l" = "y",
     "yv_m" = "y",
-    
-    "v_b" = "v_p",
-    "ev_b" = "ev_p"
+    "yv_h" = "y"
 )
 
 req = function(
@@ -336,18 +351,27 @@ cm_base_pop_SEI3R = function(
     contact_lowerto = numeric(),
     
     u = rep(0.08, n_groups),
-    y = rep(0.5, n_groups),
     fIp = rep(1, n_groups),
     fIs = rep(1, n_groups),
     fIa = rep(0.5, n_groups),
+    y = rep(0.5, n_groups),
     omega = rep(0, n_groups),
     rho = rep(1, n_groups),
     tau = rep(1, n_groups),
+    
     v_p = rep(0, n_groups),
+    v_b = rep(0, n_groups),
     ev_p = rep(1, n_groups),
-    vt_l = rep(0.5, n_groups),
+    ev_b = rep(1, n_groups),
+    
+    v_p_2l = rep(0.3, n_groups),
+    v_p_2m = rep(0.3, n_groups),
+    v_b_l2m = rep(0.5, n_groups),
+    
     wn = rep(0, n_groups),
-    wv_ml = rep(0, n_groups),
+    wv_m2l = rep(0, n_groups),
+    wv_h2m = rep(0, n_groups),
+    
     A = rep(0, n_groups),
     B = rep(0, n_groups),
     D = rep(0, n_groups),
@@ -367,7 +391,7 @@ cm_base_pop_SEI3R = function(
 ) {
     # cannot use {} notation here, since creates a sub-environment
     for (key in c(
-        "u", "y", "fIp", "fIs", "fIa", "omega", "rho", "tau", "v_p", "ev_p", "wn", "wv_ml", "vt_l","A", "B", "D"
+        "u", "fIp", "fIs", "fIa", "y", "omega", "rho", "tau", "v_p", "v_b", "ev_p", "ev_b", "wn", "wv_m2l", "wv_h2m", "A", "B", "D"
     )) if (
         length(get(key)) == 1
     ) assign(key, rep(get(key), n_groups)) else if (
