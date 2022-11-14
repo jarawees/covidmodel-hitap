@@ -27,10 +27,12 @@ gen_country_basics <- function(country,
                                processes = NULL,
                                contact = contact_schedule,
                                period_wn  = 3*365, # duration, waning of natural immunity
-                               period_wv_ml = 1*365, # duration, waning from medium to low levels vaccine induced 
+                               period_wv_m2l = 1*365, # duration, waning from medium to low levels vaccine induced 
+                               period_wv_h2m = 1*365, # duration, waning from medium to low levels vaccine induced 
                                prob_v_p_2l = 0.5,
                                prob_v_p_2m = 0.3,
                                prob_v_b_l2m = 0.5,
+                               ve_inf = 0.7, # probability reduction of breakthrough due to infection
                                deterministic = TRUE){
   
   require(countrycode)
@@ -75,16 +77,18 @@ gen_country_basics <- function(country,
     # update all copies of u and y to begin with
     para$pop[[i]]$uv_l  <- para$pop[[i]]$u
     para$pop[[i]]$uv_m  <- para$pop[[i]]$u
-    para$pop[[i]]$ur    <- 0.3*para$pop[[i]]$u
-    para$pop[[i]]$uvr_l <- 0.3*para$pop[[i]]$u
-    para$pop[[i]]$uvr_m <- 0.3*para$pop[[i]]$u
+    para$pop[[i]]$uv_h  <- para$pop[[i]]$u
+    para$pop[[i]]$ur    <- (1 - ve_inf)*para$pop[[i]]$u
+    para$pop[[i]]$uvr_l <- (1 - ve_inf)*para$pop[[i]]$u
+    para$pop[[i]]$uvr_m <- (1 - ve_inf)*para$pop[[i]]$u
+    para$pop[[i]]$uvr_h <- (1 - ve_inf)*para$pop[[i]]$u
     
     para$pop[[i]]$yv_l <- para$pop[[i]]$y
     para$pop[[i]]$yv_m <- para$pop[[i]]$y
+    para$pop[[i]]$yv_h <- para$pop[[i]]$y
 
     # natural waning
-    para$pop[[i]]$wn <- rep((1/period_wn), 
-                            n_age_groups)
+    para$pop[[i]]$wn <- rep((1/period_wn), n_age_groups)
     
     ## Set seeds to control start of outbreak
     # infections start in individuals aged 20-50
@@ -112,7 +116,8 @@ gen_country_basics <- function(country,
   
   # waning vaccine-induced immunity
   para$pop[[1]]$wn <- rep(1/period_wn, n_age_groups)
-  para$pop[[1]]$wv_ml <-  rep(1/period_wv_ml, n_age_groups)
+  para$pop[[1]]$wv_m2l <-  rep(1/period_wv_m2l, n_age_groups)
+  para$pop[[1]]$wv_h2m <-  rep(1/period_wv_h2m, n_age_groups)
   
   return(para)
 }
@@ -142,7 +147,8 @@ update_u_y <- function(para = NULL,
                        date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
                        rc_u = c(1, 1.5, 0.5), # relative changes in u
                        rc_y = c(1, 0.5, 0.5), # relative changes in y
-                       rc_ve = c(1, 0.9, 0.7), # relative changes in ve
+                       rc_ve = c(1, 0.9, 0.7), # relative changes in evasiveness (infection part)
+                       # relative chanves in 
                        efficacy_baseline = NULL, # vaccine efficacy 
                        efficacy_weights = efficacy_weights_test # as a result of different vaccine composition
 ){
@@ -240,15 +246,16 @@ emerge_VOC_burden <- function(
   
   # set up
   n_voc = length(rc_severity)
-  compartments_E <- c("E", "Ev_l", "Ev_m")
+  compartments_E <- c("newE", "newEv_l", "newEv_m", "newEv_h")
   
   # generate death processes
   generate_death_processes <- function(source_compartment = NULL,
                                        voc_index = NULL){
     multiplier1 <- prod(rc_severity[1:voc_index])
-    if(source_compartment == "E") multiplier2 <- 1
-    if(source_compartment == "Ev_l") multiplier2 <- 1 - efficacy_baseline$ve_mort_condition[1]
-    if(source_compartment == "Ev_m") multiplier2 <- 1 - efficacy_baseline$ve_mort_condition[2]
+    if(source_compartment == "newE") multiplier2 <- 1
+    if(source_compartment == "newEv_l") multiplier2 <- 1 - efficacy_baseline$ve_mort_condition[1]
+    if(source_compartment == "newEv_m") multiplier2 <- 1 - efficacy_baseline$ve_mort_condition[2]
+    if(source_compartment == "newEv_h") multiplier2 <- 1 - efficacy_baseline$ve_mort_condition[3]
     tmp_var <- paste0("death_voc", voc_index)
     
     tmp_process <- cm_multinom_process(source_compartment,
@@ -272,19 +279,24 @@ emerge_VOC_burden <- function(
                                               voc_index = NULL){
     multiplier1 <- prod(rc_severity[1:voc_index])
     
-    if(source_compartment == "E") {
+    if(source_compartment == "newE") {
       multiplier2_severe <- multiplier2_critical <- 1
     }
     
-    if(source_compartment == "Ev_l") {
+    if(source_compartment == "newEv_l") {
       multiplier2_severe <- 1 - efficacy_baseline$ve_severe_condition[1]
       multiplier2_critical <- 1 - efficacy_baseline$ve_critical_condition[1]
       
     }
     
-    if(source_compartment == "Ev_m") {
+    if(source_compartment == "newEv_m") {
       multiplier2_severe <- 1 - efficacy_baseline$ve_severe_condition[2]
       multiplier2_critical <- 1 - efficacy_baseline$ve_critical_condition[2]
+    }
+    
+    if(source_compartment == "newEv_h") {
+      multiplier2_severe <- 1 - efficacy_baseline$ve_severe_condition[3]
+      multiplier2_critical <- 1 - efficacy_baseline$ve_critical_condition[3]
     }
     
     tmp_var_to_severe <- paste0("to_severe_voc", voc_index)
@@ -343,18 +355,28 @@ emerge_VOC_burden <- function(
 
 vaccinate_primary <- function(para = NULL){
   n_age_groups <- length(para$pop[[1]]$size)
+  
   tmp_time <- c(0,
-                as.numeric(ymd("2021-05-15") - ymd(para$date0)),
-                as.numeric(ymd("2021-10-15") - ymd(para$date0)))
+                as.numeric(ymd("2021-06-15") - ymd(para$date0)),
+                as.numeric(ymd("2021-11-15") - ymd(para$date0)),
+                para$time1)
+  rep_time <- diff(tmp_time)
+  rep_time[1] <-   rep_time[1] + 1
+  
+  list_tmp <- list()
+  for(i in 1:1096) {
+    list_tmp[[i]] <- rep(0, n_age_groups)
+    if(i >= tmp_time[2]+2 & i <= tmp_time[3]){
+    list_tmp[[i]] <- rep(c(0,7500), c(4, n_age_groups - 4))
+    }
+  }
   
   para$schedule[["primary_course"]] <- list(
     parameter = "v_p",
     pops = numeric(),
     mode = "assign",
-    values = list(rep(0, n_age_groups),
-                  rep(c(0,7500), c(4, n_age_groups - 4)),
-                  rep(0, n_age_groups)),
-    times = tmp_time
+    values = list_tmp,
+    times = 0:1095
   )
   return(para)
 }
