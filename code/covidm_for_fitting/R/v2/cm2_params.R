@@ -350,39 +350,71 @@ cm_base_pop_SEI3R = function(
     contact_mult = numeric(),
     contact_lowerto = numeric(),
     
+    # susceptibility
     u = rep(0.08, n_groups),
+    # relative infectiousness of pre-clinical individuals
     fIp = rep(1, n_groups),
+    # relative infectiousness of clinical individuals
     fIs = rep(1, n_groups),
+    # relative infectiousness of sub-clinical individuals
     fIa = rep(0.5, n_groups),
+    # clinical fraction
     y = rep(0.5, n_groups),
+    
     omega = rep(0, n_groups),
     rho = rep(1, n_groups),
     tau = rep(1, n_groups),
     
+    # daily doses of primary course, it's a 16 number array corresponding to
+    # each age group, does not difference between doses, counting doses then we need 2 * v_p
+    # tot vaccine doses would be v_p == complete immunization, need post processing
     v_p = rep(0, n_groups),
+    # daily doses of booster dose, also 16 numbers array
+    # counting doses, we need 1 * v_b
     v_b = rep(0, n_groups),
+    
+    # left over from previous modelling exercise
+    # ev = effective vaccination - all or nothing or leaky
+    # set to 1 fine for now - assuming everyone who got the vaccine is 
+    # protected by a little bit
     ev_p = rep(1, n_groups),
     ev_b = rep(1, n_groups),
     
+    # proportion progressing by primary course to low level of immune protection
     v_p_2l = rep(0.3, n_groups),
+    # proportion progressing by primary course to medium level of immune protection
     v_p_2m = rep(0.3, n_groups),
+    # proportion progressiong by booster dose by low to medium
     v_b_l2m = rep(0.5, n_groups),
     
+    # unit = days
     wn = rep(0, n_groups),
     wv_m2l = rep(0, n_groups),
     wv_h2m = rep(0, n_groups),
     
+    # needed for 5-10 year time frame
+    # Aging
     A = rep(0, n_groups),
+    # Birthing
     B = rep(0, n_groups),
+    # Death
     D = rep(0, n_groups),
     
+    # seasonality, fine to leave for now
     season_A = 0,
     season_T = 365.25,
     season_phi = 0,
     
+    # this defines how an epidemic starts
     seed_times = 1,
+    # age group of the seeding cases
+    # c(rep(0,4),
+    #   rep(10, 8),
+    #   rep(0,4))
+    # we generally just make an assumption 
     dist_seed_ages = rep(1, n_groups),
     
+    # things you'd like to change over
     schedule = list(),
     observer = NULL,
     name = "pop_name",

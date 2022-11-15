@@ -32,6 +32,7 @@ gen_country_basics <- function(country,
                                prob_v_p_2l = 0.5,
                                prob_v_p_2m = 0.3,
                                prob_v_b_l2m = 0.5,
+                               # this needs to be a three number array
                                ve_inf = 0.7, # probability reduction of breakthrough due to infection
                                deterministic = TRUE){
   
@@ -75,10 +76,15 @@ gen_country_basics <- function(country,
     para$pop[[i]]$u = para$pop[[i]]$u * R0_assumed / current_R0
     
     # update all copies of u and y to begin with
+    # need to fix this as well
+    
+    # ve against infection by vaccine induced immunity only
     para$pop[[i]]$uv_l  <- para$pop[[i]]$u
     para$pop[[i]]$uv_m  <- para$pop[[i]]$u
     para$pop[[i]]$uv_h  <- para$pop[[i]]$u
+    # ve against infection by infection only
     para$pop[[i]]$ur    <- (1 - ve_inf)*para$pop[[i]]$u
+    # ve against infection by hybrid immunity
     para$pop[[i]]$uvr_l <- (1 - ve_inf)*para$pop[[i]]$u
     para$pop[[i]]$uvr_m <- (1 - ve_inf)*para$pop[[i]]$u
     para$pop[[i]]$uvr_h <- (1 - ve_inf)*para$pop[[i]]$u
