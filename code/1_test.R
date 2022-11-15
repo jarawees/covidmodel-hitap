@@ -74,8 +74,8 @@ res$dynamics |>
   mutate(doses = Sv_l + Sv_m + Sv_h + Rv_l + Rv_m + Rv_h,
          p_Sv_m = Sv_m/doses,
          days_elapsed = doses/7500) |> 
-  filter(group == "20-24")
-
+  filter(group == "20-24") |> 
+  pull(doses) |> diff()
 
 
 # everything fall on day 501
