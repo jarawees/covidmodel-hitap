@@ -336,7 +336,7 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         Ev_h[a].Add(P, Rand, nSv_h_Ev_h + nRv_h_Ev_h, P.pop[p].dEv_h);
     
         // progressing from infection
-        // (13)-(14) E -> Ip and E -> Is
+        // (13)-(14) E -> Ip and E -> Ia
         double nE_Ipa = E[a].Mature();
         double nE_Ip = binomial(nE_Ipa, P.pop[p].y[a]);
         double nE_Ia = nE_Ipa - nE_Ip;

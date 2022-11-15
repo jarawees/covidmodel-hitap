@@ -362,6 +362,7 @@ cm_base_pop_SEI3R = function(
     y = rep(0.5, n_groups),
     
     omega = rep(0, n_groups),
+    # probability of reporting
     rho = rep(1, n_groups),
     tau = rep(1, n_groups),
     

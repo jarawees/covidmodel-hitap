@@ -20,7 +20,9 @@ cm_multinom_process <- function(
   )
 }
 
-gen_country_basics <- function(country,
+# foundamental wrapper of the functions
+gen_country_basics <- function(country = "Thailand",
+                               # fitting
                                R0_assumed  = 2.7,
                                date_start = "2020-01-01",
                                date_end = "2022-12-31",
@@ -32,8 +34,9 @@ gen_country_basics <- function(country,
                                prob_v_p_2l = 0.5,
                                prob_v_p_2m = 0.3,
                                prob_v_b_l2m = 0.5,
-                               # this needs to be a three number array
-                               ve_inf = 0.7, # probability reduction of breakthrough due to infection
+                               # reduction in susceptibility among previously 
+                               # infected individuals
+                               r_i_o = 0.5,
                                deterministic = TRUE){
   
   require(countrycode)
@@ -78,22 +81,24 @@ gen_country_basics <- function(country,
     # update all copies of u and y to begin with
     # need to fix this as well
     
-    # ve against infection by vaccine induced immunity only
+    # The purpose of this chunk of code is to update uv_l, uv_m, uv_h, ur, uvr_l
+    # uvr_m, uvr_h to be consistent with u and to update yv_l, yv_m, and yv_h 
+    # to be consistent with yv. we will not implement efficacy at this step 
+    # just yet.
+    
     para$pop[[i]]$uv_l  <- para$pop[[i]]$u
     para$pop[[i]]$uv_m  <- para$pop[[i]]$u
     para$pop[[i]]$uv_h  <- para$pop[[i]]$u
-    # ve against infection by infection only
-    para$pop[[i]]$ur    <- (1 - ve_inf)*para$pop[[i]]$u
-    # ve against infection by hybrid immunity
-    para$pop[[i]]$uvr_l <- (1 - ve_inf)*para$pop[[i]]$u
-    para$pop[[i]]$uvr_m <- (1 - ve_inf)*para$pop[[i]]$u
-    para$pop[[i]]$uvr_h <- (1 - ve_inf)*para$pop[[i]]$u
+    para$pop[[i]]$ur    <- (1 - r_i_o) * para$pop[[i]]$u
+    para$pop[[i]]$uvr_l <- (1 - r_i_o) * para$pop[[i]]$u
+    para$pop[[i]]$uvr_m <- (1 - r_i_o) * para$pop[[i]]$u
+    para$pop[[i]]$uvr_h <- (1 - r_i_o) * para$pop[[i]]$u
     
     para$pop[[i]]$yv_l <- para$pop[[i]]$y
     para$pop[[i]]$yv_m <- para$pop[[i]]$y
     para$pop[[i]]$yv_h <- para$pop[[i]]$y
 
-    # natural waning
+    # infection induced immunity waning
     para$pop[[i]]$wn <- rep((1/period_wn), n_age_groups)
     
     ## Set seeds to control start of outbreak
@@ -112,7 +117,7 @@ gen_country_basics <- function(country,
   para$schedule[["mobility"]] = list(
     parameter = "contact",
     pops = numeric(),
-    mode = "assign",
+    mode = "multiply",
     values = split(c_tmp[,3:6],
                    seq(nrow(c_tmp))) %>%
       map(unlist) %>%
@@ -128,18 +133,19 @@ gen_country_basics <- function(country,
   return(para)
 }
 
-
-# # generate some test data of what efficacy weights should look like
 # CJ(date = seq(ymd("2019-12-01"),
-#               ymd("2024-01-01"),
-#               by = "day")) %>%
-#   mutate(weights_ve_i_l = rnorm(nrow(.),1,0.05),
-#          weights_ve_i_m = rnorm(nrow(.),1,0.05),
-#          weights_ve_d_l = rnorm(nrow(.),1,0.05),
-#          weights_ve_d_m = rnorm(nrow(.),1,0.05)) -> efficacy_weights_test
+#               ymd("2030-01-01"),
+#               by = "day")) %>% 
+#   mutate(weights_ve_i_l = rnorm(nrow(.), 1, 0.05),
+#          weights_ve_i_m = rnorm(nrow(.), 1, 0.05),
+#          weights_ve_i_h = rnorm(nrow(.), 1, 0.05),
+#          weights_ve_d_l = rnorm(nrow(.), 1, 0.05),
+#          weights_ve_d_m = rnorm(nrow(.), 1, 0.05),
+#          weights_ve_d_h = rnorm(nrow(.), 1, 0.05)) -> efficacy_weights_test
+# 
 # write_rds(efficacy_weights_test,
-#           "data/intermediate/efficacy_weights_test.rds"
-#           )
+#           "data/intermediate/efficacy_weights_test.rds")
+
 efficacy_weights_test <- read_rds("data/intermediate/efficacy_weights_test.rds")
 efficacy_weights_test |> 
   mutate_at(vars(starts_with("weights")), function(x) x <- 1) -> efficacy_weights_one
@@ -169,13 +175,37 @@ update_u_y <- function(para = NULL,
   date_range <- c(lubridate::ymd(para$date0),
                   date_switch,
                   lubridate::ymd(para$date0) + para$time1)
+  
   t_range <- c(para$time0:para$time1)
-  targets <- data.frame(scaler_label = c("uv_l_scaler", "uv_m_scaler",
-                                         "uvr_l_scaler", "uvr_m_scaler",
-                                         "yv_l_scaler", "yv_m_scaler"),
-                        variable_label = c("uv_l", "uv_m",
-                                           "uvr_l", "uvr_m",
-                                           "yv_l", "yv_m"))
+  
+  targets <- data.frame(
+    scaler_label = c(
+      "u_scaler",
+      "uv_l_scaler",
+      "uv_m_scaler",
+      "uv_h_scaler",
+      "ur_scaler",
+      "uvr_l_scaler",
+      "uvr_m_scaler",
+      "uvr_h_scaler",
+      "yv_l_scaler",
+      "yv_m_scaler",
+      "yv_h_scaler"
+    ),
+    
+    variable_label = c("u",
+                       "uv_l",
+                       "uv_m",
+                       "uv_h",
+                       "ur",
+                       "uvr_l",
+                       "uvr_m",
+                       "uvr_h",
+                       "yv_l",
+                       "yv_m",
+                       "yv_h")
+  )
+  
   n_age_groups <- para$pop[[1]]$n_groups
   
   # create modifier table
@@ -198,12 +228,17 @@ update_u_y <- function(para = NULL,
   modifier |> 
     left_join(efficacy_weights,
               by = "date") |> 
-    mutate(uv_l_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
-           uv_m_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
+    mutate(u_scaler     = rc_u_prod,
+           uv_l_scaler  = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
+           uv_m_scaler  = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
+           uv_h_scaler  = rc_u_prod*(1 - efficacy_baseline$ve_i_o[3]*weights_ve_i_h*rc_ve_prod),
+           ur_scaler    = rc_u_prod,
            uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
            uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
-           yv_l_scaler = rc_y_prod*(1 - efficacy_baseline$ve_d[1]*weights_ve_d_l*rc_ve_prod),
-           yv_m_scaler = rc_y_prod*(1 - efficacy_baseline$ve_d[2]*weights_ve_d_m*rc_ve_prod)) -> modifier
+           uvr_h_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[3]*weights_ve_i_h*rc_ve_prod),
+           yv_l_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d[1]*weights_ve_d_l*rc_ve_prod),
+           yv_m_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d[2]*weights_ve_d_m*rc_ve_prod),
+           yv_h_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d[3]*weights_ve_d_h*rc_ve_prod)) -> modifier
 
   modifier |> 
     select(ends_with("scaler")) |> 
@@ -360,20 +395,24 @@ emerge_VOC_burden <- function(
 }
 
 vaccinate_primary <- function(para = NULL){
+  
   n_age_groups <- length(para$pop[[1]]$size)
   
   tmp_time <- c(0,
+                as.numeric(ymd("2021-06-15") - ymd(para$date0)) - 1,
                 as.numeric(ymd("2021-06-15") - ymd(para$date0)),
                 as.numeric(ymd("2021-11-15") - ymd(para$date0)),
                 para$time1)
-  rep_time <- diff(tmp_time)
-  rep_time[1] <-   rep_time[1] + 1
   
   list_tmp <- list()
-  for(i in 1:1096) {
+  
+  for(i in 1:(params$time1 + 1)) {
     list_tmp[[i]] <- rep(0, n_age_groups)
-    if(i >= tmp_time[2]+2 & i <= tmp_time[3]){
-    list_tmp[[i]] <- rep(c(0,7500), c(4, n_age_groups - 4))
+    if(i >= tmp_time[2] & i < tmp_time[3]){
+      list_tmp[[i]] <- rep(c(0,0.1), c(4, n_age_groups - 4))
+    }
+    if(i >= tmp_time[3] & i <= tmp_time[4]){
+      list_tmp[[i]] <- rep(c(0,7500), c(4, n_age_groups - 4))
     }
   }
   
@@ -397,7 +436,7 @@ vaccinate_booster <- function(para = NULL,
   tmp_time <- c(0,
                 as.numeric(ymd(program_start) - ymd(para$date0)),
                 as.numeric(ymd(program_end) - ymd(para$date0)))
-  
+
   para$schedule[["booster"]] <- list(
     parameter = "v_b",
     pops = numeric(),
@@ -409,4 +448,3 @@ vaccinate_booster <- function(para = NULL,
   )
   return(para)
 }
- 

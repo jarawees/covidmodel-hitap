@@ -16,16 +16,16 @@ params <- gen_country_basics(country = "Thailand",
                              prob_v_p_2l = 1,
                              prob_v_p_2m = 0,
                              prob_v_b_l2m = 0.5,
-                             ve_inf = 0.7, # probability reduction of breakthrough due to infection
-                             deterministic = TRUE) %>%
+                             r_i_o = 0.7, # probability reduction of breakthrough due to infection
+                             deterministic = TRUE) %>% 
   update_u_y(para = .,
-                  date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
-                  rc_u = c(1, 1.5, 0.5), # relative changes in u
-                  rc_y = c(1, 0.5, 0.5), # relative changes in y
-                  rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
-                  efficacy_baseline = ve_az,
-                  efficacy_weights = efficacy_weights_test
-                  ) %>%
+             date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
+             rc_u = c(1, 1.5, 0.5), # relative changes in u
+             rc_y = c(1, 0.5, 0.5), # relative changes in y
+             rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
+             efficacy_baseline = ve_az,
+             efficacy_weights = efficacy_weights_test
+  ) %>%
   emerge_VOC_burden(para = .,
     rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
     efficacy_baseline = ve_az) %>%
@@ -43,15 +43,15 @@ outcome_labels <-  all_labels[25:51]
 # testing
 # (1) population level unchanged
 
-res$dynamics |> 
-  filter(compartment %in% compartment_labels) |> 
-  group_by(t) |> 
-  summarise(tot = sum(value)) |> 
-  mutate(diff = c(0,diff(tot))) |> 
-  filter(diff > 0.1) |> 
-  nrow() -> tmp
-
-if(tmp != 0) print("population unbalanced!")
+# res$dynamics |> 
+#   filter(compartment %in% compartment_labels) |> 
+#   group_by(t) |> 
+#   summarise(tot = sum(value)) |> 
+#   mutate(diff = c(0,diff(tot))) |> 
+#   filter(diff > 0.1) |> 
+#   nrow() -> tmp
+# 
+# if(tmp != 0) print("population unbalanced!")
 
 # (2) people moving to vaccinated stages
 res$dynamics |>
