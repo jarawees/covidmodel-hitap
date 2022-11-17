@@ -1,0 +1,15 @@
+Study_ID,Type,Group1,Group2,LOD,Variant,Num_ppl,Day_measure,NAb_mean,NAb_SD,NAb_l95,NAb_u95,NAb_med,NAb_q1,NAb_q3,NAb_min,NAb_max,LOD_50,DOI
+PZ3_AP,Obs,PZ_PZ,,,WT,85,14,,,,,2.361728,1.799341,2.91169,,,Y,https://doi.org/10.1007/s40520-021-01987-9
+PZ3_AP,Obs,ConvNR,,,WT,29,14,3.210586,,2.9154,3.515476,,,,,,Y,https://doi.org/10.1007/s40520-021-01987-9
+PZ16_AP,Obs,PZ,,10,B.1.36.27,12,21,1.075547,,0.7323938,1.418301,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,PZ,,10,Beta,12,21,0.770852,,0.6127839,0.9395193,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,PZ,,10,theta,12,21,0.80618,,0.6720979,0.9344985,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,PZ,,10,kappa,12,21,0.8512583,,0.6334685,1.064458,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,PZ_PZ,,10,B.1.36.27,12,28,1.904174,,1.662758,2.149219,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,PZ_PZ,,10,Beta,12,28,1.041393,,0.845098,1.230449,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,PZ_PZ,,10,theta,12,28,1.133539,,0.9542425,1.30103,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,PZ_PZ,,10,kappa,12,28,1.260071,,1,1.518514,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,ConvNR,,10,B.1.36.27,8,,1.996512,,1.623249,2.372912,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,ConvNR,,10,Beta,8,,1.240549,,0.7781513,1.672098,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,ConvNR,,10,theta,8,,1.290035,,0.90309,1.672098,,,,,,Y,https://doi.org/10.1093/cid/ciab656
+PZ16_AP,Obs,ConvNR,,10,kappa,8,,1.462398,,1.041393,1.90309,,,,,,Y,https://doi.org/10.1093/cid/ciab656
