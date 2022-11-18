@@ -431,10 +431,11 @@ void Population::Tick(Parameters& P, Randomizer& Rand, double t, vector<double>&
         for (auto& process : P.processes.flows)
         {
             // Determine number of individuals entering the process
+            // only if you have to called it as an src
+            // the labels of these variables are in processes_spec.h
             double n_entering = 0.;
             switch (process.source_id)
             {
-                
                 // 1. all infections
             case src_newE_all:
                 n_entering = nS_E + nR_E + nSv_l_Ev_l + nRv_l_Ev_l + nSv_m_Ev_m + nRv_m_Ev_m + nSv_h_Ev_h + nRv_h_Ev_h; break;

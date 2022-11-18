@@ -10,6 +10,8 @@ cm_force_rebuild <- F
 cm_build_verbose <- T
 cm_version <- 2
 source(paste0(cm_path, "/R/covidm.R"))
+
+# load custom functions
 source("code/0_1_util_functions.R")
 
 ## Load required data

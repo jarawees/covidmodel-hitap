@@ -9,7 +9,7 @@ params <- gen_country_basics(country = "Thailand",
                              date_start = "2020-01-01",
                              date_end = "2022-12-31",
                              contact = contact_schedule,
-                             processes = gen_burden_processes(VE = ve_az),
+                             processes = gen_burden_processes(VE = ve_all),
                              period_wn  = 3*365, # duration, waning of natural immunity
                              period_wv_m2l = 1*365, # duration, waning from medium to low levels vaccine induced 
                              period_wv_h2m = 1*365, # duration, waning from medium to low levels vaccine induced 
@@ -23,18 +23,20 @@ params <- gen_country_basics(country = "Thailand",
              rc_u = c(1, 1.5, 0.5), # relative changes in u
              rc_y = c(1, 0.5, 0.5), # relative changes in y
              rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
-             efficacy_baseline = ve_az,
+             efficacy_baseline = ve_all,
              efficacy_weights = efficacy_weights_test
   ) %>%
   emerge_VOC_burden(para = .,
     rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
-    efficacy_baseline = ve_az) %>%
+    efficacy_baseline = ve_all) %>%
   vaccinate_primary(para = .) # %>%
   # vaccinate_booster(para = .,
   #                   program_start = "2021-12-31",
   #                   program_end = "2022-06-30")
   
-res <- cm_simulate(params) 
+res <- cm_simulate(params)
+
+res$dynamics$compartment |> unique()
 
 all_labels <- unique(res$dynamics$compartment)
 compartment_labels <- all_labels[1:24]
@@ -74,9 +76,7 @@ res$dynamics |>
   mutate(doses = Sv_l + Sv_m + Sv_h + Rv_l + Rv_m + Rv_h,
          p_Sv_m = Sv_m/doses,
          days_elapsed = doses/7500) |> 
-  filter(group == "20-24") |> 
-  pull(doses) |> diff()
-
+  filter(group == "20-24") 
 
 # everything fall on day 501
 res$dynamics |>

@@ -10,36 +10,41 @@
 #   download.file("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv",
 #                 paste0("data/vaccinations.csv"))
 # }
-# ve_i_o: observed VE against infection
-# ve_d_o: observed VE against disease
+# ve_i_o: observed vaccine efficacy against infection
+# ve_d_o: observed vaccine efficacy against disease
 # ve_d: VE against disease conditioned on changes occurring RE infection
 # ve_severe, ve_critical, ve_mort: observed VE against different outcomes
 # ve_severe_condition, ve_critical_condition, ve_mort_condition: VE against different outcomes condition on infection
 
 # vaccine efficacy tested
+# key input locations for antibody levels
 data.table(ve_i_o = c(0.7, 0.85, 0.9),
            ve_d_o = c(0.7, 0.9, 0.95),
-           ve_severe = c(0.85, 0.95, 0.96),
-           ve_critical = c(0.85, 0.95, 0.97),
-           ve_mort = c(0.85, 0.95, 0.98)) %>% 
+           ve_severe_o = c(0.85, 0.95, 0.96),
+           ve_critical_o = c(0.85, 0.95, 0.97),
+           ve_mort_o = c(0.85, 0.95, 0.98),
+           protection_level_label = c("l", "m", "h")) %>% 
   # the following lines do not explicit reflect existing changes in infection
   # which has been explicitly modelled as changes in u
-  mutate(ve_d = 1 - (1-ve_d_o)/((1-ve_i_o)),
-         ve_severe_condition = 1 - (1-ve_severe)/((1-ve_i_o)),
-         ve_critical_condition = 1 - (1-ve_critical)/((1-ve_i_o)),
-         ve_mort_condition = 1 - (1-ve_mort)/((1-ve_i_o))) -> ve_pfizer
+  # This equation is explained in Liu et al. 
+  # https://www.medrxiv.org/content/10.1101/2022.05.09.22274846v1.supplementary-material
+  # Supplemental material, p37, version 1
+  mutate(ve_d_condition = 1 - (1-ve_d_o)/((1-ve_i_o)),
+         ve_severe_condition = 1 - (1-ve_severe_o)/((1-ve_i_o)),
+         ve_critical_condition = 1 - (1-ve_critical_o)/((1-ve_i_o)),
+         ve_mort_condition = 1 - (1-ve_mort_o)/((1-ve_i_o))) -> ve_all
 
-data.table(ve_i_o = c(0.7, 0.75, 0.8),
-           ve_d_o = c(0.7, 0.8, 0.9),
-           ve_severe = c(0.85, 0.9, 0.95),
-           ve_critical = c(0.85, 0.93, 0.96),
-           ve_mort = c(0.85, 0.95, 0.98)) %>% 
-  # the following lines do not explicit reflect existing changes in infection
-  # which has been explicitly modelled as changes in u
-  mutate(ve_d = 1 - (1-ve_d_o)/((1-ve_i_o)),
-         ve_severe_condition = 1 - (1-ve_severe)/(1-ve_i_o),
-         ve_critical_condition = 1 - (1-ve_critical)/(1-ve_i_o),
-         ve_mort_condition = 1 - (1-ve_mort)/(1-ve_i_o)) -> ve_az
+# data.table(ve_i_o = c(0.7, 0.75, 0.8),
+#            ve_d_o = c(0.7, 0.8, 0.9),
+#            ve_severe = c(0.85, 0.9, 0.95),
+#            ve_critical = c(0.85, 0.93, 0.96),
+#            ve_mort = c(0.85, 0.95, 0.98)) %>% 
+#   # the following lines do not explicit reflect existing changes in infection
+#   # which has been explicitly modelled as changes in u
+#   mutate(ve_d = 1 - (1-ve_d_o)/((1-ve_i_o)),
+#          ve_severe_condition = 1 - (1-ve_severe)/(1-ve_i_o),
+#          ve_critical_condition = 1 - (1-ve_critical)/(1-ve_i_o),
+#          ve_mort_condition = 1 - (1-ve_mort)/(1-ve_i_o)) -> ve_az
 
 owid_vac <- fread("data/vaccinations.csv") %>%
   filter(location == "Thailand") |> 
@@ -56,14 +61,14 @@ owid_vac <- fread("data/vaccinations.csv") %>%
 # vaccinations/ million-day
 # could test 190000 for starters
 
-lapply(c(seq(ymd("2021-09-30"),
-           ymd("2021-10-17"),
-           by = "day"),ymd("2022-08-30")), function(x){
-             owid_vac |>
-               filter(date < x)
-           }) |>
-  map(pull, daily_vaccinations) |>
-  map(summary) |> bind_rows()
+# lapply(c(seq(ymd("2021-09-30"),
+#            ymd("2021-10-17"),
+#            by = "day"),ymd("2022-08-30")), function(x){
+#              owid_vac |>
+#                filter(date < x)
+#            }) |>
+#   map(pull, daily_vaccinations) |>
+#   map(summary) |> bind_rows()
 
 owid_vac |>
   mutate(date = ymd(date),
@@ -74,8 +79,23 @@ owid_vac |>
   # geom_line(aes(x = date, y = total_boosters ), color = "blue")+
   geom_line(aes(x = date, y = daily_vaccinations), color = "green") + geom_hline(yintercept = 190000)
 
-#### look for the transition time between primary dose and booster campaign ####
+owid_vac |> 
+  dplyr::select(date, total_vaccinations, total_boosters,
+                daily_vaccinations, people_fully_vaccinated_per_hundred) |> 
+  mutate(total_vaccinations = as.numeric(total_vaccinations),
+         total_boosters = as.numeric(total_boosters),
+         total_primary = total_vaccinations - total_boosters,
+         daily_boosters = c(0, diff(total_boosters)),
+         daily_primary = c(0, diff(total_primary))
+         ) |> 
+  pivot_longer(cols = c("total_vaccinations", "total_boosters", "daily_boosters","daily_primary",
+                        "daily_vaccinations", "people_fully_vaccinated_per_hundred")) |> 
+  filter(name %in% c("daily_boosters", "daily_primary")) |> 
+  ggplot(aes(x = date, y = value)) +
+  geom_point() +
+  facet_wrap(~name, scales = "free", ncol = 1)
 
+#### look for the transition time between primary dose and booster campaign ####
 lapply(seq(0,1,0.1),
        function(x){
          smooth.spline(x = owid_vac$date_numeric,

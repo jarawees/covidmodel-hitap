@@ -1,25 +1,3 @@
-cm_multinom_process <- function(
-    src, outcomes, delays,
-    report = ""
-) {
-  if ("null" %in% names(outcomes)) {
-    if (length(report) != length(outcomes)) report <- rep(report, length(outcomes))
-    report[which(names(outcomes)=="null")] <- ""
-    if (!("null" %in% names(delays))) {
-      delays$null <- c(1, rep(0, length(delays[[1]])-1))
-    }
-  } else if (!all(rowSums(outcomes)==1)) {
-    report <- c(rep(report, length(outcomes)), "")
-    outcomes$null <- 1-rowSums(outcomes)
-    delays$null <- c(1, rep(0, length(delays[[1]])-1))
-  }
-  nrow <- length(outcomes)
-  list(
-    source = src, type="multinomial", names=names(outcomes), report = report,
-    prob = t(as.matrix(outcomes)), delays = t(as.matrix(delays))
-  )
-}
-
 # foundamental wrapper of the functions
 gen_country_basics <- function(country = "Thailand",
                                # fitting
@@ -86,9 +64,15 @@ gen_country_basics <- function(country = "Thailand",
     # to be consistent with yv. we will not implement efficacy at this step 
     # just yet.
     
+    # 
     para$pop[[i]]$uv_l  <- para$pop[[i]]$u
     para$pop[[i]]$uv_m  <- para$pop[[i]]$u
     para$pop[[i]]$uv_h  <- para$pop[[i]]$u
+    # r_i_o
+    # r = recovered
+    # i = against infection
+    # o = observed
+    # we are assuming r_i_o is not changing as a result of emerging VOCs
     para$pop[[i]]$ur    <- (1 - r_i_o) * para$pop[[i]]$u
     para$pop[[i]]$uvr_l <- (1 - r_i_o) * para$pop[[i]]$u
     para$pop[[i]]$uvr_m <- (1 - r_i_o) * para$pop[[i]]$u
@@ -98,9 +82,6 @@ gen_country_basics <- function(country = "Thailand",
     para$pop[[i]]$yv_m <- para$pop[[i]]$y
     para$pop[[i]]$yv_h <- para$pop[[i]]$y
 
-    # infection induced immunity waning
-    para$pop[[i]]$wn <- rep((1/period_wn), n_age_groups)
-    
     ## Set seeds to control start of outbreak
     # infections start in individuals aged 20-50
     para$pop[[i]]$dist_seed_ages = 
@@ -114,19 +95,24 @@ gen_country_basics <- function(country = "Thailand",
   
   para$processes = processes
   
+  # this is a schedule oject
   para$schedule[["mobility"]] = list(
     parameter = "contact",
     pops = numeric(),
     mode = "multiply",
+    # values and times need to be the same length
+    # values need to be a list
+    # times need to be an array
+    # this is true for all schedule objects
     values = split(c_tmp[,3:6],
                    seq(nrow(c_tmp))) %>%
       map(unlist) %>%
-      map(as.vector) %>%
-      unname,
+      map(as.vector) %>% 
+      unname, #remove list structure, convert to vector, and remove item names
     times = 1:nrow(c_tmp))
   
   # waning vaccine-induced immunity
-  para$pop[[1]]$wn <- rep(1/period_wn, n_age_groups)
+  para$pop[[1]]$wn     <- rep(1/period_wn, n_age_groups)
   para$pop[[1]]$wv_m2l <-  rep(1/period_wv_m2l, n_age_groups)
   para$pop[[1]]$wv_h2m <-  rep(1/period_wv_h2m, n_age_groups)
   
@@ -135,32 +121,46 @@ gen_country_basics <- function(country = "Thailand",
 
 # CJ(date = seq(ymd("2019-12-01"),
 #               ymd("2030-01-01"),
-#               by = "day")) %>% 
-#   mutate(weights_ve_i_l = rnorm(nrow(.), 1, 0.05),
-#          weights_ve_i_m = rnorm(nrow(.), 1, 0.05),
-#          weights_ve_i_h = rnorm(nrow(.), 1, 0.05),
-#          weights_ve_d_l = rnorm(nrow(.), 1, 0.05),
-#          weights_ve_d_m = rnorm(nrow(.), 1, 0.05),
-#          weights_ve_d_h = rnorm(nrow(.), 1, 0.05)) -> efficacy_weights_test
-# 
+#               by = "day")) %>%
+#   mutate(weights_ve_i_l = rnorm(nrow(.), 0.8, 0.05),
+#          weights_ve_i_m = rnorm(nrow(.), 0.8, 0.05),
+#          weights_ve_i_h = rnorm(nrow(.), 0.8, 0.05),
+#          weights_ve_d_l = rnorm(nrow(.), 0.8, 0.05),
+#          weights_ve_d_m = rnorm(nrow(.), 0.8, 0.05),
+#          weights_ve_d_h = rnorm(nrow(.), 0.8, 0.05)) -> efficacy_weights_test
+# # 
 # write_rds(efficacy_weights_test,
 #           "data/intermediate/efficacy_weights_test.rds")
 
 efficacy_weights_test <- read_rds("data/intermediate/efficacy_weights_test.rds")
+
 efficacy_weights_test |> 
   mutate_at(vars(starts_with("weights")), function(x) x <- 1) -> efficacy_weights_one
 
+# efficacy_weights_test |> 
+#   ggplot(aes(x = date, y = weights_ve_d_h)) +
+#   geom_point() +
+#   geom_line()
+
 # this function will update u and y
 # there's two sources for u and y changes
-# (1) VOC emergences related to changes in susceptibility and clinical fraction
+# (1) emerging VOCs, changes in susceptibility and clinical fraction, immune 
+# evading characteristics
 # (2) different vaccine efficacy values intput at different time steps due to 
 # composition of vaccines
 update_u_y <- function(para = NULL,
+                       # group (1) changes
+                       # date_switch marks the introduction of new VOCs
+                       # check function to make sure that date_switch and rc_x
+                       # have the same size
+                       # rc - relative changes
                        date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
                        rc_u = c(1, 1.5, 0.5), # relative changes in u
                        rc_y = c(1, 0.5, 0.5), # relative changes in y
+                       # if ve can be specific to VOCs in relation to the 
+                       # wildtype, rc_ve will be all 1s
                        rc_ve = c(1, 0.9, 0.7), # relative changes in evasiveness (infection part)
-                       # relative chanves in 
+                       # group (2) changes 
                        efficacy_baseline = NULL, # vaccine efficacy 
                        efficacy_weights = efficacy_weights_test # as a result of different vaccine composition
 ){
@@ -169,7 +169,7 @@ update_u_y <- function(para = NULL,
   # rc_u = c(1, 1.5, 0.5)
   # rc_y = c(1, 0.5, 0.5)
   # rc_ve = c(1, 0.9, 0.7)
-  # efficacy_baseline = ve_az
+  # efficacy_baseline = ve_all
   # efficacy_weights = efficacy_weights_test
 
   date_range <- c(lubridate::ymd(para$date0),
@@ -178,6 +178,8 @@ update_u_y <- function(para = NULL,
   
   t_range <- c(para$time0:para$time1)
   
+  # this is the table that will help us keep track of the names of things to be
+  # changed in the schedule
   targets <- data.frame(
     scaler_label = c(
       "u_scaler",
@@ -225,6 +227,15 @@ update_u_y <- function(para = NULL,
                modifier$date <= date_range[i+1],"rc_ve_prod"] <- prod(c(1,rc_ve)[1:i])
   }
   
+
+  
+  # VEs against infection and disease are implemented over "compartments"
+  # VEs against severe, critical and mortality cases are implemented over "processes" 
+  # Everything above infection in terms of outcome will need to use conditional
+  # probability, because the infection step has already occurred to reach this 
+  # endpoint
+  
+  # in the context of this model, disease preventing = clinical preventing
   modifier |> 
     left_join(efficacy_weights,
               by = "date") |> 
@@ -236,10 +247,10 @@ update_u_y <- function(para = NULL,
            uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
            uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
            uvr_h_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[3]*weights_ve_i_h*rc_ve_prod),
-           yv_l_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d[1]*weights_ve_d_l*rc_ve_prod),
-           yv_m_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d[2]*weights_ve_d_m*rc_ve_prod),
-           yv_h_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d[3]*weights_ve_d_h*rc_ve_prod)) -> modifier
-
+           yv_l_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d_condition[1]*weights_ve_d_l*rc_ve_prod),
+           yv_m_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d_condition[2]*weights_ve_d_m*rc_ve_prod),
+           yv_h_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d_condition[3]*weights_ve_d_h*rc_ve_prod)) -> modifier
+  
   modifier |> 
     select(ends_with("scaler")) |> 
     pivot_longer(targets$scaler_label) |> 
@@ -277,15 +288,19 @@ update_u_y <- function(para = NULL,
 
 emerge_VOC_burden <- function(
     para = NULL,
+    # could add another variable for ve_against >= severe outcomes to change by
+    # VOC stages
     rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
     efficacy_baseline = NULL){
   
   # debug
   # para = params
   # rc_severity = c(1, 1.5,1.5)
-  # efficacy_baseline = ve_az
+  # efficacy_baseline = ve_all
   
   # set up
+  # the number of VOC 
+  # all rc_xx variables need to have the same length
   n_voc = length(rc_severity)
   compartments_E <- c("newE", "newEv_l", "newEv_m", "newEv_h")
   
@@ -448,3 +463,26 @@ vaccinate_booster <- function(para = NULL,
   )
   return(para)
 }
+
+cm_multinom_process <- function(
+    src, outcomes, delays,
+    report = ""
+) {
+  if ("null" %in% names(outcomes)) {
+    if (length(report) != length(outcomes)) report <- rep(report, length(outcomes))
+    report[which(names(outcomes)=="null")] <- ""
+    if (!("null" %in% names(delays))) {
+      delays$null <- c(1, rep(0, length(delays[[1]])-1))
+    }
+  } else if (!all(rowSums(outcomes)==1)) {
+    report <- c(rep(report, length(outcomes)), "")
+    outcomes$null <- 1-rowSums(outcomes)
+    delays$null <- c(1, rep(0, length(delays[[1]])-1))
+  }
+  nrow <- length(outcomes)
+  list(
+    source = src, type="multinomial", names=names(outcomes), report = report,
+    prob = t(as.matrix(outcomes)), delays = t(as.matrix(delays))
+  )
+}
+
