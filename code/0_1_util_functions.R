@@ -409,34 +409,32 @@ emerge_VOC_burden <- function(
   return(para)
 }
 
-vaccinate_primary <- function(para = NULL){
+vaccinate_primary <- function(para = NULL,
+                              vac_data = owid_vac,
+                              values = primary_allocation_plan
+                              ){
   
+  require(lurbidate)
   n_age_groups <- length(para$pop[[1]]$size)
+  date_start <- ymd(para$date0)
+  date_end <- date_start + para$time1
+  data.frame(date = seq(date_start, date_end, by = "day")) |> 
+    mutate(t = 0:para$time1,
+           empirical = date %in% (vac_data$date)) |> 
+    filter(empirical == T) |> 
+    pull(t) -> tmp_times
   
-  tmp_time <- c(0,
-                as.numeric(ymd("2021-06-15") - ymd(para$date0)) - 1,
-                as.numeric(ymd("2021-06-15") - ymd(para$date0)),
-                as.numeric(ymd("2021-11-15") - ymd(para$date0)),
-                para$time1)
+  c(0, tmp_times, max(tmp_times)+1) -> tmp_times
+  c(list(rep(0,16)), values, list(rep(0,16))) -> tmp_allocation
   
-  list_tmp <- list()
-  
-  for(i in 1:(params$time1 + 1)) {
-    list_tmp[[i]] <- rep(0, n_age_groups)
-    if(i >= tmp_time[2] & i < tmp_time[3]){
-      list_tmp[[i]] <- rep(c(0,0.1), c(4, n_age_groups - 4))
-    }
-    if(i >= tmp_time[3] & i <= tmp_time[4]){
-      list_tmp[[i]] <- rep(c(0,7500), c(4, n_age_groups - 4))
-    }
-  }
-  
+  testthat::expect_equal(length(tmp_times), length(tmp_allocation))
+
   para$schedule[["primary_course"]] <- list(
     parameter = "v_p",
     pops = numeric(),
     mode = "assign",
-    values = list_tmp,
-    times = 0:1095
+    values = tmp_allocation,
+    times = tmp_times
   )
   return(para)
 }

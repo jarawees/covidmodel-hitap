@@ -46,16 +46,26 @@ data.table(ve_i_o = c(0.7, 0.85, 0.9),
 #          ve_critical_condition = 1 - (1-ve_critical)/(1-ve_i_o),
 #          ve_mort_condition = 1 - (1-ve_mort)/(1-ve_i_o)) -> ve_az
 
-owid_vac <- fread("data/vaccinations.csv") %>%
+fread("data/vaccinations.csv") %>%
   filter(location == "Thailand") |> 
   arrange(date) |> 
   mutate(people_fully_vaccinated = as.numeric(people_fully_vaccinated),
-         people_fully_vaccinated = imputeTS::na_interpolation(people_fully_vaccinated),
+         # people_fully_vaccinated = imputeTS::na_interpolation(people_fully_vaccinated),
+         total_vaccinations = as.numeric(total_vaccinations),
+         total_vaccinations = imputeTS::na_interpolation(total_vaccinations),
          daily_vaccinations = as.numeric(daily_vaccinations),
-         daily_vaccinations = imputeTS::na_interpolation(daily_vaccinations),
+         # daily_vaccinations = imputeTS::na_interpolation(daily_vaccinations),
          daily_vaccinations_per_million = as.numeric(daily_vaccinations_per_million),
-         daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
-         date_numeric = as.numeric(date))
+         # daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
+         date_numeric = as.numeric(date)) -> owid_vac
+
+
+source("code/0_4_1_Staged_Vac.R")
+source("code/0_4_2_Primary.R")
+
+# owid_date_total <- data.frame(date = seq(range(owid_vac$date)[1], range(owid_vac$date)[2], by = "day"))
+# owid_vac |> full_join(owid_date_total, by = "date")
+# diff(owid_vac$date_numeric)
 
 #### look for reasonable daily vaccination rates #####
 # vaccinations/ million-day
@@ -70,67 +80,67 @@ owid_vac <- fread("data/vaccinations.csv") %>%
 #   map(pull, daily_vaccinations) |>
 #   map(summary) |> bind_rows()
 
-owid_vac |>
-  mutate(date = ymd(date),
-         people_vaccinated = as.numeric(people_vaccinated)) |>
-  ggplot() +
-  # geom_line(aes(x = date, y = people_vaccinated)) +
-  # geom_line(aes(x = date, y = people_fully_vaccinated), color = "red") +
-  # geom_line(aes(x = date, y = total_boosters ), color = "blue")+
-  geom_line(aes(x = date, y = daily_vaccinations), color = "green") + geom_hline(yintercept = 190000)
+# owid_vac |>
+#   mutate(date = ymd(date),
+#          people_vaccinated = as.numeric(people_vaccinated)) |>
+#   ggplot() +
+#   # geom_line(aes(x = date, y = people_vaccinated)) +
+#   # geom_line(aes(x = date, y = people_fully_vaccinated), color = "red") +
+#   # geom_line(aes(x = date, y = total_boosters ), color = "blue")+
+#   geom_line(aes(x = date, y = daily_vaccinations), color = "green") + geom_hline(yintercept = 190000)
 
-owid_vac |> 
-  dplyr::select(date, total_vaccinations, total_boosters,
-                daily_vaccinations, people_fully_vaccinated_per_hundred) |> 
-  mutate(total_vaccinations = as.numeric(total_vaccinations),
-         total_boosters = as.numeric(total_boosters),
-         total_primary = total_vaccinations - total_boosters,
-         daily_boosters = c(0, diff(total_boosters)),
-         daily_primary = c(0, diff(total_primary))
-         ) |> 
-  pivot_longer(cols = c("total_vaccinations", "total_boosters", "daily_boosters","daily_primary",
-                        "daily_vaccinations", "people_fully_vaccinated_per_hundred")) |> 
-  filter(name %in% c("daily_boosters", "daily_primary")) |> 
-  ggplot(aes(x = date, y = value)) +
-  geom_point() +
-  facet_wrap(~name, scales = "free", ncol = 1)
+# owid_vac |> 
+#   dplyr::select(date, total_vaccinations, total_boosters,
+#                 daily_vaccinations, people_fully_vaccinated_per_hundred) |> 
+#   mutate(total_vaccinations = as.numeric(total_vaccinations),
+#          total_boosters = as.numeric(total_boosters),
+#          total_primary = total_vaccinations - total_boosters,
+#          daily_boosters = c(0, diff(total_boosters)),
+#          daily_primary = c(0, diff(total_primary))
+#          ) |> 
+#   pivot_longer(cols = c("total_vaccinations", "total_boosters", "daily_boosters","daily_primary",
+#                         "daily_vaccinations", "people_fully_vaccinated_per_hundred")) |> 
+#   filter(name %in% c("daily_boosters", "daily_primary")) |> 
+#   ggplot(aes(x = date, y = value)) +
+#   geom_point() +
+#   facet_wrap(~name, scales = "free", ncol = 1)
 
 #### look for the transition time between primary dose and booster campaign ####
-lapply(seq(0,1,0.1),
-       function(x){
-         smooth.spline(x = owid_vac$date_numeric,
-                       y = owid_vac$people_fully_vaccinated,
-                       spar = x)
-       }) |>
-  map(predict,
-      deriv = 2) |>
-  map(function(x) {x["y"]}) |>
-  bind_cols() |>
-  setNames(paste0("spar_",seq(0,1,0.1))) |>
-  bind_cols(owid_vac[,"date"]) |>
-  pivot_longer(starts_with("spar")) -> splines_all
+# lapply(seq(0,1,0.1),
+#        function(x){
+#          smooth.spline(x = owid_vac$date_numeric,
+#                        y = owid_vac$people_fully_vaccinated,
+#                        spar = x)
+#        }) |>
+#   map(predict,
+#       deriv = 2) |>
+#   map(function(x) {x["y"]}) |>
+#   bind_cols() |>
+#   setNames(paste0("spar_",seq(0,1,0.1))) |>
+#   bind_cols(owid_vac[,"date"]) |>
+#   pivot_longer(starts_with("spar")) -> splines_all
 
 # we can see that spar = 0-0.3 doesn't really make sense because of too much
 # permutation, the transition between initial vaccination and booster dose
 # occurred in the first two weeks of October
 # 2021-09-30 ~ 2021-10-17
 
-splines_all %>%
-  data.table |>
-  # split(by = "name") |>
-  # map(filter, value < 0 & date >= "2021-08-01") |>
-  # map(filter, date == min(date, na.rm = T)) |>
-  # bind_rows() |> 
-  ggplot(aes(x = date, y = value, group = name, color = name)) +
-  geom_line() +
-  facet_wrap(~name)
+# splines_all %>%
+#   data.table |>
+#   # split(by = "name") |>
+#   # map(filter, value < 0 & date >= "2021-08-01") |>
+#   # map(filter, date == min(date, na.rm = T)) |>
+#   # bind_rows() |> 
+#   ggplot(aes(x = date, y = value, group = name, color = name)) +
+#   geom_line() +
+#   facet_wrap(~name)
 
 #### daily new vaccines
-owid_vac |> 
-  filter(date <= "2022-06-01" & date >= "2021-01-15") |> 
-  ggplot(aes(x = date, y = people_fully_vaccinated)) +
-  geom_line() +
-  geom_smooth(method = "lm")
+# owid_vac |> 
+#   filter(date <= "2022-06-01" & date >= "2021-01-15") |> 
+#   ggplot(aes(x = date, y = people_fully_vaccinated)) +
+#   geom_line() +
+#   geom_smooth(method = "lm")
 
-lm(people_fully_vaccinated ~ date, data = owid_vac) |> summary()
-owid_vac$people_fully_vaccinated |> tail(1)
+# lm(people_fully_vaccinated ~ date, data = owid_vac) |> summary()
+# owid_vac$people_fully_vaccinated |> tail(1)

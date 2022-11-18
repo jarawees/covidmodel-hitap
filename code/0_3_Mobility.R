@@ -122,7 +122,7 @@ CJ(date = seq(range(fit_tab$date)[1],
   bind_rows() -> pre_tab
 
 # generate predictions
-pre_tab[,"mobility_level_predicted"] <- predict(model_fit, newdata = pre_tab)
+pre_tab[,"mobility_level_predicted"] <- predict.gam(model_fit, newdata = pre_tab)
 pre_tab |> 
   left_join(fit_tab[,c("country_region",
                        "date",

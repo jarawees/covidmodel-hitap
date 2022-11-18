@@ -2,7 +2,7 @@
 if(!require(pacman)) install.packages("pacman")
 library(pacman)
 p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr,
-       lubridate, mgcv)
+       lubridate, mgcv, DEoptim, magrittr, progress)
 
 ##### load covidm #####
 cm_path <- "code/covidm_for_fitting/"
@@ -11,8 +11,39 @@ cm_build_verbose <- T
 cm_version <- 2
 source(paste0(cm_path, "/R/covidm.R"))
 
+# J. Population structure
+fread("data/pop_str_2021.csv") %>%
+  gather(key = "sex", value = "pop", both) %>%
+  mutate(pop = parse_number(pop)) |> 
+  mutate(age_group = age %/% 5 + 1,
+         # age = paste0(age_group * 5, "-", age_group * 5 + 4),
+         # age = replace(age, age_group>=18, "90+"),
+         # age = factor(age, levels = limits_to_agegroups(seq(0, 90, by = 5))),
+         age_group = if_else(age_group > 16, 16, age_group)) |> 
+  group_by(age_group) |> 
+  summarise(pop_age = sum(pop)) -> pop_TH
+
+cm_populations |> 
+  filter(name == "Thailand") |> 
+  separate(age, into = c("age_LL", "age_UL")) |> 
+  mutate(age_group = as.numeric(age_LL) %/%5 + 1,
+         age_group = if_else(age_group > 16, 16, age_group)) |> 
+  group_by(age_group) |> 
+  summarise(tot_age = (f + m) * 1000) |> 
+  ungroup() |> mutate(tot = sum(tot_age)) -> popTH_cm
+
+pop_TH |> 
+  rename(pop_age_hitap = pop_age) |> 
+  mutate(pop_tot_hitap = sum(pop_age_hitap)) |> 
+  left_join(popTH_cm, by = "age_group") |> 
+  rename(pop_tot_cm = tot,
+         pop_age_cm = tot_age) |> 
+  mutate(diff = pop_age_cm/pop_tot_hitap)
+
 # load custom functions
 source("code/0_1_util_functions.R")
+
+
 
 ## Load required data
 # A. Covid-19 deaths
@@ -104,16 +135,7 @@ source("code/0_2_StringencyIndex.R")
 # H. Google mobility data
 source("code/0_3_Mobility.R")
 
-# J. Population structure
-# popTH <- fread("data/pop_str_2021.csv")
 
-# popTH <- popTH %>%
-#   gather(key = "sex", value = "pop", male, female, both) %>%
-#   mutate_at(vars(pop), ~as.numeric(gsub("[^\\d]+", "", ., perl=TRUE))) %>%
-#   mutate(age_group = age %/% 5,
-#          age = paste0(age_group * 5, "-", age_group * 5 + 4),
-#          age = replace(age, age_group>=18, "90+"),
-#          age = factor(age, levels = limits_to_agegroups(seq(0, 90, by = 5))))
 
 #### K. Epi parameters ####
 source("code/0_5_EpiParams.R")
