@@ -185,12 +185,11 @@ gm_scaled |>
          year = year(date)) %>%
   mutate(holiday = if_else(
     #winter holiday,
-    (year >= 2022 & month == 10 & day >=  15) |
-      (year >= 2022 & month == 11 & day < 15) |
+    (year >= 2022 & month == 10 & day >=  11) |
+      (year >= 2022 & month == 10 & day <= 31) |
       # summer holiday
-      (year > 2022 & month == 3 & day >=  15) |
       (year > 2022 & month == 4) |
-      (year > 2022 & month == 4 & day < 15),
+      (year > 2022 & month == 5 & day <= 15),
     T,
     F),
     school = if_else(holiday, 0, school)) %>%
