@@ -400,7 +400,7 @@ tbl_ab_ratio <- meta_uncensored_WT_ST(NAb_uncensored_fold_LOD,3)
     
     tbl_vx_eff
     
-    #tiff(file = "tbl_vx_eff_monte_carlo.tiff", unit = "in", width = 5, height = 12, res = 300)
+    #tiff(file = "tbl_vx_eff_monte_carlo.tiff", unit = "in", width = 5, height = 12, res = 300, compression = "lzw")
     tbl_vx_eff_monte_carlo %>%
       gather(key = "group", value = "vx_eff") %>%
       mutate_at(vars(group), ~factor(., levels = c("AZ", "PZ", "AZ_AZ", "SP_SP", "PZ_PZ", "MixedVac", "BoosterPZ", "Conv_PZ", "Conv_PZ_PZ", "Conv_BoosterPZ", "Overall"))) %>%
