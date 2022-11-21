@@ -3,7 +3,7 @@ gen_country_basics <- function(country = "Thailand",
                                # fitting
                                R0_assumed  = 2.7,
                                date_start = "2020-01-01",
-                               date_end = "2022-12-31",
+                               date_end = "2030-12-31",
                                processes = NULL,
                                contact = contact_schedule,
                                period_wn  = 3*365, # duration, waning of natural immunity
@@ -120,7 +120,7 @@ gen_country_basics <- function(country = "Thailand",
 }
 
 # CJ(date = seq(ymd("2019-12-01"),
-#               ymd("2030-01-01"),
+#               ymd("2030-12-31"),
 #               by = "day")) %>%
 #   mutate(weights_ve_i_l = rnorm(nrow(.), 0.8, 0.05),
 #          weights_ve_i_m = rnorm(nrow(.), 0.8, 0.05),
@@ -128,7 +128,7 @@ gen_country_basics <- function(country = "Thailand",
 #          weights_ve_d_l = rnorm(nrow(.), 0.8, 0.05),
 #          weights_ve_d_m = rnorm(nrow(.), 0.8, 0.05),
 #          weights_ve_d_h = rnorm(nrow(.), 0.8, 0.05)) -> efficacy_weights_test
-# # 
+# #
 # write_rds(efficacy_weights_test,
 #           "data/intermediate/efficacy_weights_test.rds")
 
@@ -443,22 +443,140 @@ vaccinate_primary <- function(para = NULL,
 # duration of interval; the start of the first booster campaign; age prioritisation
 # booster vaccine characteristics; 
 vaccinate_booster <- function(para = NULL,
-                              program_start = NULL,
-                              program_end = NULL){
-  n_age_groups <- length(para$pop[[1]]$size)
-  tmp_time <- c(0,
-                as.numeric(ymd(program_start) - ymd(para$date0)),
-                as.numeric(ymd(program_end) - ymd(para$date0)))
+                              vac_data = owid_vac,
+                              program_interval = 30*6,
+                              uptake_by_existing = 0.9,
+                              prioritisation_initial = c(rep(NA, 4), rep(1,12)),
+                              prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+                              boosters_daily = 300000
+                              ){
+
+  require(lubridate)
+  # debug
+  # para <- params
+  # vac_data = owid_vac
+  # program_interval = 30*6
+  # uptake_by_existing = 0.9
+  # prioritisation_initial = c(rep(NA, 4), rep(1,12))
+  # prioritisation_followup = c(NA,rep(2,11),rep(1,4))
+  # boosters_daily = 300000
+  
+  time_range <- data.frame(date = seq(ymd(para$date0),
+                                      ymd(para$date0) + (para$time1),
+                                      by = "day")) |> 
+    rownames_to_column(var = "t") |> 
+    mutate(t = as.numeric(t))
+  
+  tmp_allocation <- tmp_times <- list()
+  
+  # initial boosting programmes
+  # with owid data
+  proportions_allocated_initial <- para$pop[[1]]$size/sum(para$pop[[1]]$size)
+  n_age_groups <- length(proportions_allocated_initial)
+  # we want the initial stage to not divide by stage and target all adults
+  proportions_allocated_initial_rescaled <- (prioritisation_initial*proportions_allocated_intial)/sum(prioritisation_initial*proportions_allocated_intial, na.rm = T)
+  proportions_allocated_initial_rescaled[is.na(proportions_allocated_initial_rescaled)] <- 0
+  
+  vac_data |> 
+    select(total_boosters_daily) %>%
+    split(seq(nrow(.))) |> 
+    map(unlist) |> 
+    map(.f = function(x) x*proportions_allocated_initial_rescaled) |> 
+    setNames(NULL) -> tmp_allocation[["initial"]]
+  
+  vac_data |> 
+    mutate(date = lubridate::date(date)) |> 
+    left_join(time_range, by = "date") |> pull(t) -> tmp_times[["initial"]]
+  
+  # follow-up campaigns
+  # children coverage = 0.787; adolescent coverage = 0.812; adult coverage = 0.813
+  data.frame(prioritisation_followup = prioritisation_followup,
+             pop = para$pop[[1]]$size,
+             cov_primary = c(NA, 0.787, 0.812, 0.812,
+                            rep(0.813,12))) |> 
+    mutate(cov_followup = uptake_by_existing*cov_primary,
+           cov_followup_doses = cov_followup*pop,
+           cov_followup_doses_all = sum(cov_followup_doses, na.rm = T),
+           campaign_duration = round(cov_followup_doses_all/boosters_daily)) |> 
+    group_by(prioritisation_followup) |> 
+    mutate(cov_followup_doses_bygroup = sum(cov_followup_doses, na.rm = T)) |> ungroup() |> 
+    mutate(campaign_duration_bygroup = round(cov_followup_doses_bygroup/boosters_daily)) |> 
+    dplyr::select(prioritisation_followup, campaign_duration_bygroup) |> unique() |> 
+    filter(!is.na(prioritisation_followup)) |> 
+    arrange(prioritisation_followup) -> follow_up_order
+  
+  follow_up_schedule <- c(program_interval, follow_up_order$campaign_duration_bygroup)
+  follow_up_unit <- sum(follow_up_schedule)
+  t_empirical_end <- (time_range |> filter(date ==  range(vac_data$date)[2]) |> pull(t))
+  date_booster_start <-  vac_data |> filter(boosters_daily > 0) |> pull(date) |> min()
+
+  time_range |>
+    mutate(
+      cycle = (t - t_empirical_end) / follow_up_unit,
+      cycle = floor(cycle),
+      t_within = t - t_empirical_end - follow_up_unit * cycle
+    ) |>
+    mutate(
+      vaccination_phase = case_when(
+        date >= date_booster_start & t <= t_empirical_end ~ "booster_initial",
+        cycle >= 0 &
+          t_within <= follow_up_schedule[1] ~ "pause",
+        cycle >= 0 &
+          t_within > follow_up_schedule[1] &
+          t_within <= sum(follow_up_schedule[1:2]) ~ "booster_OA",
+        cycle >= 0 &
+          t_within > sum(follow_up_schedule[1:2]) &
+          t_within <= sum(follow_up_schedule[1:3]) ~ "booster_all"
+      )
+    ) |> 
+    dplyr::filter(cycle >= 0) -> phase_def
+
+  phase_def |> 
+    group_by(vaccination_phase, cycle) |> 
+    mutate(start = min(t_within)) |> 
+    filter(start == t_within,
+           vaccination_phase != "booster_initial") -> phase_list
+  
+  # proportions OA rescaled
+  proportions_allocation_OA_rescaled <- proportions_allocated_intial
+  proportions_allocation_OA_rescaled[1:12] <- 0
+  proportions_allocation_OA_rescaled <- proportions_allocation_OA_rescaled/sum(proportions_allocation_OA_rescaled)
+  
+  # proportions A rescaled
+  proportions_allocation_all_rescaled <- proportions_allocated_intial
+  proportions_allocation_all_rescaled[1] <- 0
+  proportions_allocation_all_rescaled[13:16] <- 0
+  proportions_allocation_all_rescaled <- proportions_allocation_all_rescaled/sum(proportions_allocation_all_rescaled)
+  
+  allocation_byphase <- list(pause = rep(0,16),
+                             booster_OA = c(rep(0,12), rep(1,4))*proportions_allocation_OA_rescaled,
+                             booster_all = c(rep(0,1),  rep(1,11), rep(0,4))*proportions_allocation_all_rescaled)
+  
+  tmp_times[["campaign"]] <- phase_list$t
+  tmp_allocation[["campaign"]] <- list()
+  for(j in 1:nrow(phase_list)){
+    if(phase_list$vaccination_phase[j] == "pause") tmp_allocation[["campaign"]][[j]] <- allocation_byphase$pause*boosters_daily
+    if(phase_list$vaccination_phase[j] == "booster_OA") tmp_allocation[["campaign"]][[j]] <- allocation_byphase$booster_OA*boosters_daily
+    if(phase_list$vaccination_phase[j] == "booster_all") tmp_allocation[["campaign"]][[j]] <- allocation_byphase$booster_all*boosters_daily
+
+  }
+  
+  tmp_times_move <- c(0,unlist(tmp_times) |> array())
+  tmp_values_move <- c(list(rep(0,16)),
+                       tmp_allocation$initial,
+                       tmp_allocation$campaign) |> setNames(NULL)
+
+  testthat::expect_equal(length(tmp_times_move),
+                         length(tmp_values_move))
 
   para$schedule[["booster"]] <- list(
     parameter = "v_b",
     pops = numeric(),
     mode = "assign",
-    values = list(rep(0, n_age_groups),
-                  rep(c(0,10000), c(4, n_age_groups - 4)),
-                  rep(0, n_age_groups)),
-    times = tmp_time
+    values = tmp_values_move,
+    times = tmp_times_move
   )
+  
   return(para)
 }
 

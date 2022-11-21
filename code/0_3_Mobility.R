@@ -99,7 +99,7 @@ summary(model_fit)
 
 # generate prediction table
 CJ(date = seq(range(fit_tab$date)[1],
-              as.Date("2023-12-31"),
+              as.Date("2030-12-31"),
               by = 1),
    mobility_type = mobility_type_used) %>%
   .[, c("dow",

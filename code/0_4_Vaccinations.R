@@ -4,7 +4,7 @@
 #                 paste0("data/vaccinations.csv"))
 # }
 # 
-# # update the data file from owid if the time difference is greater than a week
+# update the data file from owid if the time difference is greater than a week
 # if(as.numeric(abs(as.Date(file.info(paste0("data/vaccinations.csv"))$mtime) -
 #                   as.Date(Sys.time()))) > 7){
 #   download.file("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv",
@@ -34,18 +34,6 @@ data.table(ve_i_o = c(0.7, 0.85, 0.9),
          ve_critical_condition = 1 - (1-ve_critical_o)/((1-ve_i_o)),
          ve_mort_condition = 1 - (1-ve_mort_o)/((1-ve_i_o))) -> ve_all
 
-# data.table(ve_i_o = c(0.7, 0.75, 0.8),
-#            ve_d_o = c(0.7, 0.8, 0.9),
-#            ve_severe = c(0.85, 0.9, 0.95),
-#            ve_critical = c(0.85, 0.93, 0.96),
-#            ve_mort = c(0.85, 0.95, 0.98)) %>% 
-#   # the following lines do not explicit reflect existing changes in infection
-#   # which has been explicitly modelled as changes in u
-#   mutate(ve_d = 1 - (1-ve_d_o)/((1-ve_i_o)),
-#          ve_severe_condition = 1 - (1-ve_severe)/(1-ve_i_o),
-#          ve_critical_condition = 1 - (1-ve_critical)/(1-ve_i_o),
-#          ve_mort_condition = 1 - (1-ve_mort)/(1-ve_i_o)) -> ve_az
-
 fread("data/vaccinations.csv") %>%
   filter(location == "Thailand") |> 
   arrange(date) |> 
@@ -53,12 +41,14 @@ fread("data/vaccinations.csv") %>%
          # people_fully_vaccinated = imputeTS::na_interpolation(people_fully_vaccinated),
          total_vaccinations = as.numeric(total_vaccinations),
          total_vaccinations = imputeTS::na_interpolation(total_vaccinations),
+         total_boosters = as.numeric(total_boosters),
+         total_boosters = imputeTS::na_interpolation(total_boosters),
+         total_boosters_daily = c(0, diff(total_boosters)),
          daily_vaccinations = as.numeric(daily_vaccinations),
          # daily_vaccinations = imputeTS::na_interpolation(daily_vaccinations),
          daily_vaccinations_per_million = as.numeric(daily_vaccinations_per_million),
          # daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
          date_numeric = as.numeric(date)) -> owid_vac
-
 
 source("code/0_4_1_Staged_Vac.R")
 source("code/0_4_2_Primary.R")

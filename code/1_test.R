@@ -7,7 +7,7 @@ source("code/0_LoadAll.R")
 params <- gen_country_basics(country = "Thailand",
                              R0_assumed = 2.7,
                              date_start = "2020-01-01",
-                             date_end = "2022-12-31",
+                             date_end = "2030-12-31",
                              contact = contact_schedule,
                              processes = gen_burden_processes(VE = ve_all),
                              period_wn  = 3*365, # duration, waning of natural immunity
@@ -31,12 +31,20 @@ params <- gen_country_basics(country = "Thailand",
     efficacy_baseline = ve_all) %>%
   vaccinate_primary(para = .,
                     vac_data = owid_vac,
-                    values = primary_allocation_plan) # %>%
-  # vaccinate_booster(para = .,
-  #                   program_start = "2021-12-31",
-  #                   program_end = "2022-06-30")
-  
+                    values = primary_allocation_plan) %>%
+  vaccinate_booster(para = .,
+                    vac_data = owid_vac,
+                    program_interval = 30*6,
+                    uptake_by_existing = 0.9,
+                    prioritisation_initial = c(rep(NA, 4), rep(1,12)),
+                    prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+                    boosters_daily = 300000)
+
 res <- cm_simulate(params)
+# res$dynamics |> 
+#   filter(t == 458) |> 
+#   filter(grepl("v_l",compartment))
+
 # res$dynamics |> filter(compartment == "Sv_l") |> filter(value > 0) |> View()
 # all_labels <- unique(res$dynamics$compartment)
 # compartment_labels <- all_labels[1:24]
@@ -67,7 +75,12 @@ res$dynamics |>
   facet_wrap(~compartment)
 
 res$dynamics |>
-  filter(compartment %in% c("Sv_h")) |> 
+  filter(compartment %in% c("Sv_l", "Rvl")) |>
+  group_by(t) |> summarise(value = sum(value)) |> 
+  ggplot(aes(x = t, y = value)) +geom_point()
+
+res$dynamics |>
+  filter(compartment %in% c("Sv_l")) |> 
   ggplot(aes(x = t, y = value)) +
   geom_point() +
   facet_wrap(~group)

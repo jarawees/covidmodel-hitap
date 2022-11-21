@@ -18,7 +18,7 @@ owid_vac |>
     ),
     fully_vaccinated_A_daily = case_when(
       days %in% days_A ~ fully_vaccinated_adult_daily,
-      days == max(days_OA) + 1 ~ fully_vaccinated_adult_daily- fully_vaccinated_OA_daily,
+      days == max(days_OA) + 1 ~ fully_vaccinated_adult_daily - fully_vaccinated_OA_daily,
       TRUE ~ 0
     )
   ) -> owid_vac
@@ -58,6 +58,8 @@ lapply(1:nrow(to_allocate), function(m){
        .y = to_allocate[m,2:6],
        function(x,y) x*y) |> unlist()
 })  -> primary_allocation_plan
+
+primary_allocation_plan |> map(length) |> unlist()
 
 pre_tag_OA <- min(which(owid_vac$people_fully_vaccinated_daily > 0)) - 1
 primary_allocation_plan[[pre_tag_OA]] <- c(rep(0,12), rep(0.1,4))
