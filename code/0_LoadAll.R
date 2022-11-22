@@ -2,7 +2,7 @@
 if(!require(pacman)) install.packages("pacman")
 library(pacman)
 p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr,
-       lubridate, mgcv, DEoptim, magrittr, progress)
+       lubridate, mgcv, DEoptim, magrittr, progress, readxl)
 
 ##### load covidm #####
 cm_path <- "code/covidm_for_fitting/"
@@ -11,7 +11,7 @@ cm_build_verbose <- T
 cm_version <- 2
 source(paste0(cm_path, "/R/covidm.R"))
 
-# J. Population structure
+# A. Population structure
 fread("data/pop_str_2021.csv") %>%
   gather(key = "sex", value = "pop", both) %>%
   mutate(pop = parse_number(pop)) |> 
@@ -40,10 +40,8 @@ pop_TH |>
          pop_age_cm = tot_age) |> 
   mutate(diff = pop_age_cm/pop_tot_hitap)
 
-# load custom functions
+# B. load custom functions
 source("code/0_1_util_functions.R")
-
-
 
 ## Load required data
 # A. Covid-19 deaths

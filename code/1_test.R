@@ -40,6 +40,27 @@ params <- gen_country_basics(country = "Thailand",
                     prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
                     boosters_daily = 300000)
 
+# check schedule objects generated
+params$schedule$primary_course$values |> 
+  map(data.frame) |> map(t) |> map(data.frame) |> bind_rows() |> 
+  mutate(rn = 1:n()) |> set_rownames(NULL) |> 
+  pivot_longer(starts_with("X")) |> 
+  mutate(name = factor(name, levels = paste0("X",1:16))) |> 
+  ggplot(aes(x = rn, y = value, group = name)) +
+  geom_point() +
+  facet_wrap(~name)
+
+params$schedule$booster$times
+
+params$schedule$booster$values |> 
+  map(data.frame) |> map(t) |> map(data.frame) |> bind_rows() |> 
+  mutate(rn = 1:n()) |> set_rownames(NULL) |> 
+  pivot_longer(starts_with("X")) |> 
+  mutate(name = factor(name, levels = paste0("X",1:16))) |> 
+  ggplot(aes(x = rn, y = value, group = name)) +
+  geom_point() +
+  facet_wrap(~name)
+
 res <- cm_simulate(params)
 # res$dynamics |> 
 #   filter(t == 458) |> 
