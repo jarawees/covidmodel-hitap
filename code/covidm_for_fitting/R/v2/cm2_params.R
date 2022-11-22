@@ -71,17 +71,23 @@ population_requirements <- lapply(list(
     "contact_mult" = "(length(contact_mult) == 0) | (non_negative(contact_mult) & same_length(contact_mult, matrices))",
     "contact_lowerto" = "(length(contact_lowerto) == 0) | (non_negative(contact_lowerto) & same_length(contact_lowerto, matrices))",
     "u" = "non_negative(u) & same_length(u, size)",
-    "y" = "non_negative(y) & same_length(y, size)",
     "fIp" = "non_negative(fIp) & same_length(fIp, size)",
     "fIa" = "non_negative(fIa) & same_length(fIa, size)",
     "fIs" = "non_negative(fIs) & same_length(fIs, size)",
+    "y" = "non_negative(y) & same_length(y, size)",
     "omega" = "non_negative(omega) & same_length(omega, size)",
     "rho" = "non_negative(rho) & same_length(rho, size)",
     "tau" = "non_negative(tau) & same_length(tau, size)",
-    "v" = "non_negative(v) & same_length(v, size)",
-    "ev" = "is_proportion(ev) & same_length(ev, size)",
+    "v_p" = "non_negative(v_p) & same_length(v_p, size)",
+    "v_b" = "non_negative(v_b) & same_length(v_b, size)",
+    "ev_p" =  "non_negative(ev_p) & same_length(ev_p, size)",
+    "ev_b" = "non_negative(ev_b) & same_length(ev_b, size)",
+    "v_p_2l" = "is_proportion(v_p_2l) & same_length(v_p_2l, size)",
+    "v_p_2m" = "is_proportion(v_p_2m) & same_length(v_p_2m, size)",
+    "v_b_l2m" = "is_proportion(v_b_l2m) & same_length(v_b_l2m, size)",
     "wn" = "non_negative(wn) & same_length(wn, size)",
-    "wv" = "non_negative(wv) & same_length(wv, size)",
+    "wv_m2l" = "non_negative(wv_m2l) & same_length(wv_m2l, size)",
+    "wv_h2m" = "non_negative(wv_h2m) & same_length(wv_h2m, size)",
     "A" = "non_negative(A) & same_length(A, size)",
     "B" = "non_negative(B) & same_length(B, size)",
     "D" = "non_negative(D) & same_length(D, size)",
@@ -94,25 +100,61 @@ population_requirements <- lapply(list(
 ), function(exp) parse(text = exp))
 
 population_optionals <- lapply(list(
-    "dEv" = "some_positive(dEv)",
-    "dEv2" = "some_positive(dEv2)",
-    "uv" = "non_negative(uv) & same_length(uv, size)",
-    "uv2" = "non_negative(uv2) & same_length(uv2, size)",
-    "yv" = "non_negative(yv) & same_length(yv, size)",
-    "yv2" = "non_negative(yv2) & same_length(yv2, size)",
-    "v2" =  "non_negative(v2) & same_length(v2, size)",
-    "ev2" = "non_negative(ev2) & same_length(ev2, size)"
+    "dEv_l" = "some_positive(dEv_l)",
+    "dEv_m" = "some_positive(dEv_m)",
+    "dEv_h" = "some_positive(dEv_h)",
+    "dIp_l" = "some_positive(dIp_l)",
+    "dIs_l" = "some_positive(dIs_l)",
+    "dIa_l" = "some_positive(dIa_l)",
+    "dIp_m" = "some_positive(dIp_m)",
+    "dIs_m" = "some_positive(dIs_m)",
+    "dIa_m" = "some_positive(dIa_m)",
+    "dIp_h" = "some_positive(dIp_h)",
+    "dIs_h" = "some_positive(dIs_h)",
+    "dIa_h" = "some_positive(dIa_h)",
+    "uv_l" = "non_negative(uv_l) & same_length(uv_l, size)",
+    "uv_m" = "non_negative(uv_m) & same_length(uv_m, size)",
+    "uv_h" = "non_negative(uv_h) & same_length(uv_h, size)",
+    "ur" = "non_negative(ur) & same_length(ur, size)",
+    "uvr_l" = "non_negative(uvr_l) & same_length(uvr_l, size)",
+    "uvr_m" = "non_negative(uvr_m) & same_length(uvr_m, size)",
+    "uvr_h" = "non_negative(uvr_h) & same_length(uvr_h, size)",
+    "yv_l" = "non_negative(yv_l) & same_length(yv_l, size)",
+    "yv_m" = "non_negative(yv_m) & same_length(yv_m, size)",
+    "yv_h" = "non_negative(yv_h) & same_length(yv_h, size)"
+    
+
 ), function(exp) parse(text = exp))
 
 optional_substitutes <- c(
-    "dEv" = "dE",
-    "dEv2" = "dE",
-    "uv" = "u",
-    "uv2" = "u",
-    "yv" = "y",
-    "yv2" = "y",
-    "v2" = "v",
-    "ev2" = "ev"
+    "dEv_l" = "dE",
+    "dEv_m" = "dE",
+    "dEv_h" = "dE",
+
+    "dIp_l" = "dIp",
+    "dIp_m" = "dIp",
+    "dIp_h" = "dIp",
+    
+    "dIs_l" = "dIs",
+    "dIs_m" = "dIs",
+    "dIs_h" = "dIs",
+    
+    "dIa_l" = "dIa",
+    "dIa_m" = "dIa",
+    "dIa_h" = "dIa",
+    
+    "uv_l" = "u",
+    "uv_m" = "u",
+    "uv_h" = "u",
+    
+    "ur" = "u",
+    "uvr_l" = "u",
+    "uvr_m" = "u",
+    "uvr_h" = "u",
+    
+    "yv_l" = "y",
+    "yv_m" = "y",
+    "yv_h" = "y"
 )
 
 req = function(
@@ -308,29 +350,72 @@ cm_base_pop_SEI3R = function(
     contact_mult = numeric(),
     contact_lowerto = numeric(),
     
+    # susceptibility
     u = rep(0.08, n_groups),
-    y = rep(0.5, n_groups),
+    # relative infectiousness of pre-clinical individuals
     fIp = rep(1, n_groups),
+    # relative infectiousness of clinical individuals
     fIs = rep(1, n_groups),
+    # relative infectiousness of sub-clinical individuals
     fIa = rep(0.5, n_groups),
+    # clinical fraction
+    y = rep(0.5, n_groups),
+    
     omega = rep(0, n_groups),
+    # probability of reporting
     rho = rep(1, n_groups),
     tau = rep(1, n_groups),
-    v = rep(0, n_groups),
-    ev = rep(1, n_groups),
+    
+    # daily doses of primary course, it's a 16 number array corresponding to
+    # each age group, does not difference between doses, counting doses then we need 2 * v_p
+    # tot vaccine doses would be v_p == complete immunization, need post processing
+    v_p = rep(0, n_groups),
+    # daily doses of booster dose, also 16 numbers array
+    # counting doses, we need 1 * v_b
+    v_b = rep(0, n_groups),
+    
+    # left over from previous modelling exercise
+    # ev = effective vaccination - all or nothing or leaky
+    # set to 1 fine for now - assuming everyone who got the vaccine is 
+    # protected by a little bit
+    ev_p = rep(1, n_groups),
+    ev_b = rep(1, n_groups),
+    
+    # proportion progressing by primary course to low level of immune protection
+    v_p_2l = rep(0.3, n_groups),
+    # proportion progressing by primary course to medium level of immune protection
+    v_p_2m = rep(0.3, n_groups),
+    # proportion progressiong by booster dose by low to medium
+    v_b_l2m = rep(0.5, n_groups),
+    
+    # unit = days
     wn = rep(0, n_groups),
-    wv = rep(0, n_groups),
+    wv_m2l = rep(0, n_groups),
+    wv_h2m = rep(0, n_groups),
+    
+    # needed for 5-10 year time frame
+    # Aging
     A = rep(0, n_groups),
+    # Birthing
     B = rep(0, n_groups),
+    # Death
     D = rep(0, n_groups),
     
+    # seasonality, fine to leave for now
     season_A = 0,
     season_T = 365.25,
     season_phi = 0,
     
+    # this defines how an epidemic starts
     seed_times = 1,
+    # age group of the seeding cases
+    # c(rep(0,4),
+    #   rep(10, 8),
+    #   rep(0,4))
+    # we generally just make an assumption 
     dist_seed_ages = rep(1, n_groups),
     
+    # things you'd like to change over
     schedule = list(),
     observer = NULL,
     name = "pop_name",
@@ -339,7 +424,7 @@ cm_base_pop_SEI3R = function(
 ) {
     # cannot use {} notation here, since creates a sub-environment
     for (key in c(
-        "u", "y", "fIp", "fIs", "fIa", "omega", "rho", "tau", "v", "ev", "wn", "wv", "A", "B", "D"
+        "u", "fIp", "fIs", "fIa", "y", "omega", "rho", "tau", "v_p", "v_b", "ev_p", "ev_b", "wn", "wv_m2l", "wv_h2m", "A", "B", "D"
     )) if (
         length(get(key)) == 1
     ) assign(key, rep(get(key), n_groups)) else if (

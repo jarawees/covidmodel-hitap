@@ -9,40 +9,24 @@
 #include <algorithm>
 #include <vector>
 
+// why do we not need all compartments here?
 enum SourceID
 {
-    srcS = 1000000,
-    srcE,
-    srcEv,
-    srcEv2,
-    srcEp,
-    srcEvp,
-    srcEv2p,
-    srcEa,
-    srcEva,
-    srcEv2a,
-    srcIp,
-    srcIs,
-    srcIa,
-    srcI,
-    srcCasesReported
+    src_newE_all = 1000000,
+    src_newE,
+    src_newEv_l,
+    src_newEv_m,
+    src_newEv_h,
+    srcCasesReported,
+    
 };
 
 const map<string,SourceID> processSourceMap = {
-    {"S", srcS},
-    {"E", srcE},
-    {"Ev", srcEv},
-    {"Ev2", srcEv2},
-    {"Ev_Ip", srcEvp},
-    {"Ev_Ia", srcEva},
-    {"Ev2_Ip", srcEv2p},
-    {"Ev2_Ia", srcEv2a},
-    {"E_Ip", srcEp},
-    {"E_Ia", srcEa},
-    {"Ip",srcIp},
-    {"Is",srcIs},
-    {"Ia",srcIa},
-    {"I",srcI},
+    {"newE_all", src_newE_all},
+    {"newE",     src_newE},
+    {"newEv_l",  src_newEv_l},
+    {"newEv_m",  src_newEv_m},
+    {"newEv_h",  src_newEv_h},
     {"cases_reported", srcCasesReported}
 };
 
