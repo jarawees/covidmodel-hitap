@@ -13,11 +13,19 @@ sus <- c(
 )
 
 #### load contact matrices ####
+# Two versions of contact matrices done by Prem et al. (2017) and (2021)
+# (2021) has been validated by DHS surveys, and therefore quality has been 
+# improved especially in LMIC settings. Here, baseline CovidM uses 
+# Prem et al. (2017) - here we are manually change the contact data source
+# to Prem et al. (2021), so that this can be implemented directly using 
+# COVIDM infrastructure
+
 for(x in 2:5){
   load(paste0("data/", list.files("data", pattern = "contact"))[x])
 }
 
 # countrycode::countrycode("Thailand", "country.name", "iso3c")
+# "Brazil" is used here just to obtained rownames and column names 
 cm_matrices[["Thailand"]]$home <- as.matrix(contact_home$THA) 
 dimnames(cm_matrices[["Thailand"]]$home) <- 
   list(rownames(cm_matrices[["Brazil"]]$home),

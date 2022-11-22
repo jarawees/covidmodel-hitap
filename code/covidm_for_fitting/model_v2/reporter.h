@@ -23,27 +23,34 @@ enum ReportIndex
     riS = 0, //1
     riSv_l,
     riSv_m,
-    riE, 
-    riEv_l, //5
+    riSv_h,
+    riE, //5
+    riEv_l, 
     riEv_m,
+    riEv_h,
     riIp, 
-    riIp_l,
+    riIp_l,//10
     riIp_m,
-    riIs, //10
+    riIp_h,
+    riIs, 
     riIs_l,
-    riIs_m,
+    riIs_m, //15
+    riIs_h,
     riIa, 
     riIa_l,
-    riIa_m, //15
+    riIa_m,
+    riIa_h,//20 
     riR,
     riRv_l,
     riRv_m,
-    ricases, 
-    ricases_reported, //20
+    riRv_h,
+    ricases, //25 
+    ricases_reported, 
     risubclinical,
     rilambda,
     rilambdav_l,
-    rilambdav_m//24
+    rilambdav_m, //30
+    rilambdav_h
 
 };
 
@@ -51,27 +58,34 @@ const vector<string> ref_col_names = {
     "S",  //1
     "Sv_l",
     "Sv_m",
-    "E", 
-    "Ev_l", //5
+    "Sv_h",
+    "E", //5
+    "Ev_l", 
     "Ev_m",
+    "Ev_h",
     "Ip", 
-    "Ip_l",
+    "Ip_l",//10
     "Ip_m",
-    "Is", //10
+    "Ip_h",
+    "Is", 
     "Is_l",
-    "Is_m",
+    "Is_m", //15
+    "Is_h",
     "Ia", 
     "Ia_l",
-    "Ia_m", //15
+    "Ia_m",
+    "Ia_h",//20 
     "R",
     "Rv_l",
     "Rv_m",
-    "cases", 
-    "cases_reported", //20
+    "Rv_h",
+    "cases", //25 
+    "cases_reported",
     "subclinical",
     "foi",
     "foiv_l",
-    "foiv_m"//24
+    "foiv_m",//30
+    "foiv_h"
 };
 
 // For reporting results

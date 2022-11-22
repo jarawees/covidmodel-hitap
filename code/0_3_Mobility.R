@@ -99,7 +99,7 @@ summary(model_fit)
 
 # generate prediction table
 CJ(date = seq(range(fit_tab$date)[1],
-              as.Date("2023-12-31"),
+              as.Date("2030-12-31"),
               by = 1),
    mobility_type = mobility_type_used) %>%
   .[, c("dow",
@@ -122,7 +122,7 @@ CJ(date = seq(range(fit_tab$date)[1],
   bind_rows() -> pre_tab
 
 # generate predictions
-pre_tab[,"mobility_level_predicted"] <- predict(model_fit, newdata = pre_tab)
+pre_tab[,"mobility_level_predicted"] <- predict.gam(model_fit, newdata = pre_tab)
 pre_tab |> 
   left_join(fit_tab[,c("country_region",
                        "date",
@@ -185,12 +185,11 @@ gm_scaled |>
          year = year(date)) %>%
   mutate(holiday = if_else(
     #winter holiday,
-    (year >= 2022 & month == 10 & day >=  15) |
-      (year >= 2022 & month == 11 & day < 15) |
+    (year >= 2022 & month == 10 & day >=  11) |
+      (year >= 2022 & month == 10 & day <= 31) |
       # summer holiday
-      (year > 2022 & month == 3 & day >=  15) |
       (year > 2022 & month == 4) |
-      (year > 2022 & month == 4 & day < 15),
+      (year > 2022 & month == 5 & day <= 15),
     T,
     F),
     school = if_else(holiday, 0, school)) %>%

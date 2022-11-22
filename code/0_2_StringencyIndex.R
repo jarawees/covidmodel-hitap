@@ -13,6 +13,8 @@
 #                 paste0("data/OxCGRT_latest.csv"))
 # }
 
+# school related contact data is located in this code file
+
 oxcgrt <- fread("data/OxCGRT_latest.csv") %>%
   dplyr::select(-c(RegionName,RegionCode)) %>%
   filter(CountryName == "Thailand") %>%
