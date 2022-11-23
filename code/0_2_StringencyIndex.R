@@ -15,7 +15,7 @@
 
 # school related contact data is located in this code file
 
-oxcgrt <- fread("data/OxCGRT_latest.csv") %>%
+oxcgrt <- fread(paste0(data_path, "OxCGRT_latest.csv")) %>%
   dplyr::select(-c(RegionName,RegionCode)) %>%
   filter(CountryName == "Thailand") %>%
   mutate_at(vars(Date), ~lubridate::ymd(.)) |> 

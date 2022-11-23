@@ -409,6 +409,9 @@ emerge_VOC_burden <- function(
   return(para)
 }
 
+# helper code file for this function is 0_4_1 and 0_4_2
+# these code files help you prepare for these input objects: owid_vac, 
+# primary_allocation_plan
 vaccinate_primary <- function(para = NULL,
                               vac_data = owid_vac,
                               values = primary_allocation_plan
@@ -444,9 +447,16 @@ vaccinate_primary <- function(para = NULL,
 # booster vaccine characteristics; 
 vaccinate_booster <- function(para = NULL,
                               vac_data = owid_vac,
-                              program_interval = 30*6,
-                              uptake_by_existing = 0.9,
+                              # this is paused time
+                              program_interval = 30*6, #default set to 6 months
+                              # should this be age-specific as well?
+                              uptake_by_existing = 0.9, 
+                              # age-specific variables that defines the 
+                              # prioritisation, the numbers are essentially just
+                              # rankings; NA = not boosted
+                              # this is based on history, based on owid_vac
                               prioritisation_initial = c(rep(NA, 4), rep(1,12)),
+                              # this is future policy
                               prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
                               boosters_daily = 300000
                               ){
@@ -460,7 +470,7 @@ vaccinate_booster <- function(para = NULL,
   # prioritisation_initial = c(rep(NA, 4), rep(1,12))
   # prioritisation_followup = c(NA,rep(2,11),rep(1,4))
   # boosters_daily = 300000
-  
+
   time_range <- data.frame(date = seq(ymd(para$date0),
                                       ymd(para$date0) + (para$time1),
                                       by = "day")) |> 
@@ -474,7 +484,7 @@ vaccinate_booster <- function(para = NULL,
   proportions_allocated_initial <- para$pop[[1]]$size/sum(para$pop[[1]]$size)
   n_age_groups <- length(proportions_allocated_initial)
   # we want the initial stage to not divide by stage and target all adults
-  proportions_allocated_initial_rescaled <- (prioritisation_initial*proportions_allocated_intial)/sum(prioritisation_initial*proportions_allocated_intial, na.rm = T)
+  proportions_allocated_initial_rescaled <- (prioritisation_initial*proportions_allocated_initial)/sum(prioritisation_initial*proportions_allocated_initial, na.rm = T)
   proportions_allocated_initial_rescaled[is.na(proportions_allocated_initial_rescaled)] <- 0
   
   vac_data |> 
@@ -486,13 +496,15 @@ vaccinate_booster <- function(para = NULL,
   
   vac_data |> 
     mutate(date = lubridate::date(date)) |> 
-    left_join(time_range, by = "date") |> pull(t) -> tmp_times[["initial"]]
+    left_join(time_range, by = "date") |> 
+    dplyr::select(date, t) |> 
+    pull(t) -> tmp_times[["initial"]]
   
   # follow-up campaigns
   # children coverage = 0.787; adolescent coverage = 0.812; adult coverage = 0.813
   data.frame(prioritisation_followup = prioritisation_followup,
              pop = para$pop[[1]]$size,
-             cov_primary = c(NA, 0.787, 0.812, 0.812,
+             cov_primary = c(NA, 0.787, rep(0.812,2),
                             rep(0.813,12))) |> 
     mutate(cov_followup = uptake_by_existing*cov_primary,
            cov_followup_doses = cov_followup*pop,
@@ -515,7 +527,7 @@ vaccinate_booster <- function(para = NULL,
       cycle = (t - t_empirical_end) / follow_up_unit,
       cycle = floor(cycle),
       t_within = t - t_empirical_end - follow_up_unit * cycle
-    ) |>
+    ) |> 
     mutate(
       vaccination_phase = case_when(
         date >= date_booster_start & t <= t_empirical_end ~ "booster_initial",
@@ -538,12 +550,12 @@ vaccinate_booster <- function(para = NULL,
            vaccination_phase != "booster_initial") -> phase_list
   
   # proportions OA rescaled
-  proportions_allocation_OA_rescaled <- proportions_allocated_intial
+  proportions_allocation_OA_rescaled <- proportions_allocated_initial
   proportions_allocation_OA_rescaled[1:12] <- 0
   proportions_allocation_OA_rescaled <- proportions_allocation_OA_rescaled/sum(proportions_allocation_OA_rescaled)
   
   # proportions A rescaled
-  proportions_allocation_all_rescaled <- proportions_allocated_intial
+  proportions_allocation_all_rescaled <- proportions_allocated_initial
   proportions_allocation_all_rescaled[1] <- 0
   proportions_allocation_all_rescaled[13:16] <- 0
   proportions_allocation_all_rescaled <- proportions_allocation_all_rescaled/sum(proportions_allocation_all_rescaled)

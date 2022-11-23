@@ -34,7 +34,7 @@ data.table(ve_i_o = c(0.7, 0.85, 0.9),
          ve_critical_condition = 1 - (1-ve_critical_o)/((1-ve_i_o)),
          ve_mort_condition = 1 - (1-ve_mort_o)/((1-ve_i_o))) -> ve_all
 
-fread("data/vaccinations.csv") %>%
+fread(paste0(data_path, "vaccinations.csv")) %>%
   filter(location == "Thailand") |> 
   arrange(date) |> 
   mutate(people_fully_vaccinated = as.numeric(people_fully_vaccinated),
