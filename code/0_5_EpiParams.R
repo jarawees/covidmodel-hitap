@@ -21,7 +21,7 @@ sus <- c(
 # COVIDM infrastructure
 
 for(x in 2:5){
-  load(paste0("data/", list.files("data", pattern = "contact"))[x])
+  load(paste0(data_path, list.files(data_path, pattern = "contact"))[x])
 }
 
 # countrycode::countrycode("Thailand", "country.name", "iso3c")

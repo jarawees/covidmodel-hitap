@@ -36,9 +36,16 @@ owid_vac %<>%
     date %in% phase2 ~ 2,
     date %in% phase3 ~ 3
   ))
-
-# target_distribution <- rnorm(10000, 0.8, 0.02) %>% .[.<1]
-# fit <- EnvStats::ebeta(target_distribution)
+# 
+# target_distribution <- list()
+# target_distribution[["OA"]] <- rnorm(10000, 0.7, 0.02) %>% .[.<1]
+# target_distribution[["A"]] <- rnorm(10000, 0.7, 0.02) %>% .[.<1]
+# target_distribution[["UA"]] <- rnorm(10000, 0.5, 0.02) %>% .[.<1]
+# 
+# fit_beta <- list()
+# fit_beta[["OA"]] <- EnvStats::ebeta(target_distribution[["OA"]])
+# fit_beta[["A"]] <- EnvStats::ebeta(target_distribution[["A"]])
+# fit_beta[["UA"]] <- EnvStats::ebeta(target_distribution[["UA"]])
 # 
 # calLogLik <- function(input){
 #   # proportion of doses allocated for the corresponding age groups
@@ -75,7 +82,18 @@ owid_vac %<>%
 #     mutate(p_covered = covered/tot_age) -> res
 # 
 # 
-#   return(data.frame(ll = sum(dbeta(res$p_covered, fit$parameters[1], fit$parameters[2], log = T)),
+#   return(data.frame(ll = sum(dbeta(res |> filter(age_group2 == "children") |> pull(p_covered), 
+#                                    fit$UA$parameters[1], 
+#                                    fit$UA$parameters[2], 
+#                                    log = T),
+#                              dbeta(res |> filter(age_group2 == "adolescent") |> pull(p_covered), 
+#                                    fit$A$parameters[1], 
+#                                    fit$A$parameters[2], 
+#                                    log = T),
+#                              dbeta(res |> filter(age_group2 == "adult") |> pull(p_covered), 
+#                                    fit$OA$parameters[1], 
+#                                    fit$OA$parameters[2], 
+#                                    log = T)),
 #               cov_child = res$p_covered[3],
 #               cov_adolescent = res$p_covered[1],
 #               cov_adult = res$p_covered[2]))

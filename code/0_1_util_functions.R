@@ -470,7 +470,7 @@ vaccinate_booster <- function(para = NULL,
   # prioritisation_initial = c(rep(NA, 4), rep(1,12))
   # prioritisation_followup = c(NA,rep(2,11),rep(1,4))
   # boosters_daily = 300000
-  
+
   time_range <- data.frame(date = seq(ymd(para$date0),
                                       ymd(para$date0) + (para$time1),
                                       by = "day")) |> 

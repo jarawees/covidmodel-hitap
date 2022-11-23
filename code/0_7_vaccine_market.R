@@ -21,12 +21,13 @@ doc[[1]] |>
          marker_100K = if_else(diff >= 100000, date, ymd(NA))) %>%
   # |> pull(diff) |> summary()
   ggplot() +
-  geom_point(aes(x = interval_second_cumsum, y = people_fully_vaccinated)) + geom_abline(intercept = 0, slope = 1) +
-  scale_y_log10() + scale_x_log10()
-  # geom_point(aes(x = date, y = interval_second_cumsum)) +
+  # geom_point(aes(x = interval_second_cumsum, y = people_fully_vaccinated)) + geom_abline(intercept = 0, slope = 1) +
+  # scale_y_log10() + scale_x_log10()
+  geom_point(aes(x = date, y = interval_second_cumsum)) +
+  geom_vline(aes(xintercept = ymd("2022-09-30")))
   # geom_point(aes(x = date, y = people_fully_vaccinated), color = "red") +
   # geom_vline(aes(xintercept = marker_100K, color = diff),
-  #            size = 1.5) 
+  #            size = 1.5)
 
 # ggsave("figs/diagnostics/market_share_validation.png",
 #        width = 10, height = 6)
