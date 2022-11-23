@@ -32,13 +32,28 @@ params <- gen_country_basics(country = "Thailand",
   vaccinate_primary(para = .,
                     vac_data = owid_vac,
                     values = primary_allocation_plan) %>%
-  vaccinate_booster(para = .,
-                    vac_data = owid_vac,
-                    program_interval = 30*6,
-                    uptake_by_existing = 0.9,
-                    prioritisation_initial = c(rep(NA, 4), rep(1,12)),
-                    prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
-                    boosters_daily = 300000)
+  # vaccinate_booster(para = .,
+  #                   vac_data = owid_vac,
+  #                   program_interval = 30*6,
+  #                   uptake_by_existing = 0.9,
+  #                   prioritisation_initial = c(rep(NA, 4), rep(1,12)),
+  #                   prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+  #                   boosters_daily = 300000)
+  vaccinate_booster_annual(para = .,
+                           vac_data = owid_vac,
+                           # this is paused time
+                           # program_interval = 30*6, #default set to 6 months
+                           # should this be age-specific as well?
+                           uptake_by_existing = 0.9, 
+                           # age-specific variables that defines the 
+                           # prioritisation, the numbers are essentially just
+                           # rankings; NA = not boosted
+                           # this is based on history, based on owid_vac
+                           prioritisation_initial = c(rep(NA, 4), rep(1,12)),
+                           # this is future policy
+                           prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+                           campaign_month = c(10:12,1:2))
+                           # boosters_daily = 300000)
 
 # check schedule objects generated
 params$schedule$primary_course$values |> 

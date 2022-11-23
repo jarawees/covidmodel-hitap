@@ -597,6 +597,8 @@ vaccinate_booster <- function(para = NULL,
   return(para)
 }
 
+source("code/0_1_1_AnnualProgram.R")
+
 cm_multinom_process <- function(
     src, outcomes, delays,
     report = ""
@@ -619,3 +621,39 @@ cm_multinom_process <- function(
   )
 }
 
+check_vaccination_program <- function(type = "booster", # or primary_course
+                                      para = NULL){
+  # para <- params
+  # type = "booster"
+  # type = "primary_course"
+  para$schedule[[type]]$values |>
+    map(data.frame) |> map(t) |> map(data.frame) |>
+    bind_rows() |> set_rownames(NULL) |>
+    mutate(t = para$schedule[[type]]$t) |>
+    full_join(data.frame(t = seq(para$time0, para$time1)) |>
+                mutate(date = lubridate::ymd(para$date0) + as.numeric(t)),
+              by = "t") |>
+    arrange(date) |>
+    mutate_at(vars(starts_with("X")),
+              imputeTS::na_locf) |>
+    pivot_longer(starts_with("X")) |>
+    mutate(name = factor(name,
+                         levels = paste0("X", 1:16))) -> p_table
+  
+  year_lims <- paste0(c(p_table$date |> lubridate::year() |> min(),
+                 p_table$date |> lubridate::year() |> max()),"-01-01") |> 
+    lubridate::ymd()
+  
+  p_table |> filter(name == "X7", date >= "2023-01-01") |> pull(value) |> unique()
+  
+  p_table |> 
+    ggplot(aes(x = date, y = value)) +
+    geom_line() +
+    facet_wrap(~name) +
+    geom_vline(xintercept = seq(year_lims[1],
+                                year_lims[2],
+                                by = "year")) -> p
+  
+  return(p)
+  
+}
