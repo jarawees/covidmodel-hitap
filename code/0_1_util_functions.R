@@ -502,19 +502,24 @@ vaccinate_booster <- function(para = NULL,
   
   # follow-up campaigns
   # children coverage = 0.787; adolescent coverage = 0.812; adult coverage = 0.813
-  data.frame(prioritisation_followup = prioritisation_followup,
-             pop = para$pop[[1]]$size,
-             cov_primary = c(NA, 0.787, rep(0.812,2),
-                            rep(0.813,12))) |> 
-    mutate(cov_followup = uptake_by_existing*cov_primary,
-           cov_followup_doses = cov_followup*pop,
-           cov_followup_doses_all = sum(cov_followup_doses, na.rm = T),
-           campaign_duration = round(cov_followup_doses_all/boosters_daily)) |> 
-    group_by(prioritisation_followup) |> 
-    mutate(cov_followup_doses_bygroup = sum(cov_followup_doses, na.rm = T)) |> ungroup() |> 
-    mutate(campaign_duration_bygroup = round(cov_followup_doses_bygroup/boosters_daily)) |> 
-    dplyr::select(prioritisation_followup, campaign_duration_bygroup) |> unique() |> 
-    filter(!is.na(prioritisation_followup)) |> 
+  data.frame(
+    prioritisation_followup = prioritisation_followup,
+    pop = para$pop[[1]]$size,
+    cov_primary = c(NA, 0.787, rep(0.812, 2),
+                    rep(0.813, 12))
+  ) |>
+    mutate(
+      cov_followup = uptake_by_existing * cov_primary,
+      cov_followup_doses = cov_followup * pop,
+      cov_followup_doses_all = sum(cov_followup_doses, na.rm = T),
+      campaign_duration = round(cov_followup_doses_all / boosters_daily)
+    ) |>
+    group_by(prioritisation_followup) |>
+    mutate(cov_followup_doses_bygroup = sum(cov_followup_doses, na.rm = T)) |> ungroup() |>
+    mutate(campaign_duration_bygroup = round(cov_followup_doses_bygroup /
+                                               boosters_daily)) |>
+    dplyr::select(prioritisation_followup, campaign_duration_bygroup) |> unique() |>
+    filter(!is.na(prioritisation_followup)) |>
     arrange(prioritisation_followup) -> follow_up_order
   
   follow_up_schedule <- c(program_interval, follow_up_order$campaign_duration_bygroup)

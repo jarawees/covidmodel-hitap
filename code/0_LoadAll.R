@@ -5,7 +5,7 @@ p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr,
        lubridate, mgcv, DEoptim, magrittr, progress, readxl)
 
 ##### load covidm #####
-data_path <- "C:/Users/eideyliu/Dropbox/Github_Data/HITAP_CovidM/"
+data_path <- "D:/GitHub/covidmodel-hitap/data/"
 cm_path <- "code/covidm_for_fitting/"
 cm_force_rebuild <- F
 cm_build_verbose <- T
