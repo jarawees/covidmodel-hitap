@@ -640,8 +640,8 @@ check_vaccination_program <- function(type = "booster", # or primary_course
     mutate(name = factor(name,
                          levels = paste0("X", 1:16))) -> p_table
   
-  year_lims <- paste0(c(p_table$date |> lubridate::year() |> min(),
-                 p_table$date |> lubridate::year() |> max()),"-01-01") |> 
+  year_lims <- paste0(c(p_table$date |> lubridate::year() |> min(na.rm = T),
+                 p_table$date |> lubridate::year() |> max(na.rm = T)),"-01-01") |> 
     lubridate::ymd()
   
   p_table |> filter(name == "X7", date >= "2023-01-01") |> pull(value) |> unique()

@@ -55,6 +55,13 @@ params <- gen_country_basics(country = "Thailand",
                            campaign_month = c(10:12,1:2))
                            # boosters_daily = 300000)
 
+check_vaccination_program(type = "booster",
+                          para = params) -> p_booster
+
+check_vaccination_program(type = "primary_course",
+                          para = params) -> p_primary
+
+
 # check schedule objects generated
 params$schedule$primary_course$values |> 
   map(data.frame) |> map(t) |> map(data.frame) |> bind_rows() |> 

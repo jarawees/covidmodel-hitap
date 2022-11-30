@@ -25,8 +25,9 @@ vaccinate_booster_annual <- function(para = NULL,
   # prioritisation_followup = c(NA,rep(2,11),rep(1,4))
   # campaign_month = c(10:12,1:2)
 
-  time_range <- data.frame(date = seq(ymd(para$date0),
-                                      ymd(para$date0) + (para$time1) +365,
+  time_range <- data.frame(date = seq(# ymd("2021-05-08"),
+                                      ymd(para$date0),
+                                      ymd(para$date0) + (para$time1) + 365,
                                       by = "day")) |> 
     rownames_to_column(var = "t") |> 
     mutate(t = as.numeric(t),
@@ -39,10 +40,11 @@ vaccinate_booster_annual <- function(para = NULL,
     group_by(year) 
   
   time_range |> ungroup() |> filter(m == campaign_month[1], d == 1) -> season_start 
+  time_range |> filter(doy >= 365) |> pull(doy) -> season_size
   
   time_range |>
     ungroup() |> 
-    mutate(t_within = dplyr::lead(doy, (365 - season_start$doy[1] + 2))) |> 
+    mutate(t_within = dplyr::lead(doy, (season_size[1] - season_start$doy[1] + 2))) |> 
     filter(date <= ymd(para$date0) + (para$time1)) -> time_range
   
   time_range |> mutate(year = lubridate::year(date)) |> filter(year == 2025) |> pull(campaign_days) |> sum() -> campaign_durations
@@ -107,11 +109,12 @@ vaccinate_booster_annual <- function(para = NULL,
     group_by(vaccination_phase, year) |> 
     mutate(start = min(t_within)) |> 
     filter(start == t_within,
-           date > max(vac_data$date)) -> phase_list
+           date >= max(vac_data$date)) -> phase_list
   
   # proportions OA rescaled
   testthat::expect_equal(length(unique(follow_up_order$campaign_daily_dose)),1)
   proportions_allocation_rescaled <- list()
+  # when we are vaccinating people
   for(i in 1:nrow(follow_up_order)){
      tmp <-   as.numeric(prioritisation_followup == i) * proportions_allocated_initial /
       (sum(
@@ -121,11 +124,13 @@ vaccinate_booster_annual <- function(para = NULL,
   tmp[is.na(tmp)] <- 0
   proportions_allocation_rescaled[[i]] <- tmp
   }
+  # taking care of the pause phase
   tmp_len <- length(proportions_allocation_rescaled)
   proportions_allocation_rescaled[[tmp_len+1]] <- (rep(0,16))
   
   tmp_times[["campaign"]] <- phase_list$t
   tmp_allocation[["campaign"]] <- list()
+  
   for (j in 1:nrow(phase_list)) {
     for (i in 1:nrow(follow_up_order)) {
       if (phase_list$vaccination_phase[j] == i) {
