@@ -17,13 +17,13 @@ vaccinate_booster_annual <- function(para = NULL,
   
   require(lubridate)
   # debug
-  # para <- params
-  # vac_data = owid_vac
-  # program_interval = 30*6
-  # uptake_by_existing = 0.9
-  # prioritisation_initial = c(rep(NA, 4), rep(1,12))
-  # prioritisation_followup = c(NA,rep(2,11),rep(1,4))
-  # campaign_month = c(10:12,1:2)
+  para <- params
+  vac_data = owid_vac
+  program_interval = 30*6
+  uptake_by_existing = 0.9
+  prioritisation_initial = c(rep(NA, 4), rep(1,12))
+  prioritisation_followup = c(NA,rep(2,11),rep(1,4))
+  campaign_month = c(10:12,1:2)
 
   time_range <- data.frame(date = seq(ymd(para$date0),
                                       ymd(para$date0) + (para$time1) +365,

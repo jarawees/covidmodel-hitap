@@ -132,7 +132,8 @@ gen_country_basics <- function(country = "Thailand",
 # write_rds(efficacy_weights_test,
 #           "data/intermediate/efficacy_weights_test.rds")
 
-efficacy_weights_test <- read_rds("data/intermediate/efficacy_weights_test.rds")
+efficacy_weights_test <- read_rds(paste0(data_path, 
+                                         "intermediate/efficacy_weights_test.rds"))
 
 efficacy_weights_test |> 
   mutate_at(vars(starts_with("weights")), function(x) x <- 1) -> efficacy_weights_one

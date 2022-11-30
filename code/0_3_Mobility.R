@@ -56,7 +56,8 @@ curves |>
 mobility_type_all <- c("retail", "grocery", "parks", 
                        "transit", "workplaces", "residential")
 mobility_type_used <- c("retail", "grocery", "transit", "workplaces")
-mobility <- read_rds("data/MobilityReport.rds") |> 
+mobility <- read_rds(paste0(data_path,
+                            "MobilityReport.rds")) |> 
   dplyr::select(-c("sub_region_1", "sub_region_2", "metro_area", 
                    "iso_3166_2_code", "census_fips_code", 
                    "country_region_code", "place_id")) |> 

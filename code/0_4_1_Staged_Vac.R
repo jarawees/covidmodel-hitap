@@ -130,7 +130,7 @@ owid_vac %<>%
 # 
 # write_rds(coef_phase_final, "data/phased_introduction.rds")
 
-phased_introduction <- read_rds("data/phased_introduction.rds")
+phased_introduction <- read_rds(paste0(data_path, "phased_introduction.rds"))
 
 owid_vac |> 
   left_join(phased_introduction, by = "vaccination_phase") |> 
