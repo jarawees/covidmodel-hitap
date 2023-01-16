@@ -15,6 +15,9 @@ gen_country_basics <- function(country = "Thailand",
                                prob_v_p_2l = 0.5,
                                prob_v_p_2m = 0.3,
                                prob_v_b_l2m = 0.5,
+                               # birth rate just from macrotrends.net
+                               rate_birth = c((9.532/1000)/365, rep(0,15)), # rate per day
+                               rate_death = mu_inuse$mu_mean_day, # rate per day
                                # reduction in susceptibility among previously 
                                # infected individuals
                                deterministic = TRUE){
@@ -31,6 +34,9 @@ gen_country_basics <- function(country = "Thailand",
   para = cm_parameters_SEI3R(dem_locations = as.character(country), 
                              date_start = date_start, 
                              date_end = date_end,
+                             A = rep(1/(365*5),16),
+                             B = rate_birth,
+                             D = rate_death,
                              dE  = cm_delay_gamma(2.5, 2.5,
                                                   t_max = 15, t_step = 0.25)$p,
                              dEa = cm_delay_gamma(2.5, 2.5,
