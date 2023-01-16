@@ -17,13 +17,16 @@ vaccinate_booster_annual <- function(para = NULL,
   
   require(lubridate)
   # debug
-  para <- params
-  vac_data = owid_vac
-  program_interval = 30*6
-  uptake_by_existing = 0.9
-  prioritisation_initial = c(rep(NA, 4), rep(1,12))
-  prioritisation_followup = c(NA,rep(2,11),rep(1,4))
-  campaign_month = c(10:12,1:2)
+  # para <- params
+  # vac_data = owid_vac
+  # uptake_by_existing = 0.9
+  # prioritisation_initial = c(rep(NA, 4), rep(1,12))
+  # prioritisation_followup = c(NA,rep(2,11),rep(1,4))
+  # campaign_month = c(10:12,1:2)
+  
+  uptake_by_existing_tmp <- uptake_by_existing
+  if(length(uptake_by_existing_tmp) == 1) uptake_by_existing_tmp <- rep(uptake_by_existing_tmp, 16)
+  testthat::expect_length(uptake_by_existing_tmp, 16)
 
   time_range <- data.frame(date = seq(# ymd("2021-05-08"),
                                       ymd(para$date0),
@@ -81,7 +84,7 @@ vaccinate_booster_annual <- function(para = NULL,
                     rep(0.813, 12))
   ) |>
     mutate(
-      cov_followup = uptake_by_existing * cov_primary,
+      cov_followup = uptake_by_existing_tmp * cov_primary,
       cov_followup_doses = cov_followup * pop,
       cov_followup_doses_all = sum(cov_followup_doses, na.rm = T),
       campaign_daily_dose =  round(cov_followup_doses_all / campaign_durations)
