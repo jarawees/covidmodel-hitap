@@ -18,21 +18,23 @@
 
 # vaccine efficacy tested
 # key input locations for antibody levels
-data.table(ve_i_o = c(0.7, 0.85, 0.9),
-           ve_d_o = c(0.7, 0.9, 0.95),
-           ve_severe_o = c(0.85, 0.95, 0.96),
-           ve_critical_o = c(0.85, 0.95, 0.97),
-           ve_mort_o = c(0.85, 0.95, 0.98),
+data.table(v_i_o = c(0.7, 0.85, 0.9),
+           vr_i_o = c(0.75, 0.9, 0.95),
+           r_i_o = c(0.5),
+           v_d_o = c(0.7, 0.9, 0.95),
+           v_severe_o = c(0.85, 0.95, 0.96),
+           v_critical_o = c(0.85, 0.95, 0.97),
+           v_mort_o = c(0.85, 0.95, 0.98),
            protection_level_label = c("l", "m", "h")) %>% 
   # the following lines do not explicit reflect existing changes in infection
   # which has been explicitly modelled as changes in u
   # This equation is explained in Liu et al. 
   # https://www.medrxiv.org/content/10.1101/2022.05.09.22274846v1.supplementary-material
   # Supplemental material, p37, version 1
-  mutate(ve_d_condition = 1 - (1-ve_d_o)/((1-ve_i_o)),
-         ve_severe_condition = 1 - (1-ve_severe_o)/((1-ve_i_o)),
-         ve_critical_condition = 1 - (1-ve_critical_o)/((1-ve_i_o)),
-         ve_mort_condition = 1 - (1-ve_mort_o)/((1-ve_i_o))) -> ve_all
+  mutate(v_d_condition = 1 - (1-v_d_o)/((1-v_i_o)),
+         v_severe_condition = 1 - (1-v_severe_o)/((1-v_i_o)),
+         v_critical_condition = 1 - (1-v_critical_o)/((1-v_i_o)),
+         v_mort_condition = 1 - (1-v_mort_o)/((1-v_i_o))) -> efficacy_all
 
 fread(paste0(data_path, "vaccinations.csv")) %>%
   filter(location == "Thailand") |> 

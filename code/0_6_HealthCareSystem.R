@@ -53,13 +53,13 @@ gen_burden_processes <- function(VE){
                         outcomes = data.frame(death = P.death),                   
                         delays = data.frame(death = delay_2death), report = "o"),
     cm_multinom_process("newEv_l",      
-                        data.frame(death = P.death*(1-VE$ve_mort_condition[1])), 
+                        data.frame(death = P.death*(1-VE$v_mort_condition[1])), 
                         delays = data.frame(death = delay_2death), report = "o"),
     cm_multinom_process("newEv_m",     
-                        data.frame(death = P.death*(1-VE$ve_mort_condition[2])), 
+                        data.frame(death = P.death*(1-VE$v_mort_condition[2])), 
                         delays = data.frame(death = delay_2death), report = "o"),
     cm_multinom_process("newEv_h",     
-                        data.frame(death = P.death*(1-VE$ve_mort_condition[3])), 
+                        data.frame(death = P.death*(1-VE$v_mort_condition[3])), 
                         delays = data.frame(death = delay_2death), report = "o"),
     
     
@@ -71,19 +71,19 @@ gen_burden_processes <- function(VE){
                                             to_critical = delay_2severe)),
     
     cm_multinom_process("newEv_l",
-                        data.frame(to_severe = P.severe*(1-VE$ve_severe_condition[1]),
-                                   to_critical = P.critical*(1-VE$ve_critical_condition[1])),
+                        data.frame(to_severe = P.severe*(1-VE$v_severe_condition[1]),
+                                   to_critical = P.critical*(1-VE$v_critical_condition[1])),
                         delays = data.frame(to_severe = delay_2severe,
                                             to_critical = delay_2severe)),
     
     cm_multinom_process("newEv_m",
-                        data.frame(to_severe = P.severe*(1-VE$ve_severe_condition[2]),
-                                   to_critical = P.critical*(1-VE$ve_critical_condition[2])),
+                        data.frame(to_severe = P.severe*(1-VE$v_severe_condition[2]),
+                                   to_critical = P.critical*(1-VE$v_critical_condition[2])),
                         delays = data.frame(to_severe = delay_2severe,
                                             to_critical = delay_2severe)),
     cm_multinom_process("newEv_h",
-                        data.frame(to_severe = P.severe*(1-VE$ve_severe_condition[3]),
-                                   to_critical = P.critical*(1-VE$ve_critical_condition[3])),
+                        data.frame(to_severe = P.severe*(1-VE$v_severe_condition[3]),
+                                   to_critical = P.critical*(1-VE$v_critical_condition[3])),
                         delays = data.frame(to_severe = delay_2severe,
                                             to_critical = delay_2severe)),
     
@@ -109,7 +109,7 @@ gen_burden_processes <- function(VE){
 # probability: probability of progression
 # delay: delay functions
 
-burden_processes_all <- gen_burden_processes(VE = ve_all)
+burden_processes_all <- gen_burden_processes(VE = efficacy_all)
 
 # burden_processes_az <- gen_burden_processes(VE = ve_az)
 

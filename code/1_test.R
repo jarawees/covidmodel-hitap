@@ -9,26 +9,25 @@ params <- gen_country_basics(country = "Thailand",
                              date_start = "2020-01-01",
                              date_end = "2030-12-31",
                              contact = contact_schedule,
-                             processes = gen_burden_processes(VE = ve_all),
+                             processes = gen_burden_processes(VE = efficacy_all),
                              period_wn  = 3*365, # duration, waning of natural immunity
                              period_wv_m2l = 1*365, # duration, waning from medium to low levels vaccine induced 
                              period_wv_h2m = 1*365, # duration, waning from medium to low levels vaccine induced 
                              prob_v_p_2l = 1,
                              prob_v_p_2m = 0,
                              prob_v_b_l2m = 0.5,
-                             r_i_o = 0.7, # probability reduction of breakthrough due to infection
                              deterministic = TRUE) %>% 
   update_u_y(para = .,
              date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
              rc_u = c(1, 1.5, 0.5), # relative changes in u
              rc_y = c(1, 0.5, 0.5), # relative changes in y
              rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
-             efficacy_baseline = ve_all,
+             efficacy_baseline = efficacy_all,
              efficacy_weights = efficacy_weights_test
   ) %>%
   emerge_VOC_burden(para = .,
     rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
-    efficacy_baseline = ve_all) %>%
+    efficacy_baseline = efficacy_all) %>%
   vaccinate_primary(para = .,
                     vac_data = owid_vac,
                     values = primary_allocation_plan) %>%

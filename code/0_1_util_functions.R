@@ -6,15 +6,17 @@ gen_country_basics <- function(country = "Thailand",
                                date_end = "2030-12-31",
                                processes = NULL,
                                contact = contact_schedule,
-                               period_wn  = 3*365, # duration, waning of natural immunity
-                               period_wv_m2l = 1*365, # duration, waning from medium to low levels vaccine induced 
-                               period_wv_h2m = 1*365, # duration, waning from medium to low levels vaccine induced 
+                               # duration, waning of natural immunity
+                               period_wn  = 3*365, 
+                               # duration, waning from medium to low levels vaccine induced 
+                               period_wv_m2l = 1*365, 
+                               # duration, waning from medium to low levels vaccine induced 
+                               period_wv_h2m = 1*365, 
                                prob_v_p_2l = 0.5,
                                prob_v_p_2m = 0.3,
                                prob_v_b_l2m = 0.5,
                                # reduction in susceptibility among previously 
                                # infected individuals
-                               r_i_o = 0.5,
                                deterministic = TRUE){
   
   require(countrycode)
@@ -29,15 +31,15 @@ gen_country_basics <- function(country = "Thailand",
   para = cm_parameters_SEI3R(dem_locations = as.character(country), 
                              date_start = date_start, 
                              date_end = date_end,
-                             dE  = cm_delay_gamma(2.5, 2.5, 
+                             dE  = cm_delay_gamma(2.5, 2.5,
                                                   t_max = 15, t_step = 0.25)$p,
-                             dEa = cm_delay_gamma(2.5, 2.5, 
-                                                  t_max = 15, t_step = 0.25)$p, 
-                             dIp = cm_delay_gamma(1.5, 4.0, 
+                             dEa = cm_delay_gamma(2.5, 2.5,
                                                   t_max = 15, t_step = 0.25)$p,
-                             dIs = cm_delay_gamma(3.5, 4.0, 
+                             dIp = cm_delay_gamma(1.5, 4.0,
                                                   t_max = 15, t_step = 0.25)$p,
-                             dIa = cm_delay_gamma(5.0, 4.0, 
+                             dIs = cm_delay_gamma(3.5, 4.0,
+                                                  t_max = 15, t_step = 0.25)$p,
+                             dIa = cm_delay_gamma(5.0, 4.0,
                                                   t_max = 15, t_step = 0.25)$p,
                              deterministic = deterministic)
   
@@ -56,31 +58,25 @@ gen_country_basics <- function(country = "Thailand",
     current_R0 = cm_calc_R0(para, i); # calculate R0 in population i of params
     para$pop[[i]]$u = para$pop[[i]]$u * R0_assumed / current_R0
     
-    # update all copies of u and y to begin with
-    # need to fix this as well
-    
     # The purpose of this chunk of code is to update uv_l, uv_m, uv_h, ur, uvr_l
     # uvr_m, uvr_h to be consistent with u and to update yv_l, yv_m, and yv_h 
     # to be consistent with yv. we will not implement efficacy at this step 
     # just yet.
     
-    # 
     para$pop[[i]]$uv_l  <- para$pop[[i]]$u
     para$pop[[i]]$uv_m  <- para$pop[[i]]$u
     para$pop[[i]]$uv_h  <- para$pop[[i]]$u
-    # r_i_o
-    # r = recovered
-    # i = against infection
-    # o = observed
-    # we are assuming r_i_o is not changing as a result of emerging VOCs
-    para$pop[[i]]$ur    <- (1 - r_i_o) * para$pop[[i]]$u
-    para$pop[[i]]$uvr_l <- (1 - r_i_o) * para$pop[[i]]$u
-    para$pop[[i]]$uvr_m <- (1 - r_i_o) * para$pop[[i]]$u
-    para$pop[[i]]$uvr_h <- (1 - r_i_o) * para$pop[[i]]$u
+    para$pop[[i]]$uvr_l  <- para$pop[[i]]$u
+    para$pop[[i]]$uvr_m  <- para$pop[[i]]$u
+    para$pop[[i]]$uvr_h  <- para$pop[[i]]$u
+    para$pop[[i]]$ur  <- para$pop[[i]]$u
     
     para$pop[[i]]$yv_l <- para$pop[[i]]$y
     para$pop[[i]]$yv_m <- para$pop[[i]]$y
     para$pop[[i]]$yv_h <- para$pop[[i]]$y
+    para$pop[[i]]$yvr_l <- para$pop[[i]]$y
+    para$pop[[i]]$yvr_m <- para$pop[[i]]$y
+    para$pop[[i]]$yvr_h <- para$pop[[i]]$y
 
     ## Set seeds to control start of outbreak
     # infections start in individuals aged 20-50
@@ -169,7 +165,7 @@ update_u_y <- function(para = NULL,
   # rc_u = c(1, 1.5, 0.5)
   # rc_y = c(1, 0.5, 0.5)
   # rc_ve = c(1, 0.9, 0.7)
-  # efficacy_baseline = ve_all
+  # efficacy_baseline = efficacy_all
   # efficacy_weights = efficacy_weights_test
 
   date_range <- c(lubridate::ymd(para$date0),
@@ -210,6 +206,18 @@ update_u_y <- function(para = NULL,
   
   n_age_groups <- para$pop[[1]]$n_groups
   
+  # assign initial estimates
+  para$pop[[1]]$ur    <- (1 - efficacy_baseline$r_i_o[1]) * para$pop[[1]]$u
+  para$pop[[1]]$uvr_l <- (1 - efficacy_baseline |> 
+                            filter(protection_level_label == "l") |> 
+                            pull(vr_i_o)) * para$pop[[1]]$u
+  para$pop[[1]]$uvr_m <- (1 - efficacy_baseline |> 
+                            filter(protection_level_label == "m") |> 
+                            pull(vr_i_o)) * para$pop[[1]]$u
+  para$pop[[1]]$uvr_h <- (1 - efficacy_baseline |> 
+                            filter(protection_level_label == "h") |> 
+                            pull(vr_i_o)) * para$pop[[1]]$u
+  
   # create modifier table
   CJ(date = seq(lubridate::ymd(para$date0),
                 lubridate::ymd(para$date0) + para$time1,
@@ -240,16 +248,16 @@ update_u_y <- function(para = NULL,
     left_join(efficacy_weights,
               by = "date") |> 
     mutate(u_scaler     = rc_u_prod,
-           uv_l_scaler  = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
-           uv_m_scaler  = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
-           uv_h_scaler  = rc_u_prod*(1 - efficacy_baseline$ve_i_o[3]*weights_ve_i_h*rc_ve_prod),
+           uv_l_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[1]*weights_ve_i_l*rc_ve_prod),
+           uv_m_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[2]*weights_ve_i_m*rc_ve_prod),
+           uv_h_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[3]*weights_ve_i_h*rc_ve_prod),
            ur_scaler    = rc_u_prod,
-           uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[1]*weights_ve_i_l*rc_ve_prod),
-           uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[2]*weights_ve_i_m*rc_ve_prod),
-           uvr_h_scaler = rc_u_prod*(1 - efficacy_baseline$ve_i_o[3]*weights_ve_i_h*rc_ve_prod),
-           yv_l_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d_condition[1]*weights_ve_d_l*rc_ve_prod),
-           yv_m_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d_condition[2]*weights_ve_d_m*rc_ve_prod),
-           yv_h_scaler  = rc_y_prod*(1 - efficacy_baseline$ve_d_condition[3]*weights_ve_d_h*rc_ve_prod)) -> modifier
+           uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$v_i_o[1]*weights_ve_i_l*rc_ve_prod),
+           uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$v_i_o[2]*weights_ve_i_m*rc_ve_prod),
+           uvr_h_scaler = rc_u_prod*(1 - efficacy_baseline$v_i_o[3]*weights_ve_i_h*rc_ve_prod),
+           yv_l_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[1]*weights_ve_d_l*rc_ve_prod),
+           yv_m_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[2]*weights_ve_d_m*rc_ve_prod),
+           yv_h_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[3]*weights_ve_d_h*rc_ve_prod)) -> modifier
   
   modifier |> 
     select(ends_with("scaler")) |> 
