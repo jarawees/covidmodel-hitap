@@ -37,13 +37,35 @@ data.table(v_i_o = c(0.7, 0.85, 0.9),
          v_mort_condition = 1 - (1-v_mort_o)/((1-v_i_o))) -> efficacy_all
 
 fread(paste0(data_path, "vaccinations.csv")) %>%
+# read_csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv") |> 
   filter(location == "Thailand") |> 
   arrange(date) |> 
   mutate(people_fully_vaccinated = as.numeric(people_fully_vaccinated),
+         people_fully_vaccinated = if_else(date <= (fread(paste0(data_path, "vaccinations.csv")) %>%
+                                             filter(location == "Thailand", !is.na(people_fully_vaccinated)) |> 
+                                             arrange(date) |> pull(date) |> min()),
+                                  0,
+                                  people_fully_vaccinated),
+         people_fully_vaccinated = imputeTS::na_interpolation(people_fully_vaccinated),
+         
+         people_vaccinated = as.numeric(people_vaccinated),
+         people_vaccinated = if_else(date <= (fread(paste0(data_path, "vaccinations.csv")) %>%
+                                                      filter(location == "Thailand", !is.na(people_vaccinated)) |> 
+                                                      arrange(date) |> pull(date) |> min()),
+                                           0,
+                                     people_vaccinated),
+         people_vaccinated = imputeTS::na_interpolation(people_vaccinated),
          # people_fully_vaccinated = imputeTS::na_interpolation(people_fully_vaccinated),
+         
          total_vaccinations = as.numeric(total_vaccinations),
          total_vaccinations = imputeTS::na_interpolation(total_vaccinations),
+         
          total_boosters = as.numeric(total_boosters),
+         total_boosters = if_else(date <= (fread(paste0(data_path, "vaccinations.csv")) %>%
+                                             filter(location == "Thailand", !is.na(total_boosters)) |> 
+                                             arrange(date) |> pull(date) |> min()),
+                                  0,
+                                  total_boosters),
          total_boosters = imputeTS::na_interpolation(total_boosters),
          total_boosters_daily = c(0, diff(total_boosters)),
          daily_vaccinations = as.numeric(daily_vaccinations),
@@ -51,6 +73,12 @@ fread(paste0(data_path, "vaccinations.csv")) %>%
          daily_vaccinations_per_million = as.numeric(daily_vaccinations_per_million),
          # daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
          date_numeric = as.numeric(date)) -> owid_vac
+
+owid_vac |> 
+  ggplot() +
+  geom_point(aes(x = date+28, y = people_vaccinated), color = "red") +
+  geom_point(aes(x = date, y = people_fully_vaccinated), color = "blue") +
+  geom_point(aes(x = date, y = total_boosters), color = "green")
 
 source("code/0_4_1_Staged_Vac.R")
 source("code/0_4_2_Primary.R")
