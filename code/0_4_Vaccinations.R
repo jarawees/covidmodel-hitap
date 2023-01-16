@@ -74,11 +74,15 @@ fread(paste0(data_path, "vaccinations.csv")) %>%
          # daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
          date_numeric = as.numeric(date)) -> owid_vac
 
-owid_vac |> 
-  ggplot() +
-  geom_point(aes(x = date, y = people_vaccinated), color = "red") +
-  geom_point(aes(x = date, y = people_fully_vaccinated), color = "blue") +
-  geom_point(aes(x = date, y = total_boosters), color = "green")
+# owid_vac |> 
+#   ggplot() +
+# <<<<<<< HEAD
+#   geom_point(aes(x = date, y = people_vaccinated), color = "red") +
+# =======
+#   geom_point(aes(x = date+28, y = people_vaccinated), color = "red") +
+# >>>>>>> 5e99ec1c5b059d8acf60cd9805b0a72f12dc64cc
+#   geom_point(aes(x = date, y = people_fully_vaccinated), color = "blue") +
+#   geom_point(aes(x = date, y = total_boosters), color = "green")
 
 source("code/0_4_1_Staged_Vac.R")
 source("code/0_4_2_Primary.R")
