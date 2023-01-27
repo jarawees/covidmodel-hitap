@@ -1,19 +1,25 @@
 # COVID-19 neutralising antibody titre meta-analysis
-# 18 November 2022
+# 26 January 2023
 # Version 4
 
 # Load libraries
 if(!require(pacman)) install.packages("pacman")
 library(pacman)
-p_load(dplyr, stats, tidyverse, meta)
+p_load(plyr, dplyr, stats, tidyverse, meta, purrr, ggridges)
 
-# Set directory to same directory as the r-script
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 ### 1. Prepare data ####
 
+## Variable description for CSV files
+# NAb_meta1.csv files contain summary data of neutralising antibody titres and study details
+# Type: either RCT (randomised controlled trial) or Obs (observational study)
+# Group 1: vaccine regimen, SP – sinopharm, SV – sinovac, AZ – AstraZeneca, PZ – Pfizer, MD – Moderna, JJ – Johnson & Johnson
+# Group 2: specific population groups, 18to65 – people aged between 18 and 65 years of age, HCW – healthcare worker
+# LOD: limit of detection of the virus neutralisation assay
+# Variant: 
+# Day_measure: number of days after last vaccination or infection that NAb titre was measured
+
   # Read CSV files
-  rm(list=ls())
 
     # Uncensored: all included studies
     csv_uncensored <- c("Anna_NAb_meta1.csv", "Dimple_NAb_meta1_v2.csv", "Dream_NAb_meta1_v2.csv", 
@@ -22,7 +28,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
     csv_uncensored <- lapply(csv_uncensored, read.csv)
     csv_uncensored <- do.call("rbind", csv_uncensored)
 
-    # Censored: subset of uncensored studies with individual data point    
+    # Censored: subset of uncensored studies with individual data points
     csv_censored <- c("Dimple_NAb_meta2.csv", "Dream_NAb_meta2_v2.csv", "Ja_NAb_meta2_NODELTA.csv", 
                       "Pui_NAb_meta2.csv", "Siobhan_NAb_meta2_Pf5.csv")
     csv_censored <- lapply(csv_censored, read.csv) 
@@ -33,11 +39,10 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
     NAb_censored_raw <- csv_censored %>%
       select(-DOI)
     
-  # Replace values below LOD with half of LOD
-    
     NAb_uncensored$LOD <- as.numeric(NAb_uncensored$LOD)
     NAb_uncensored <- NAb_uncensored %>%
       mutate_at(vars(LOD), ~ ifelse(. > 2, log10(.), .)) %>%
+      # Replace values below LOD with half of LOD
       mutate_at(vars(NAb_mean, NAb_SD, NAb_l95, NAb_u95, NAb_med, NAb_q1, NAb_q3, NAb_min, NAb_max), ~ ifelse(. == "<LOD", LOD/2, .)) %>%
       mutate_at(vars(Variant), ~ case_when(. == "Wuhan" ~ "WT",
                                            . == "D614" ~ "D614G",
@@ -47,7 +52,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
                                            . == "theta" ~ "Theta",
                                            TRUE ~ .)) %>%
       filter(Variant != "SARS-COV-1") %>%
-      mutate_at(vars(Group1), ~ str_replace_all(., c("Pf" = "PZ", "PF" = "PZ",  "CV" = "SV")))
+      mutate_at(vars(Group1), ~ str_replace_all(., c("Pf" = "PZ", "PF" = "PZ", "CV" = "SV")))
     
     #table(NAb_uncensored$Group1)
 
@@ -72,13 +77,18 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
   # Conversions from Wan 2014 https://doi.org/10.1186/1471-2288-14-135
     
     NAb_uncensored <-  NAb_uncensored %>%
-      mutate_at(vars(NAb_mean), ~ifelse(is.na(.), (NAb_q1 + NAb_med + NAb_q3)/3, .)) %>%
-      mutate_at(vars(NAb_SD), ~case_when(
-        !is.na(NAb_l95) ~ (NAb_u95 - NAb_l95)*sqrt(Num_ppl)/(2*qnorm(0.975)),
-        !is.na(NAb_q1) ~ (NAb_q3 - NAb_q1)/(2*qnorm((0.75*Num_ppl - 0.125)/(Num_ppl + 0.25))),
-        !is.na(NAb_min) ~ (NAb_max - NAb_min)/(2*qnorm((Num_ppl - 0.375)/(Num_ppl + 0.25))),
-        !is.na(.) ~ .)) %>%
-      select(1:10,18)
+      mutate_at(vars(NAb_mean), ~ ifelse(is.na(.), (NAb_q1 + NAb_med + NAb_q3) /
+                                           3, .)) %>%
+      mutate_at(vars(NAb_SD),
+                ~ case_when(
+                  !is.na(NAb_l95) ~ (NAb_u95 - NAb_l95) * sqrt(Num_ppl) / (2 * qnorm(0.975)),
+                  !is.na(NAb_q1) ~ (NAb_q3 - NAb_q1) /
+                    (2 * qnorm((0.75 * Num_ppl - 0.125) / (Num_ppl + 0.25))),
+                  !is.na(NAb_min) ~ (NAb_max - NAb_min) /
+                    (2 * qnorm((Num_ppl - 0.375) / (Num_ppl + 0.25))),
+                  !is.na(.) ~ .
+                )) %>%
+      select(1:10, 18)
     
     
 ### 2. Censoring for studies with individual data ####
@@ -139,6 +149,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
     
   # Function to calculate fold of reference, for uncensored data
     
+    ## TODO: update to function that doesn't split into separate tables
     conv_fold_uncensored <- function(tbl, ref_tbl) {
       
       tbl <- tbl %>%
@@ -210,7 +221,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
       rename_with(~str_remove(., '.x')) %>% # remove suffix .x from column names
       arrange(Group1)
 
-    
+
 ### 4. Meta-analysis #####
     
   # Pooled SD for censored data
@@ -244,74 +255,35 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
     
     
   # Summary NAb ratio stratified by vaccine combination
-    # using uncensored data, short-term against WT only, removing points with >50% points below LOD
+    # using uncensored data
     
     #table(NAb_uncensored_fold_LOD$Group1, NAb_uncensored_fold_LOD$Day_order)
     
-    meta_uncensored_WT_ST <- function(tbl, type = 3) {
+    meta_uncensored <- function(NAb_uncensored_fold, type, variant = "WT", duration = "ST") {
       
+      # NAb_uncensored_fold is ratio of neutralising antibody against convalescent antibody and removing studies with >50% points below LOD
       # hybrid is 1 (vaccine only), 2 (hybrid only), or 3 (overall)
+      # variant 
+      # duration is "ST" (< 80 days), "LT" (80-300 days), or "vLT" (> 300 days)
+      
       if (type == 1) {
-        tempdata <- tbl %>%
-          filter(!str_starts(Group1, "Conv")) %>%
-          mutate(Group_meta = case_when(
-            # create new group variable for subgroup meta-analysis
-            str_length(Group1) == 2 ~ Group1,
-            str_length(Group1) == 5 &
-              (substr(Group1, 1, 2) == substr(Group1, 4, 5)) ~ Group1,
-            str_length(Group1) == 7 &
-              (substr(Group1, 1, 2) == substr(Group1, 4, 5)) ~ substr(Group1, 1, 5),
-            str_length(Group1) > 7 ~ "BoosterPZ",
-            TRUE ~ "MixedVac")
-          )
-        
+        tempdata <- NAb_uncensored_fold %>%
+          filter(!str_starts(Group1, "Conv"))
       } else if (type == 2) {
-        tempdata <- tbl %>%
-          filter(str_starts(Group1, "Conv")) %>%
-          mutate(Group_meta = case_when(
-            # create new group variable for subgroup meta-analysis
-            str_length(Group1) == 2+5 ~ Group1,
-            str_length(Group1) == 5+5 &
-              (substr(Group1, 1+5, 2+5) == substr(Group1, 4+5, 5+5)) ~ Group1,
-            str_length(Group1) == 7+5 &
-              (substr(Group1, 1+5, 2+5) == substr(Group1, 4+5, 5+5)) ~ substr(Group1, 1, 5+5),
-            str_length(Group1) > 7+5 ~ "Conv_BoosterPZ",
-            TRUE ~ "MixedVac")
-          )
-        
+        tempdata <- NAb_uncensored_fold %>%
+          filter(str_starts(Group1, "Conv"))
       } else if (type == 3) {
-        tbl1 <- tbl %>%
-          filter(!str_starts(Group1, "Conv")) %>%
-          mutate(Group_meta = case_when(
-            # create new group variable for subgroup meta-analysis
-            str_length(Group1) == 2 ~ Group1,
-            str_length(Group1) == 5 &
-              (substr(Group1, 1, 2) == substr(Group1, 4, 5)) ~ Group1,
-            str_length(Group1) == 7 &
-              (substr(Group1, 1, 2) == substr(Group1, 4, 5)) ~ substr(Group1, 1, 5),
-            str_length(Group1) > 7 ~ "BoosterPZ",
-            TRUE ~ "MixedVac")
-          )
-        
-        tbl2 <- tbl %>%
-          filter(str_starts(Group1, "Conv")) %>%
-          mutate(Group_meta = case_when(
-            # create new group variable for subgroup meta-analysis
-            str_length(Group1) == 2+5 ~ Group1,
-            str_length(Group1) == 5+5 &
-              (substr(Group1, 1+5, 2+5) == substr(Group1, 4+5, 5+5)) ~ Group1,
-            str_length(Group1) == 7+5 &
-              (substr(Group1, 1+5, 2+5) == substr(Group1, 4+5, 5+5)) ~ substr(Group1, 1, 5+5),
-            str_length(Group1) > 7+5 ~ "Conv_BoosterPZ",
-            TRUE ~ "MixedVac")
-            )
-        
-        tempdata <- rbind(tbl1, tbl2)
+        tempdata <- NAb_uncensored_fold
       }
       
       tempdata <- tempdata %>%
-        filter(!str_starts(Group1, "JJ") & # remove one study with mixed vaccination of JJ and PZ
-                 Variant == "WT" & Day_order == "ST")
+        separate(Group1, into = c("dose1","dose2","dose3","dose4"), sep = "_", remove = F) %>%
+        mutate_at(c("dose1","dose2","dose3","dose4"), ~ str_replace_all(., "[:digit:]", "")) %>%
+        filter((dose1 != "Conv" & !is.na(dose2)) | (dose1 == "Conv" & !is.na(dose3))) %>% # filter out single dose regimens
+        unite(Group_meta, c(dose1, dose2, dose3, dose4), sep = "_") %>% # create variable for subgroup meta-analysis
+        mutate(Group_meta = str_replace_all(Group_meta, "_NA", "")) %>%
+        filter(!str_starts(Group1, "JJ") & # remove one study with mixed vaccination of JJ (zero market share in Thailand) and PZ
+                 Variant == variant & Day_order == duration)
       
       meta <- metamean(
         n = tempdata$Num_ppl,
@@ -322,35 +294,46 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
         studlab = tempdata$Group_meta
       )
       
-      overall_tbl <- data.frame(
-        group = "Overall",
-        mean_ab_ratio = unlist(meta['TE.random'], use.names = FALSE),
-        se_ab_ratio = unlist(meta['seTE.random'], use.names = FALSE)
-        # l95 = unlist(meta['TE.random'], use.names = FALSE) - qnorm(0.975) *
-        #   unlist(meta['seTE.random'], use.names = FALSE),
-        # u95 = unlist(meta['TE.random'], use.names = FALSE) + qnorm(0.975) *
-        #   unlist(meta['seTE.random'], use.names = FALSE)
-      )
+      # overall_tbl <- data.frame(
+      #   group = "Overall",
+      #   mean_ab_ratio = unlist(meta['TE.random'], use.names = FALSE),
+      #   se_ab_ratio = unlist(meta['seTE.random'], use.names = FALSE),
+      #   n_study = sum(unlist(meta['k.w'], use.names = FALSE)),
+      #   I2 = unlist(meta['I2'], use.names = FALSE))
       
       subgroup_tbl <- data.frame(
-          group = unique(tempdata$Group_meta),
-          mean_ab_ratio = unlist(meta['TE.random.w'], use.names = FALSE),
-          se_ab_ratio = unlist(meta['seTE.random.w'], use.names = FALSE)
-          # l95 = unlist(meta['TE.random.w'], use.names = FALSE) - qnorm(0.975) *
-          #   unlist(meta['seTE.random.w'], use.names = FALSE),
-          # u95 = unlist(meta['TE.random.w'], use.names = FALSE) + qnorm(0.975) *
-          #   unlist(meta['seTE.random.w'], use.names = FALSE)
-        )
+        group = unique(tempdata$Group_meta),
+        mean_ab_ratio = unlist(meta['TE.random.w'], use.names = FALSE),
+        se_ab_ratio = unlist(meta['seTE.random.w'], use.names = FALSE),
+        n_study = unlist(meta['k.w'], use.names = FALSE),
+        I2 = unlist(meta['I2.w'], use.names = FALSE))
       
-      result_tbl <- rbind(overall_tbl, subgroup_tbl)
-      return(result_tbl)
+      # result_tbl <- rbind(overall_tbl, subgroup_tbl)
+      return(list(meta,subgroup_tbl))
     }
     
-tbl_ab_ratio <- meta_uncensored_WT_ST(NAb_uncensored_fold_LOD,3)
-    
+# short-term against WT only, removing points with >50% points below LOD
+tbl_ab_ratio <- list()
+tbl_ab_ratio$vac_wt_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 1, variant = "WT", duration = "ST")[[2]]
+tbl_ab_ratio$hyb_wt_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 2, variant = "WT", duration = "ST")[[2]]
+tbl_ab_ratio$all_wt_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "WT", duration = "ST")[[2]]
+tbl_ab_ratio$vac_wt_lt <- meta_uncensored(NAb_uncensored_fold_LOD, type = 1, variant = "WT", duration = "LT")[[2]]
+tbl_ab_ratio$hyb_wt_lt <- meta_uncensored(NAb_uncensored_fold_LOD, type = 2, variant = "WT", duration = "LT")[[2]]
+tbl_ab_ratio$all_wt_lt <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "WT", duration = "LT")[[2]]
+
+# for sanity check: short-term against alpha, beta, and omicron, removing points with >50% points below LOD
+tbl_ab_ratio$all_alpha_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "Alpha", duration = "ST")[[2]]
+tbl_ab_ratio$all_beta_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "Beta", duration = "ST")[[2]]
+tbl_ab_ratio$all_omicron_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "Omicron", duration = "ST")[[2]]
+
+# By group meta-analysis diagnostics
+# tiff("Meta_NAb_uncensored_fold_LOD.tiff", height = 15, width = 12, res = 300, units = "in", compression = "lzw")
+# forest(meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "WT", duration = "ST")[[1]])
+# dev.off()
+
 
 ### 5. Convert NAb titres to vaccine efficacy ####
-    # (covariate matrix from Deborah, email on 11 Oct)
+    # (covariate matrix from Deborah, email on 11 Oct 2022)
     
     n_vx <- 246 # number of samples from Khoury & Cromer paper
     mean_k_n50 <- c(1.1306607, -0.6966127)
@@ -362,54 +345,162 @@ tbl_ab_ratio <- meta_uncensored_WT_ST(NAb_uncensored_fold_LOD,3)
       return(vx_eff)
     }
     
-    
   # function to transform NAb data to effectiveness PROBABILISTIC
     runs <- 1000 # number of Monte Carlo runs
     k_n50_samples <- mvtnorm::rmvnorm(runs, mean = mean_k_n50, sigma = cov_k_n50)
     colnames(k_n50_samples) <- c("k","IC50")
     
-    tbl_vx_eff <- tbl_ab_ratio
-    tbl_vx_eff$mean_vx_eff <- NA
-    tbl_vx_eff$sd_vx_eff <- NA
+    tbl_vx_eff <- list()
+    tbl_vx_eff$all_wt_st <- tbl_ab_ratio$all_wt_st
+    tbl_vx_eff$all_alpha_st <- tbl_ab_ratio$all_alpha_st
+    tbl_vx_eff$all_beta_st <- tbl_ab_ratio$all_beta_st
+    tbl_vx_eff$all_omicron_st <- tbl_ab_ratio$all_omicron_st
+    tbl_vx_eff$all_wt_lt <- tbl_ab_ratio$all_wt_lt
     
-    tbl_vx_eff_monte_carlo <-
-      data.frame(
-        Overall = rep(NA, 1000),
-        AZ = rep(NA, 1000),
-        AZ_AZ = rep(NA, 1000),
-        BoosterPZ = rep(NA, 1000),
-        MixedVac = rep(NA, 1000),
-        PZ = rep(NA, 1000),
-        PZ_PZ = rep(NA, 1000),
-        SP_SP = rep(NA, 1000),
-        Conv_PZ = rep(NA, 1000),
-        Conv_PZ_PZ = rep(NA, 1000),
-        Conv_BoosterPZ = rep(NA, 1000)
-      )
+    tbl_vx_eff <- map(tbl_vx_eff, ~ .x %>% 
+                    mutate(mean_vx_eff = NA,
+                           sd_vx_eff = NA))
+    
+    n_loop <- 1 # index for storing Monte Carlo results
+
+    tbl_vx_eff_monte_carlo <- list()
+    tbl_ab_ratio_random <- list()
 
   # loop to transform NAb data to effectiveness PROBABILISTIC for each vaccine combination
-    for (i in 1:nrow(tbl_vx_eff)){
-      n_random <- rnorm(runs, mean = tbl_vx_eff[i,2], sd = tbl_vx_eff[i,3])
-      monte_carlo <- mapply(vx_efficacy, k = k_n50_samples[,1], n = n_random, n50 = k_n50_samples[,2])
-      
-      tbl_vx_eff$mean_vx_eff[i] <- mean(monte_carlo)
-      tbl_vx_eff$sd_vx_eff[i] <- sd(monte_carlo)
-      
-      tbl_vx_eff_monte_carlo[,i] <- monte_carlo
+    for (i in 1:length(tbl_vx_eff)){
+      for(j in 1:nrow(tbl_vx_eff[[i]])){
+        n_random <- rnorm(runs, mean = tbl_vx_eff[[i]][j,"mean_ab_ratio"], sd = tbl_vx_eff[[i]][j,"se_ab_ratio"])
+        monte_carlo <- mapply(vx_efficacy, k = k_n50_samples[,1], n = n_random, n50 = k_n50_samples[,2])
+        
+        tbl_vx_eff[[i]][j,"mean_vx_eff"] <- mean(monte_carlo)
+        tbl_vx_eff[[i]][j,"sd_vx_eff"] <- sd(monte_carlo)
+        
+        tbl_vx_eff_monte_carlo[[n_loop]] <- monte_carlo
+        names(tbl_vx_eff_monte_carlo)[n_loop] <- paste("monte",names(tbl_vx_eff)[i],tbl_vx_eff[[i]][j, "group"], sep = "_")
+        
+        tbl_ab_ratio_random[[n_loop]] <- n_random
+        names(tbl_ab_ratio_random)[n_loop] <- paste("ab",names(tbl_vx_eff)[i],tbl_vx_eff[[i]][j, "group"], sep = "_")
+        
+        n_loop <- n_loop + 1
+        }
     }
     
-    tbl_vx_eff
+    tbl_vx_eff # summary table of NAb titre ratio and vaccine efficacy for each vaccine combo
     
-    #tiff(file = "tbl_vx_eff_monte_carlo.tiff", unit = "in", width = 5, height = 12, res = 300, compression = "lzw")
-    tbl_vx_eff_monte_carlo %>%
-      gather(key = "group", value = "vx_eff") %>%
-      mutate_at(vars(group), ~factor(., levels = c("AZ", "PZ", "AZ_AZ", "SP_SP", "PZ_PZ", "MixedVac", "BoosterPZ", "Conv_PZ", "Conv_PZ_PZ", "Conv_BoosterPZ", "Overall"))) %>%
-      ggplot(., aes(x = vx_eff)) +
-      geom_histogram(binwidth = 0.01) +
-      facet_wrap(~ group, ncol = 1)
+    df_ab_ratio_random <- ldply(tbl_ab_ratio_random, data.frame)
+    names(df_ab_ratio_random) <- c("regimen","NAb_titre")
+    df_ab_ratio_random <- df_ab_ratio_random %>% 
+      mutate(id = 1:n())
+    
+    df_vx_eff_monte_carlo <- ldply(tbl_vx_eff_monte_carlo, data.frame)
+    names(df_vx_eff_monte_carlo) <- c("regimen","vx_eff")
+    df_vx_eff_monte_carlo <- df_vx_eff_monte_carlo %>% 
+      mutate(id = 1:n())
+    
+    # tempdata_ab <- df_ab_ratio_random %>% 
+    #   filter(regimen %in% c("all_wt_st_PZ_PZ", "all_wt_st_PZ_PZ_PZ"))
+    # 
+    #   ggplot(tempdata_ab, aes(x = NAb_titre, fill = regimen, col = regimen)) +
+    #   geom_histogram(alpha = 0.7) +
+    #     facet_wrap( ~ regimen)
+    # 
+    # t.test(tempdata_ab$NAb_titre ~ tempdata_ab$regimen)
+    
+  # Density figure of vaccine combo with antibody titre on the x-axes    
+  # Sanity check: a. pz > everything else; b. vac + conv > vac
+    #tiff(file = "NAb titre density.tiff", unit = "in", width = 8, height = 6, res = 300, compression = "lzw")
+    df_ab_ratio_random %>%
+      filter(startsWith(regimen, "ab_all_wt_st_")) %>%
+      mutate(regimen = str_remove(regimen, "ab_all_wt_st_")) %>%
+      ggplot(., aes(x = NAb_titre, fill = regimen, col = regimen)) +
+      geom_density(alpha = 0.7) +
+      scale_fill_manual(values = c("#FED976", "#FEB24C", "#FD8D3C", "#C6DBEF", "#9ECAE1", "#6BAED6", "#D5F591", "#8CDBA9", "#33AB5F", "#BDBDBD", "#969696"), 
+                        breaks = c("AZ_AZ", "SP_SP", "PZ_PZ", "AZ_PZ", "AZ_SP", "SP_AZ", "AZ_AZ_PZ", "PZ_PZ_PZ",  "MD_MD_PZ", "Conv_PZ_PZ", "Conv_PZ_PZ_PZ")) +
+      scale_color_manual(values = c("#FED976", "#FEB24C", "#FD8D3C",  "#C6DBEF", "#9ECAE1", "#6BAED6", "#D5F591", "#8CDBA9", "#33AB5F", "#BDBDBD", "#969696"), 
+                        breaks = c("AZ_AZ", "SP_SP", "PZ_PZ", "AZ_PZ", "AZ_SP", "SP_AZ", "AZ_AZ_PZ", "PZ_PZ_PZ", "MD_MD_PZ", "Conv_PZ_PZ", "Conv_PZ_PZ_PZ"))
     #dev.off()
-      
     
+  # Sanity check: c. day_measure; short elapse > long elapse
+    df_vx_eff <- ldply(tbl_vx_eff_monte_carlo, data.frame)
+    names(df_vx_eff) <- c("regimen","vx_eff")
+    
+    #tiff(file = "vx_eff by day_order.tiff", unit = "in", width = 8, height = 6, res = 300, compression = "lzw")
+    df_vx_eff %>%
+      mutate(Day_order = if_else(str_detect(regimen, "lt"),"LT","ST")) %>%
+      mutate(regimen = str_remove(regimen, "monte_all_wt_st_")) %>%
+      mutate(regimen = str_remove(regimen, "monte_all_wt_lt_")) %>%
+      filter(regimen %in% c("AZ_AZ", "Conv_PZ_PZ", "PZ_PZ", "SP_SP")) %>%
+      ggplot(., aes(x = vx_eff, fill = Day_order, col = Day_order)) +
+      geom_density(alpha = 0.7) +
+      facet_wrap(~ regimen)
+    #dev.off()
+
+  # Sanity check: d. variant; short-term against WT vs Alpha, Beta, Omicron
+    #tiff(file = "vx_eff by variant.tiff", unit = "in", width = 9, height = 6, res = 300, compression = "lzw")
+    df_vx_eff %>%
+      mutate(regimen = str_remove(regimen, "monte_all_")) %>%
+      filter(regimen %in% c("wt_st_PZ_PZ", "wt_st_Conv_PZ_PZ", "alpha_st_PZ_PZ", "alpha_st_Conv_PZ_PZ", "beta_st_PZ_PZ", "beta_st_Conv_PZ_PZ", "omicron_st_PZ_PZ", "omicron_st_Conv_PZ_PZ")) %>%
+      separate(regimen, into = c("Variant","Day_order", "regimen"), sep = "_", remove = T) %>%
+      mutate(regimen = if_else(regimen == "PZ", "PZ_PZ", "Conv_PZ_PZ")) %>%
+      ggplot(., aes(x = vx_eff, fill = Variant, col = Variant)) +
+      geom_density(alpha = 0.7) +
+      facet_wrap(~ regimen)
+    #dev.off()
+    
+    
+### 6. Set cut-point for NAb ####
+    # TODO: 1. cut off for L, M, H; 2. percentage transition for v_b and v_p
+    
+  # set the cut-points for NAb ratio at 0 and 0.5
+    df_ab_ratio_level <- df_ab_ratio_random %>%
+      mutate(immune_level = case_when(
+        NAb_titre < 0 ~ "Vl",
+        NAb_titre <= 0.5 ~ "Vm",
+        TRUE ~ "Vh")
+      ) %>%
+      mutate_at(vars(immune_level), ~factor(., levels = c("Vl","Vm","Vh")))
+    
+    table(df_ab_ratio_level$immune_level)
+    
+    tbl_immune_level <- df_ab_ratio_level %>%
+      left_join(df_vx_eff_monte_carlo %>% select(-regimen), by = "id") %>%
+      group_by(immune_level) %>%
+      summarise(mean = mean(vx_eff),
+                sd = sd(vx_eff))
+    tbl_immune_level # summary table of vaccine efficacy in people with low, medium, and high protective efficacy
+    
+    #tiff(file = "vx_eff by level of protection.tiff", unit = "in", width = 9, height = 6, res = 300, compression = "lzw")
+    df_ab_ratio_level %>%
+      left_join(df_vx_eff_monte_carlo %>% select(-regimen), by = "id") %>%
+      #filter(regimen == "monte_all_wt_st_Conv_PZ_PZ" | regimen == "monte_all_wt_st_PZ_PZ") %>%
+      ggplot(., aes(x = vx_eff, fill = immune_level, col = immune_level)) +
+      geom_density(alpha = 0.5)
+    #dev.off()
+
+    # prob of people going into vl, vm, vh for each vaccine combo
+    tbl_prob_immune_level <- df_ab_ratio_level %>%
+      left_join(df_vx_eff_monte_carlo %>% select(-regimen), by = "id") %>%
+      filter(startsWith(regimen, "ab_all_wt_st_")) %>%
+      mutate(regimen = str_remove(regimen, "ab_all_wt_st_")) %>%
+      group_by(regimen, immune_level) %>%
+      summarise(p = n()/1000)
+    tbl_prob_immune_level
+    #write_csv(tbl_prob_immune_level, file = "tbl_prob_immune_level.csv")
+    
+    # plot prob density of people going into vl, vm, vh for each vaccine combo
+    #tiff(file = "vx_eff by combo.tiff", unit = "in", width = 12, height = 10, res = 300, compression = "lzw")
+    df_ab_ratio_level %>%
+      left_join(df_vx_eff_monte_carlo %>% select(-regimen), by = "id") %>%
+      filter(startsWith(regimen, "ab_all_wt_st_")) %>%
+      mutate(regimen = str_remove(regimen, "ab_all_wt_st_")) %>%
+      mutate_at(vars(regimen), ~factor(., levels = c("AZ_AZ", "SP_SP", "PZ_PZ", "AZ_PZ", "AZ_SP", "SP_AZ", "AZ_AZ_PZ", "PZ_PZ_PZ", "MD_MD_PZ", "Conv_PZ_PZ", "Conv_PZ_PZ_PZ"))) %>%
+      ggplot(., aes(x = vx_eff, y = fct_rev(regimen), fill = stat(x))) +
+      geom_density_ridges_gradient(scale = 2, rel_min_height = 0.01) +
+      scale_fill_viridis_c(name = "Vaccine efficacy", option = "D") +
+      theme_bw(base_size = 18)
+    #dev.off()
+    
+
 ### ASSUMPTIONS ###
     
       # all NAb data is normally distributed
