@@ -1,5 +1,5 @@
 # COVID-19 neutralising antibody titre meta-analysis
-# 26 January 2023
+# 13 February 2023
 # Version 4
 
 # Load libraries
@@ -501,7 +501,7 @@ tbl_ab_ratio$all_omicron_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3
   # set the cut-points for NAb ratio at 1) 0 and 0.5; and 2) -0.5 and 0.5
     df_ab_ratio_level <- df_ab_ratio_random %>%
       mutate(immune_level = case_when(
-        NAb_titre < -0.5 ~ "Vl",
+        NAb_titre < 0 ~ "Vl",
         NAb_titre <= 0.5 ~ "Vm",
         TRUE ~ "Vh")
       ) %>%
