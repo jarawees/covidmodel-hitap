@@ -16,29 +16,21 @@ p_load(plyr, dplyr, stats, tidyverse, meta, purrr, ggridges)
 # Group 1: vaccine regimen, SP – sinopharm, SV – sinovac, AZ – AstraZeneca, PZ – Pfizer, MD – Moderna, JJ – Johnson & Johnson
 # Group 2: specific population groups, 18to65 – people aged between 18 and 65 years of age, HCW – healthcare worker
 # LOD: limit of detection of the virus neutralisation assay
-# Variant: 
+# Variant
 # Day_measure: number of days after last vaccination or infection that NAb titre was measured
 
   # Read CSV files
 
     # Uncensored: all included studies
-    csv_uncensored <- c("Anna_NAb_meta1.csv", "Dimple_NAb_meta1_v2.csv", "Dream_NAb_meta1_v2.csv", 
-                        "Ja_NAb_meta1_PZ35.csv", "Pui_NAb_meta1.csv", "Siobhan_NAb_meta1.csv", 
-                        "Saudamini_NAb_meta1.csv")
-    csv_uncensored <- lapply(csv_uncensored, read.csv)
-    csv_uncensored <- do.call("rbind", csv_uncensored)
-
-    # Censored: subset of uncensored studies with individual data points
-    csv_censored <- c("Dimple_NAb_meta2.csv", "Dream_NAb_meta2_v2.csv", "Ja_NAb_meta2_NODELTA.csv", 
-                      "Pui_NAb_meta2.csv", "Siobhan_NAb_meta2_Pf5.csv")
-    csv_censored <- lapply(csv_censored, read.csv) 
-    csv_censored <- do.call("rbind", csv_censored)
-    
+    csv_uncensored <- read_csv("csv_uncensored.csv")
     NAb_uncensored <- csv_uncensored %>%
       select(-DOI)
+
+    # Censored: subset of uncensored studies with individual data points
+    csv_censored <- read_csv("csv_censored.csv")
     NAb_censored_raw <- csv_censored %>%
       select(-DOI)
-    
+
     NAb_uncensored$LOD <- as.numeric(NAb_uncensored$LOD)
     NAb_uncensored <- NAb_uncensored %>%
       mutate_at(vars(LOD), ~ ifelse(. > 2, log10(.), .)) %>%
@@ -55,6 +47,7 @@ p_load(plyr, dplyr, stats, tidyverse, meta, purrr, ggridges)
       mutate_at(vars(Group1), ~ str_replace_all(., c("Pf" = "PZ", "PF" = "PZ", "CV" = "SV")))
     
     #table(NAb_uncensored$Group1)
+    #table(NAb_uncensored$Variant)
 
     NAb_censored_raw <- NAb_censored_raw %>%
       left_join(NAb_uncensored %>% select(Study_ID, LOD) %>% unique(), by = "Study_ID") %>%
@@ -114,32 +107,43 @@ p_load(plyr, dplyr, stats, tidyverse, meta, purrr, ggridges)
     
   # Negative log likelihood of normal distribution model with censoring (adapted from Cromer & Khoury github)
   
-    Likelihood = function(p,censT,data) {
-      -sum(log(dnorm(data[data>censT],p[1],p[2]))) - sum(log(pnorm(data[data<=censT],p[1],p[2])))}
+    Likelihood = function(p, censT, data) {
+      -sum(log(dnorm(data[data > censT], p[1], p[2]))) - sum(log(pnorm(data[data <=
+                                                                              censT], p[1], p[2])))
+    }
     
-    NAb_censored <- unique(NAb_censored_raw[,c("Study_ID","Group1","Variant","Day_order")])
-
+    NAb_censored <-
+      unique(NAb_censored_raw[, c("Study_ID", "Group1", "Variant", "Day_order")])
+    
     NAb_censored$SD <- NA
     NAb_censored$EstimatedMean <- NA
     NAb_censored$Num_ppl <- NA
     
-    for (i in 1:nrow(NAb_censored)){
-      
-      tempdata =  NAb_censored_raw$Titre_log[NAb_censored_raw$Study_ID==NAb_censored$Study_ID[i] & 
-                                              NAb_censored_raw$Group1==NAb_censored$Group1[i] & 
-                                              NAb_censored_raw$Variant==NAb_censored$Variant[i] &
-                                              NAb_censored_raw$Day_order==NAb_censored$Day_order[i]]
-      if(sd(tempdata) != 0 & length(tempdata) != 1){
-        fitmdltemp <- nlm(function(p){Likelihood(p,NAb_uncensored$LOD[NAb_uncensored$Study_ID==NAb_censored$Study_ID[i] &
-                                                                        NAb_uncensored$Group1==NAb_censored$Group1[i] &
-                                                                        NAb_uncensored$Variant==NAb_censored$Variant[i] &
-                                                                        NAb_uncensored$Day_order==NAb_censored$Day_order[i]],
-                                                 tempdata)},c(mean(tempdata),sd(tempdata)))
-      
-      
-      NAb_censored$SD[i] <- fitmdltemp$estimate[2]
-      NAb_censored$EstimatedMean[i] <- fitmdltemp$estimate[1]
-      NAb_censored$Num_ppl[i] <- length(tempdata)
+    for (i in 1:nrow(NAb_censored)) {
+      tempdata =  NAb_censored_raw$Titre_log[NAb_censored_raw$Study_ID == NAb_censored$Study_ID[i] &
+                                               NAb_censored_raw$Group1 ==
+                                               NAb_censored$Group1[i] &
+                                               NAb_censored_raw$Variant ==
+                                               NAb_censored$Variant[i] &
+                                               NAb_censored_raw$Day_order ==
+                                               NAb_censored$Day_order[i]]
+      if (sd(tempdata) != 0 & length(tempdata) != 1) {
+        fitmdltemp <-
+          nlm(function(p) {
+            Likelihood(p, NAb_uncensored$LOD[NAb_uncensored$Study_ID == NAb_censored$Study_ID[i] &
+                                               NAb_uncensored$Group1 ==
+                                               NAb_censored$Group1[i] &
+                                               NAb_uncensored$Variant ==
+                                               NAb_censored$Variant[i] &
+                                               NAb_uncensored$Day_order ==
+                                               NAb_censored$Day_order[i]],
+                       tempdata)
+          }, c(mean(tempdata), sd(tempdata)))
+        
+        
+        NAb_censored$SD[i] <- fitmdltemp$estimate[2]
+        NAb_censored$EstimatedMean[i] <- fitmdltemp$estimate[1]
+        NAb_censored$Num_ppl[i] <- length(tempdata)
       }
     }
     
@@ -312,7 +316,7 @@ p_load(plyr, dplyr, stats, tidyverse, meta, purrr, ggridges)
       return(list(meta,subgroup_tbl))
     }
     
-# short-term against WT only, removing points with >50% points below LOD
+# meta-analysis of NAb fold
 tbl_ab_ratio <- list()
 tbl_ab_ratio$vac_wt_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 1, variant = "WT", duration = "ST")[[2]]
 tbl_ab_ratio$hyb_wt_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 2, variant = "WT", duration = "ST")[[2]]
@@ -326,7 +330,7 @@ tbl_ab_ratio$all_alpha_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, 
 tbl_ab_ratio$all_beta_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "Beta", duration = "ST")[[2]]
 tbl_ab_ratio$all_omicron_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "Omicron", duration = "ST")[[2]]
 
-# By group meta-analysis diagnostics
+# By group meta-analysis diagnostics (forest plot)
 # tiff("Meta_NAb_uncensored_fold_LOD.tiff", height = 15, width = 12, res = 300, units = "in", compression = "lzw")
 # forest(meta_uncensored(NAb_uncensored_fold_LOD, type = 3, variant = "WT", duration = "ST")[[1]])
 # dev.off()
@@ -396,16 +400,7 @@ tbl_ab_ratio$all_omicron_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3
     names(df_vx_eff_monte_carlo) <- c("regimen","vx_eff")
     df_vx_eff_monte_carlo <- df_vx_eff_monte_carlo %>% 
       mutate(id = 1:n())
-    
-    # tempdata_ab <- df_ab_ratio_random %>% 
-    #   filter(regimen %in% c("all_wt_st_PZ_PZ", "all_wt_st_PZ_PZ_PZ"))
-    # 
-    #   ggplot(tempdata_ab, aes(x = NAb_titre, fill = regimen, col = regimen)) +
-    #   geom_histogram(alpha = 0.7) +
-    #     facet_wrap( ~ regimen)
-    # 
-    # t.test(tempdata_ab$NAb_titre ~ tempdata_ab$regimen)
-    
+
   # Density figure of vaccine combo with antibody titre on the x-axes    
   # Sanity check: a. pz > everything else; b. vac + conv > vac
     #tiff(file = "NAb titre density.tiff", unit = "in", width = 8, height = 6, res = 300, compression = "lzw")
@@ -414,47 +409,99 @@ tbl_ab_ratio$all_omicron_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3
       mutate(regimen = str_remove(regimen, "ab_all_wt_st_")) %>%
       ggplot(., aes(x = NAb_titre, fill = regimen, col = regimen)) +
       geom_density(alpha = 0.7) +
-      scale_fill_manual(values = c("#FED976", "#FEB24C", "#FD8D3C", "#C6DBEF", "#9ECAE1", "#6BAED6", "#D5F591", "#8CDBA9", "#33AB5F", "#BDBDBD", "#969696"), 
-                        breaks = c("AZ_AZ", "SP_SP", "PZ_PZ", "AZ_PZ", "AZ_SP", "SP_AZ", "AZ_AZ_PZ", "PZ_PZ_PZ",  "MD_MD_PZ", "Conv_PZ_PZ", "Conv_PZ_PZ_PZ")) +
-      scale_color_manual(values = c("#FED976", "#FEB24C", "#FD8D3C",  "#C6DBEF", "#9ECAE1", "#6BAED6", "#D5F591", "#8CDBA9", "#33AB5F", "#BDBDBD", "#969696"), 
-                        breaks = c("AZ_AZ", "SP_SP", "PZ_PZ", "AZ_PZ", "AZ_SP", "SP_AZ", "AZ_AZ_PZ", "PZ_PZ_PZ", "MD_MD_PZ", "Conv_PZ_PZ", "Conv_PZ_PZ_PZ"))
+      scale_fill_manual(
+        values = c(
+          "#FED976",
+          "#FEB24C",
+          "#FD8D3C",
+          "#C6DBEF",
+          "#9ECAE1",
+          "#6BAED6",
+          "#D5F591",
+          "#8CDBA9",
+          "#33AB5F",
+          "#BDBDBD",
+          "#969696"
+        ),
+        breaks = c(
+          "AZ_AZ",
+          "SP_SP",
+          "PZ_PZ",
+          "AZ_PZ",
+          "AZ_SP",
+          "SP_AZ",
+          "AZ_AZ_PZ",
+          "PZ_PZ_PZ",
+          "MD_MD_PZ",
+          "Conv_PZ_PZ",
+          "Conv_PZ_PZ_PZ"
+        )
+      ) +
+      scale_color_manual(
+        values = c(
+          "#FED976",
+          "#FEB24C",
+          "#FD8D3C",
+          "#C6DBEF",
+          "#9ECAE1",
+          "#6BAED6",
+          "#D5F591",
+          "#8CDBA9",
+          "#33AB5F",
+          "#BDBDBD",
+          "#969696"
+        ),
+        breaks = c(
+          "AZ_AZ",
+          "SP_SP",
+          "PZ_PZ",
+          "AZ_PZ",
+          "AZ_SP",
+          "SP_AZ",
+          "AZ_AZ_PZ",
+          "PZ_PZ_PZ",
+          "MD_MD_PZ",
+          "Conv_PZ_PZ",
+          "Conv_PZ_PZ_PZ"
+        )
+      )
     #dev.off()
     
   # Sanity check: c. day_measure; short elapse > long elapse
-    df_vx_eff <- ldply(tbl_vx_eff_monte_carlo, data.frame)
-    names(df_vx_eff) <- c("regimen","vx_eff")
+    # df_vx_eff <- ldply(tbl_vx_eff_monte_carlo, data.frame)
+    # names(df_vx_eff) <- c("regimen","vx_eff")
     
     #tiff(file = "vx_eff by day_order.tiff", unit = "in", width = 8, height = 6, res = 300, compression = "lzw")
-    df_vx_eff %>%
-      mutate(Day_order = if_else(str_detect(regimen, "lt"),"LT","ST")) %>%
-      mutate(regimen = str_remove(regimen, "monte_all_wt_st_")) %>%
-      mutate(regimen = str_remove(regimen, "monte_all_wt_lt_")) %>%
-      filter(regimen %in% c("AZ_AZ", "Conv_PZ_PZ", "PZ_PZ", "SP_SP")) %>%
-      ggplot(., aes(x = vx_eff, fill = Day_order, col = Day_order)) +
-      geom_density(alpha = 0.7) +
-      facet_wrap(~ regimen)
+    # df_vx_eff %>%
+    #   mutate(Day_order = if_else(str_detect(regimen, "lt"),"LT","ST")) %>%
+    #   mutate(regimen = str_remove(regimen, "monte_all_wt_st_")) %>%
+    #   mutate(regimen = str_remove(regimen, "monte_all_wt_lt_")) %>%
+    #   filter(regimen %in% c("AZ_AZ", "Conv_PZ_PZ", "PZ_PZ", "SP_SP")) %>%
+    #   ggplot(., aes(x = vx_eff, fill = Day_order, col = Day_order)) +
+    #   geom_density(alpha = 0.7) +
+    #   facet_wrap(~ regimen)
     #dev.off()
 
   # Sanity check: d. variant; short-term against WT vs Alpha, Beta, Omicron
     #tiff(file = "vx_eff by variant.tiff", unit = "in", width = 9, height = 6, res = 300, compression = "lzw")
-    df_vx_eff %>%
-      mutate(regimen = str_remove(regimen, "monte_all_")) %>%
-      filter(regimen %in% c("wt_st_PZ_PZ", "wt_st_Conv_PZ_PZ", "alpha_st_PZ_PZ", "alpha_st_Conv_PZ_PZ", "beta_st_PZ_PZ", "beta_st_Conv_PZ_PZ", "omicron_st_PZ_PZ", "omicron_st_Conv_PZ_PZ")) %>%
-      separate(regimen, into = c("Variant","Day_order", "regimen"), sep = "_", remove = T) %>%
-      mutate(regimen = if_else(regimen == "PZ", "PZ_PZ", "Conv_PZ_PZ")) %>%
-      ggplot(., aes(x = vx_eff, fill = Variant, col = Variant)) +
-      geom_density(alpha = 0.7) +
-      facet_wrap(~ regimen)
+    # df_vx_eff %>%
+    #   mutate(regimen = str_remove(regimen, "monte_all_")) %>%
+    #   filter(regimen %in% c("wt_st_PZ_PZ", "wt_st_Conv_PZ_PZ", "alpha_st_PZ_PZ", "alpha_st_Conv_PZ_PZ", "beta_st_PZ_PZ", "beta_st_Conv_PZ_PZ", "omicron_st_PZ_PZ", "omicron_st_Conv_PZ_PZ")) %>%
+    #   separate(regimen, into = c("Variant","Day_order", "regimen"), sep = "_", remove = T) %>%
+    #   mutate(regimen = if_else(regimen == "PZ", "PZ_PZ", "Conv_PZ_PZ")) %>%
+    #   ggplot(., aes(x = vx_eff, fill = Variant, col = Variant)) +
+    #   geom_density(alpha = 0.7) +
+    #   facet_wrap(~ regimen)
     #dev.off()
     
     
 ### 6. Set cut-point for NAb ####
     # TODO: 1. cut off for L, M, H; 2. percentage transition for v_b and v_p
     
-  # set the cut-points for NAb ratio at 0 and 0.5
+  # set the cut-points for NAb ratio at 1) 0 and 0.5; and 2) -0.5 and 0.5
     df_ab_ratio_level <- df_ab_ratio_random %>%
       mutate(immune_level = case_when(
-        NAb_titre < 0 ~ "Vl",
+        NAb_titre < -0.5 ~ "Vl",
         NAb_titre <= 0.5 ~ "Vm",
         TRUE ~ "Vh")
       ) %>%
@@ -467,14 +514,13 @@ tbl_ab_ratio$all_omicron_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3
       group_by(immune_level) %>%
       summarise(mean = mean(vx_eff),
                 sd = sd(vx_eff))
-    tbl_immune_level # summary table of vaccine efficacy in people with low, medium, and high protective efficacy
+    tbl_immune_level # summary table of vaccine efficacy against infection/mild disease in people with low, medium, and high protective efficacy
     
     #tiff(file = "vx_eff by level of protection.tiff", unit = "in", width = 9, height = 6, res = 300, compression = "lzw")
     df_ab_ratio_level %>%
       left_join(df_vx_eff_monte_carlo %>% select(-regimen), by = "id") %>%
-      #filter(regimen == "monte_all_wt_st_Conv_PZ_PZ" | regimen == "monte_all_wt_st_PZ_PZ") %>%
       ggplot(., aes(x = vx_eff, fill = immune_level, col = immune_level)) +
-      geom_density(alpha = 0.5)
+      geom_density(alpha = 0.5, trim = T)
     #dev.off()
 
     # prob of people going into vl, vm, vh for each vaccine combo
@@ -487,7 +533,7 @@ tbl_ab_ratio$all_omicron_st <- meta_uncensored(NAb_uncensored_fold_LOD, type = 3
     tbl_prob_immune_level
     #write_csv(tbl_prob_immune_level, file = "tbl_prob_immune_level.csv")
     
-    # plot prob density of people going into vl, vm, vh for each vaccine combo
+    # plot prob density of vaccine efficacy against infection/mild disease for each vaccine combo
     #tiff(file = "vx_eff by combo.tiff", unit = "in", width = 12, height = 10, res = 300, compression = "lzw")
     df_ab_ratio_level %>%
       left_join(df_vx_eff_monte_carlo %>% select(-regimen), by = "id") %>%
