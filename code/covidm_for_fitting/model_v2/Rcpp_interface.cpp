@@ -30,7 +30,6 @@ using namespace std;
 #include "Rcpp_interface.h"
 #include "mcmc.h"
 
-
 Reporter RunSimulation(Parameters& P, Randomizer& Rand, vector<double> x)
 {
     Reporter rep(P);

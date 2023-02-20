@@ -1,15 +1,16 @@
 ## Load required packages
 if(!require(pacman)) install.packages("pacman")
 library(pacman)
-p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr,
-       lubridate, mgcv, DEoptim, magrittr, progress, readxl)
+p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr, imputeTS,
+       lubridate, mgcv, DEoptim, magrittr, progress, readxl, Rcpp, here)
 
 ##### load covidm #####
-data_path <- "C:/Users/eideyliu/Dropbox/Github_Data/HITAP_CovidM/"
+data_path <- "/Users/yangliu/Dropbox/Github_Data/HITAP_CovidM/"
+# "C:/Users/eideyliu/Dropbox/Github_Data/HITAP_CovidM/"
 #"D:/GitHub/covidmodel-hitap/data/"
 cm_path <- "code/covidm_for_fitting/"
-cm_force_rebuild <- F
-cm_build_verbose <- T
+cm_force_rebuild <- T
+cm_build_verbose <- F
 cm_version <- 2
 source(paste0(cm_path, "/R/covidm.R"))
 
@@ -140,3 +141,6 @@ source("code/0_5_EpiParams.R")
 
 #### L. Burden processes #### 
 source("code/0_6_HealthCareSystem.R")
+
+#### Vaccine Market ####
+source("code/0_7_vaccine_market.R")
