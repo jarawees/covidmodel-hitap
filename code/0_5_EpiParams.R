@@ -93,6 +93,10 @@ pop_by1 |>
   summarise(mu_mean_year = sum(pop*mu)/sum(pop),
             mu_mean_day = mu_mean_year/365) -> mu_inuse
 
+source("code/0_5_1_VoCs.R")
+
+owid_epi <- read_csv(url("https://github.com/owid/covid-19-data/blob/master/public/data/owid-covid-data.csv?raw=true"))
+
 # is this consistent with what we know about the population proejct outlook?
 # test <- cm_parameters_SEI3R(dem_locations = "Thailand", 
 #                             date_start = "2020-01-01", 

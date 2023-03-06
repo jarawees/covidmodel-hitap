@@ -9,8 +9,8 @@ data_path <- "/Users/yangliu/Dropbox/Github_Data/HITAP_CovidM/"
 # "C:/Users/eideyliu/Dropbox/Github_Data/HITAP_CovidM/"
 #"D:/GitHub/covidmodel-hitap/data/"
 cm_path <- "code/covidm_for_fitting/"
-cm_force_rebuild <- T
-cm_build_verbose <- F
+cm_force_rebuild <- F
+cm_build_verbose <- T
 cm_version <- 2
 source(paste0(cm_path, "/R/covidm.R"))
 
@@ -119,13 +119,13 @@ pcr_rate <- fread(paste0(data_path, "thailand_covid-19_testing_data.csv"))[,1:3]
 #                 paste0("data/sars-cov-2-variants-dmsc.csv"))
 # }
 
-geno_freq <- fread(paste0(data_path, "sars-cov-2-variants-dmsc.csv"))[,1:6] %>%
-  mutate_at(vars(Date_Start, Date_End), ~as.Date(., format = "%d/%m/%Y")) %>%
-  rename("Alpha" = "B.1.1.7 (Alpha)",
-         "Delta" = "B.1617.2 (Delta)",
-         "Beta" = "B.1.351 (Beta)",
-         "Omicron" = "B.1.1.529 (Omicron") %>%
-  filter(!is.na(Alpha))
+# geno_freq <- fread(paste0(data_path, "sars-cov-2-variants-dmsc.csv"))[,1:6] %>%
+#   mutate_at(vars(Date_Start, Date_End), ~as.Date(., format = "%d/%m/%Y")) %>%
+#   rename("Alpha" = "B.1.1.7 (Alpha)",
+#          "Delta" = "B.1617.2 (Delta)",
+#          "Beta" = "B.1.351 (Beta)",
+#          "Omicron" = "B.1.1.529 (Omicron") %>%
+#   filter(!is.na(Alpha))
 
 # G. Contact matrices
 # load("data/contact_all.rdata")

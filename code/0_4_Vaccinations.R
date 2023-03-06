@@ -74,6 +74,7 @@ fread(paste0(data_path, "vaccinations.csv")) %>%
          # daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
          date_numeric = as.numeric(date)) -> owid_vac
 
+
 # owid_vac |> 
 #   ggplot() +
 # <<<<<<< HEAD

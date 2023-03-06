@@ -14,6 +14,12 @@ combo <- read_csv(fn) %>%
              "dose3",
              "applicability"))
 
+data.frame(date = dose1$date,
+           sum = rowSums(dose1[,2:6],na.rm = T),
+           reported = doc[[2]]$total_first)
+
+
+
 # clean for dose 1
 doc[[2]] %>% 
   dplyr::select(date, ends_with("first")) %>% 
@@ -45,8 +51,8 @@ doc[[2]] %>%
 dose2[1,2:6] <- 0
 
 dose2 %>% 
-  right_join(data.frame(date = seq(ymd(min(dose1$date)),
-                                   ymd(max(dose1$date)),
+  right_join(data.frame(date = seq(ymd(min(dose2$date)),
+                                   ymd(max(dose2$date)),
                                    by = "day")),
              by = "date") %>% 
   arrange(date) %>% 
@@ -84,6 +90,32 @@ dose3 %>%
          sp_boost_daily = c(0, diff(sp_boost_imputed)),
          pf_boost_daily = c(0, diff(pf_boost_imputed)),
          md_boost_daily = c(0, diff(md_boost_imputed)))  -> dose3
+
+
+dose3 %>% 
+  dplyr::select(date, ends_with("daily")) %>% 
+  arrange(date) %>% 
+  mutate_at(vars(ends_with("daily")), cumsum) %>% 
+  pivot_longer(ends_with("daily")) %>% 
+  ggplot(., aes(x = date, y = value, group = name, color = name)) +
+  geom_line()
+
+method_1 <- read_rds(paste0(data_path,"vaccine_market_identical_results.rds"))
+method_2 <- read_rds(paste0(data_path,"vaccine_market_proportional_results.rds"))
+
+method_1 %>% 
+  pivot_longer(starts_with(c("2_", "3_")),
+               names_to = "combo") %>%
+  mutate(method = "identical") %>% 
+  bind_rows(method_2 %>% 
+              pivot_longer(starts_with(c("1_", "2_", "3_")),
+                           names_to = "combo") %>% 
+              mutate(method = "proportional")) %>% 
+  ggplot(., aes(x = date, y = value, color = method)) +
+geom_line() +
+  facet_wrap(~combo)
+tail(method_1)
+tail(method_2)
 
 # dose3 %>% 
 #   dplyr::select(-ends_with("daily")) %>% 
@@ -216,23 +248,23 @@ doc[[1]] |>
   filter(date >= ymd("2021-04-01")) |> 
   separate(name, into = c("seg1","seg2", "seg3")) -> p_table
   
-ggplot(data = p_table, 
-         aes(x = date, y = value, color = seg2, fill = seg2)) +
-  geom_bar(position = "stack", stat = "identity") 
-
-doc[[1]] |> 
-  dplyr::select(date, starts_with("interval") & ends_with("boost"), interval_boost) |> 
-  mutate(date = lubridate::ymd(date)) |> 
-  drop_na() %>%
-  mutate(rs = rowSums(.[,3:7])) %>%
-  mutate_at(vars(starts_with("interval") & ends_with("boost")), function(x) x/.$rs) |> 
-  dplyr::select(date, starts_with("interval") & ends_with("boost")) |> 
-  drop_na() |> 
-  pivot_longer(starts_with("interval")) |> 
-  separate(name, into = c("seg1","seg2", "seg3")) |> 
-  filter(seg2 != "boost") |> 
-  ggplot(aes(x = date, y = value, color = seg2, fill = seg2)) +
-  geom_bar(stat = "identity", position = "stack"
+# ggplot(data = p_table, 
+#          aes(x = date, y = value, color = seg2, fill = seg2)) +
+#   geom_bar(position = "stack", stat = "identity") 
+# 
+# doc[[1]] |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("boost"), interval_boost) |> 
+#   mutate(date = lubridate::ymd(date)) |> 
+#   drop_na() %>%
+#   mutate(rs = rowSums(.[,3:7])) %>%
+#   mutate_at(vars(starts_with("interval") & ends_with("boost")), function(x) x/.$rs) |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("boost")) |> 
+#   drop_na() |> 
+#   pivot_longer(starts_with("interval")) |> 
+#   separate(name, into = c("seg1","seg2", "seg3")) |> 
+#   filter(seg2 != "boost") |> 
+#   ggplot(aes(x = date, y = value, color = seg2, fill = seg2)) +
+#   geom_bar(stat = "identity", position = "stack"
 
 # aggregate data
 # boost, ignore sp and sv for boosting

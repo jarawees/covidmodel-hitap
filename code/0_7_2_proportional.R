@@ -14,7 +14,8 @@ vaccine_daily[,1] %>% distinct() -> tmp
 tmp[,vaccine_compartments] <- as.numeric(NA)
 tmp[1,2:ncol(tmp)] <- 0
 
-for(d in 2:nrow(tmp)){
+# for(d in 2:nrow(tmp)){
+  for(d in 2:30){
   date_tmp <- tmp$date[d]
   tmp[tmp$date == date_tmp, "1_sv"] <- tmp[tmp$date == date_tmp - 1, "1_sv"] + vaccine_daily %>% dplyr::filter(date %in% date_tmp, dose_index == "first", vac_type == "sv") %>% pull(value)
   tmp[tmp$date == date_tmp, "1_az"] <- tmp[tmp$date == date_tmp - 1, "1_az"] + vaccine_daily %>% dplyr::filter(date %in% date_tmp, dose_index == "first", vac_type == "az") %>% pull(value)
@@ -55,10 +56,10 @@ for(d in 2:nrow(tmp)){
                                                                pull(value)) * dose2_tmp[[vac_type_tmp]]) %>% 
         pull(labels_target$previous_r[m]) %>% unlist()
     }
+    
     tmp[tmp$date == date_tmp, labels_target$new] <-   tmp[tmp$date == date_tmp - 1, labels_target$new] + dose2_tmp[[vac_type_tmp]][,labels_target$new]
     tmp[tmp$date == date_tmp, labels_target$previous] <- tmp[tmp$date == date_tmp, labels_target$previous] -  dose2_tmp[[vac_type_tmp]][,labels_target$new]
   }
-  
 
   # allocate third doses
    dose3_tmp <- list()
@@ -104,6 +105,10 @@ tmp %>%
   dplyr::select(date, "2_sv_sv", "2_az_az", "2_sp_sp","2_pf_pf","2_md_md") -> res_proportional
 
 # write_rds(tmp, paste0(data_path,"vaccine_market_proportional_results.rds"))
+read_rds(paste0(data_path,"vaccine_market_proportional_results.rds"))%>% 
+  dplyr::select(date, "2_sv_sv", "2_az_az", "2_sp_sp","2_pf_pf","2_md_md") %>% 
+  ggplot(., aes(x = date, y = `2_sv_sv`)) +
+  geom_point()
 
 # tmp %>% 
 #   dplyr::select(date, starts_with(c("1_", "2_","3_"))) %>% 
