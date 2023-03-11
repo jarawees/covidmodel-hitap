@@ -14,12 +14,6 @@ combo <- read_csv(fn) %>%
              "dose3",
              "applicability"))
 
-data.frame(date = dose1$date,
-           sum = rowSums(dose1[,2:6],na.rm = T),
-           reported = doc[[2]]$total_first)
-
-
-
 # clean for dose 1
 doc[[2]] %>% 
   dplyr::select(date, ends_with("first")) %>% 
@@ -89,7 +83,9 @@ dose3 %>%
          az_boost_daily = c(0, diff(az_boost_imputed)),
          sp_boost_daily = c(0, diff(sp_boost_imputed)),
          pf_boost_daily = c(0, diff(pf_boost_imputed)),
-         md_boost_daily = c(0, diff(md_boost_imputed)))  -> dose3
+         md_boost_daily = c(0, diff(md_boost_imputed)),
+         sp_boost_daily = if_else(sp_boost_daily != 0, 0, sp_boost_daily),
+         sv_boost_daily = if_else(sv_boost_daily != 0, 0, sv_boost_daily))  -> dose3
 
 
 dose3 %>% 
@@ -114,6 +110,7 @@ method_1 %>%
   ggplot(., aes(x = date, y = value, color = method)) +
 geom_line() +
   facet_wrap(~combo)
+
 tail(method_1)
 tail(method_2)
 
