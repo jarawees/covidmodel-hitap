@@ -32,4 +32,4 @@ voc %>%
   mutate(tot = sum(value),
          value_p = value/tot) %>% 
   filter(grepl("Omicron",name),
-         value_p > 0.5) 
+         value_p > 0.4) 

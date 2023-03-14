@@ -1,5 +1,6 @@
-vaccinate_booster_annual <- function(para = NULL,
+vaccinate_booster <- function(para = NULL,
                               vac_data = owid_vac,
+                              booster_plan =  booster_allocation_plan,
                               # this is paused time
                               # program_interval = 30*6, #default set to 6 months
                               # should this be age-specific as well?
@@ -7,11 +8,10 @@ vaccinate_booster_annual <- function(para = NULL,
                               # age-specific variables that defines the 
                               # prioritisation, the numbers are essentially just
                               # rankings; NA = not boosted
-                              # this is based on history, based on owid_vac
-                              prioritisation_initial = c(rep(NA, 4), rep(1,12)),
                               # this is future policy
                               prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
-                              campaign_month = c(10:12,1:2)
+                              campaign_month = c(10:12,1:2),
+                              frequency = 1
                               # boosters_daily = 300000
 ){
   
@@ -19,10 +19,10 @@ vaccinate_booster_annual <- function(para = NULL,
   # debug
   # para <- params
   # vac_data = owid_vac
-  # uptake_by_existing = 0.9
-  # prioritisation_initial = c(rep(NA, 4), rep(1,12))
-  # prioritisation_followup = c(NA,rep(2,11),rep(1,4))
+  # uptake_by_existing = 0.3
+  # prioritisation_followup = c(NA,rep(1,15))
   # campaign_month = c(10:12,1:2)
+  # frequency = 1
   
   uptake_by_existing_tmp <- uptake_by_existing
   if(length(uptake_by_existing_tmp) == 1) uptake_by_existing_tmp <- rep(uptake_by_existing_tmp, 16)
@@ -40,7 +40,8 @@ vaccinate_booster_annual <- function(para = NULL,
            doy = lubridate::yday(date),
            year = lubridate::year(date),
            vaccination_phase = NA) |> 
-    group_by(year) 
+    group_by(year) %>% 
+    filter(date >= "2023-09-30")
   
   time_range |> ungroup() |> filter(m == campaign_month[1], d == 1) -> season_start 
   time_range |> filter(doy >= 365) |> pull(doy) -> season_size
@@ -57,31 +58,33 @@ vaccinate_booster_annual <- function(para = NULL,
   # initial boosting programmes
   # with owid data
   proportions_allocated_initial <- para$pop[[1]]$size/sum(para$pop[[1]]$size)
-  n_age_groups <- length(proportions_allocated_initial)
-  # we want the initial stage to not divide by stage and target all adults
-  proportions_allocated_initial_rescaled <- (prioritisation_initial*proportions_allocated_initial)/sum(prioritisation_initial*proportions_allocated_initial, na.rm = T)
-  proportions_allocated_initial_rescaled[is.na(proportions_allocated_initial_rescaled)] <- 0
-  
-  vac_data |> 
-    select(total_boosters_daily) %>%
-    split(seq(nrow(.))) |> 
-    map(unlist) |> 
-    map(.f = function(x) x*proportions_allocated_initial_rescaled) |> 
-    setNames(NULL) -> tmp_allocation[["initial"]]
-  
-  vac_data |> 
-    mutate(date = lubridate::date(date)) |> 
-    left_join(time_range, by = "date") |> 
-    dplyr::select(date, t) |> 
-    pull(t) -> tmp_times[["initial"]]
+  # n_age_groups <- length(proportions_allocated_initial)
+  # # we want the initial stage to not divide by stage and target all adults
+  # proportions_allocated_initial_rescaled <- (prioritisation_initial*proportions_allocated_initial)/sum(prioritisation_initial*proportions_allocated_initial, na.rm = T)
+  # proportions_allocated_initial_rescaled[is.na(proportions_allocated_initial_rescaled)] <- 0
+  # 
+  # vac_data |> 
+  #   select(total_boosters_daily) %>%
+  #   split(seq(nrow(.))) |> 
+  #   map(unlist) |> 
+  #   map(.f = function(x) x*proportions_allocated_initial_rescaled) |> 
+  #   setNames(NULL) -> tmp_allocation[["initial"]]
+  # 
+  # vac_data |> 
+  #   mutate(date = lubridate::date(date)) |> 
+  #   left_join(time_range, by = "date") |> 
+  #   dplyr::select(date, t) |> 
+  #   pull(t) -> tmp_times[["initial"]]
   
   # follow-up campaigns
   # children coverage = 0.787; adolescent coverage = 0.812; adult coverage = 0.813
   data.frame(
     prioritisation_followup = prioritisation_followup,
     pop = para$pop[[1]]$size,
-    cov_primary = c(NA, 0.787, rep(0.812, 2),
-                    rep(0.813, 12))
+    cov_primary = c(NA, 
+                    0.524, 
+                    rep(0.703, 2),
+                    rep(0.849, 12))
   ) |>
     mutate(
       cov_followup = uptake_by_existing_tmp * cov_primary,
@@ -147,20 +150,46 @@ vaccinate_booster_annual <- function(para = NULL,
     }
   }
   
-  tmp_times_move <- c(0,unlist(tmp_times) |> array())
-  tmp_values_move <- c(list(rep(0,16)),
-                       tmp_allocation$initial,
-                       tmp_allocation$campaign |> purrr::flatten()) |> setNames(NULL)
+  tmp_times_move <- c(unlist(tmp_times) |> array())
+  tmp_values_move <- c(tmp_allocation$campaign |> purrr::flatten()) |> setNames(NULL)
+  
+  if(frequency == 2 & max(prioritisation_followup, na.rm = T) == 1){
+    to_alter <- which(((1:length(tmp_values_move))%%4) == 3)
+    for(a in to_alter){
+      tmp_values_move[[a]] <- rep(0,16)
+    }
+  }
+  
+  if(frequency == 2 & max(prioritisation_followup, na.rm = T) == 2){
+    to_alter <- c(4, 5, 10, 11, 16, 17, 22, 23)
+    for(a in to_alter){
+      tmp_values_move[[a]] <- rep(0,16)
+    }
+  }
+  
   
   testthat::expect_equal(length(tmp_times_move),
                          length(tmp_values_move))
+  
+  # booster activities already observed
+  n_age_groups <- length(para$pop[[1]]$size)
+  date_start <- ymd(para$date0)
+  date_end <- date_start + para$time1
+  data.frame(date = seq(date_start, date_end, by = "day")) |> 
+    mutate(t = 0:para$time1,
+           empirical = date %in% (vac_data$date)) |> 
+    filter(empirical == T) |> 
+    pull(t) -> tmp_times_initial
+  c(0, tmp_times_initial, max(tmp_times_initial)+1) -> tmp_times_initial
+  c(list(rep(0,16)), booster_plan, list(rep(0,16))) -> tmp_values_initial
+  testthat::expect_equal(length(tmp_times_initial), length(tmp_values_initial))
   
   para$schedule[["booster"]] <- list(
     parameter = "v_b",
     pops = numeric(),
     mode = "assign",
-    values = tmp_values_move,
-    times = tmp_times_move
+    values = c(tmp_values_initial, tmp_values_move),
+    times = c(tmp_times_initial, tmp_times_move)
   )
   
   return(para)

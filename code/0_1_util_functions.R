@@ -4,8 +4,8 @@ gen_country_basics <- function(country = "Thailand",
                                R0_assumed  = 2.7,
                                date_start = "2020-01-01",
                                date_end = "2030-12-31",
-                               processes = NULL,
                                contact = contact_schedule,
+                               processes = gen_burden_processes(VE = efficacy_all),
                                # duration, waning of natural immunity
                                period_wn  = 3*365, 
                                # duration, waning from medium to low levels vaccine induced 
@@ -20,13 +20,32 @@ gen_country_basics <- function(country = "Thailand",
                                rate_death = mu_inuse$mu_mean_day, # rate per day
                                # reduction in susceptibility among previously 
                                # infected individuals
-                               deterministic = TRUE){
+                               deterministic = TRUE,
+                               scenario_primary = scenario3_primary,
+                               scenario_booster = scenario3_booster){
   
   require(countrycode)
   
+  # country = "Thailand"
+  # R0_assumed = out$optim$bestmem[1]
+  # date_start = as.character(ymd("2020-10-01") + out$optim$bestmem[2])
+  # date_end = "2030-12-31"
+  # contact = contact_schedule
+  # processes = gen_burden_processes(VE = efficacy_all)
+  # period_wn  = 3*365 # duration, waning of natural immunity
+  # period_wv_m2l = 1*365 # duration, waning from medium to low levels vaccine induced
+  # period_wv_h2m = 1*365 # duration, waning from medium to low levels vaccine induced
+  # prob_v_p_2l = 1
+  # prob_v_p_2m = 0
+  # prob_v_b_l2m = 0.5
+  # deterministic = TRUE
+  # scenario_primary = scenario3_primary
+  # scenario_booster = scenario3_booster
+  
   iso3c_tmp = countrycode(country, "country.name", "iso3c")
   
-  c_tmp = contact %>% 
+  c_tmp = 
+    contact %>% 
     filter(country_region == country) %>% 
     filter(date >= date_start,
            date <= date_end)
@@ -118,25 +137,86 @@ gen_country_basics <- function(country = "Thailand",
   para$pop[[1]]$wv_m2l <-  rep(1/period_wv_m2l, n_age_groups)
   para$pop[[1]]$wv_h2m <-  rep(1/period_wv_h2m, n_age_groups)
   
+  # add in the changes in 
+  data.frame(date = seq(ymd(date_start),
+      ymd(date_end),
+      "day")) %>% 
+    mutate(t = 1:n()) %>% 
+    filter(date %in% scenario_primary$date) %>% 
+    arrange(t) -> vaccine_product_t
+  
+  para$schedule[["prob_v_p_2l"]] = list(
+    parameter = "v_p_2l",
+    pops = numeric(),
+    mode = "assign",
+    # values and times need to be the same length
+    # values need to be a list
+    # times need to be an array
+    # this is true for all schedule objects
+    values = scenario_primary[,"prob_v_p_2l"] %>% 
+      split(., 1:nrow(.)) %>% 
+      map(c) %>% 
+      map(rep, 16) %>%
+      map(unlist) %>% 
+      map(unname) %>% 
+      unname, #remove list structure, convert to vector, and remove item names
+    times = vaccine_product_t$t)
+  
+  para$schedule[["prob_v_p_2m"]] = list(
+    parameter = "v_p_2m",
+    pops = numeric(),
+    mode = "assign",
+    # values and times need to be the same length
+    # values need to be a list
+    # times need to be an array
+    # this is true for all schedule objects
+    values = scenario_primary[,"prob_v_p_2m"] %>% 
+      split(., 1:nrow(.)) %>% 
+      map(c) %>% 
+      map(rep, 16) %>%
+      map(unlist) %>% 
+      map(unname) %>% 
+      unname, #remove list structure, convert to vector, and remove item names
+    times = vaccine_product_t$t)
+  
+  para$schedule[["prob_v_b_l2m"]] = list(
+    parameter = "v_b_l2m",
+    pops = numeric(),
+    mode = "assign",
+    # values and times need to be the same length
+    # values need to be a list
+    # times need to be an array
+    # this is true for all schedule objects
+    values = scenario_booster[,"prob_v_b_l2m"] %>% 
+      split(., 1:nrow(.)) %>% 
+      map(c) %>% 
+      map(rep, 16) %>%
+      map(unlist) %>% 
+      map(unname) %>% 
+      unname, #remove list structure, convert to vector, and remove item names
+    times = vaccine_product_t$t)
+  
   return(para)
 }
 
 # CJ(date = seq(ymd("2019-12-01"),
 #               ymd("2030-12-31"),
 #               by = "day")) %>%
-#   mutate(weights_v_i_l = rnorm(nrow(.), 0.8, 0.05),
-#          weights_v_i_m = rnorm(nrow(.), 0.8, 0.05),
-#          weights_v_i_h = rnorm(nrow(.), 0.8, 0.05),
-#          weights_v_d_l = rnorm(nrow(.), 0.8, 0.05),
-#          weights_v_d_m = rnorm(nrow(.), 0.8, 0.05),
-#          weights_v_d_h = rnorm(nrow(.), 0.8, 0.05)) -> efficacy_weights_test
+#   mutate(weights_v_i_l = rnorm(nrow(.), 1, 0),
+#          weights_v_i_m = rnorm(nrow(.), 1, 0),
+#          weights_v_i_h = rnorm(nrow(.), 1, 0),
+#          weights_v_d_l = rnorm(nrow(.), 1, 0),
+#          weights_v_d_m = rnorm(nrow(.), 1, 0),
+#          weights_v_d_h = rnorm(nrow(.), 1, 0)) -> efficacy_weights_one
 # 
-# write_rds(efficacy_weights_test,
-#           paste0(data_path, 
-#                  "intermediate/efficacy_weights_test.rds"))
+# write_rds(efficacy_weights_one,
+#           paste0(data_path,
+#                  "intermediate/efficacy_weights_one.rds"))
 
 efficacy_weights_test <- read_rds(paste0(data_path, 
                                          "intermediate/efficacy_weights_test.rds"))
+efficacy_weights_one <- read_rds(paste0(data_path, 
+                                         "intermediate/efficacy_weights_one.rds"))
 
 # efficacy_weights_test |> 
 #   mutate_at(vars(starts_with("weights")), function(x) x <- 1) -> efficacy_weights_one
@@ -464,6 +544,36 @@ vaccinate_primary <- function(para = NULL,
   return(para)
 }
 
+# vaccinate_boost_initial <- function(para = NULL,
+#                               vac_data = owid_vac,
+#                               values = booster_allocation_plan
+# ){
+#   
+#   require(lurbidate)
+#   n_age_groups <- length(para$pop[[1]]$size)
+#   date_start <- ymd(para$date0)
+#   date_end <- date_start + para$time1
+#   data.frame(date = seq(date_start, date_end, by = "day")) |> 
+#     mutate(t = 0:para$time1,
+#            empirical = date %in% (vac_data$date)) |> 
+#     filter(empirical == T) |> 
+#     pull(t) -> tmp_times
+#   
+#   c(0, tmp_times, max(tmp_times)+1) -> tmp_times
+#   c(list(rep(0,16)), values, list(rep(0,16))) -> tmp_allocation
+#   
+#   testthat::expect_equal(length(tmp_times), length(tmp_allocation))
+#   
+#   para$schedule[["booster_initial"]] <- list(
+#     parameter = "v_b",
+#     pops = numeric(),
+#     mode = "assign",
+#     values = tmp_allocation,
+#     times = tmp_times
+#   )
+#   return(para)
+# }
+
 # multiple booster campaigns is it a one time thing?
 # duration of interval; the start of the first booster campaign; age prioritisation
 # booster vaccine characteristics; 
@@ -646,7 +756,7 @@ cm_multinom_process <- function(
   )
 }
 
-check_vaccination_program <- function(type = "booster", # or primary_course
+check_vaccination_program <- function(type = "booster_initial", # or primary_course
                                       para = NULL){
   # para <- params
   # type = "booster"
@@ -681,4 +791,53 @@ check_vaccination_program <- function(type = "booster", # or primary_course
   
   return(p)
   
+}
+
+parameterise_setting <- function(f = 1,
+                                 prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+                                 boosting_level = 0.3){
+  para <- gen_country_basics(country = "Thailand",
+                             R0_assumed = out$optim$bestmem[1],
+                             date_start = as.character(ymd("2020-10-01") + out$optim$bestmem[2]),
+                             date_end = "2030-12-31",
+                             contact = contact_schedule,
+                             processes = gen_burden_processes(VE = efficacy_all),
+                             period_wn  = 3*365, # duration, waning of natural immunity
+                             period_wv_m2l = 1*365, # duration, waning from medium to low levels vaccine induced 
+                             period_wv_h2m = 1*365, # duration, waning from medium to low levels vaccine induced 
+                             prob_v_p_2l = 1,
+                             prob_v_p_2m = 0,
+                             prob_v_b_l2m = 0.5,
+                             deterministic = TRUE,
+                             scenario_primary = scenario3_primary,
+                             scenario_booster = scenario3_booster) %>% 
+    update_u_y(para = .,
+               date_switch = c("2021-01-15", "2021-07-05", "2021-12-31"),
+               rc_u = c(1, 1.5, 1.5), # relative changes in u
+               rc_y = c(1, 1, 1), # relative changes in y
+               rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
+               efficacy_baseline = efficacy_all,
+               efficacy_weights = efficacy_weights_test
+    ) %>%
+    emerge_VOC_burden(para = .,
+                      rc_severity = c(1, 1.5, 0.7), # relative change in ihr and ifr
+                      efficacy_baseline = efficacy_all) %>%
+    vaccinate_primary(para = .,
+                      vac_data = owid_vac,
+                      values = primary_allocation_plan) %>%
+    vaccinate_booster(para = .,
+                      vac_data = owid_vac,
+                      booster_plan =  booster_allocation_plan,
+                      # this is paused time
+                      # program_interval = 30*6, #default set to 6 months
+                      # should this be age-specific as well?
+                      uptake_by_existing = boosting_level, 
+                      # age-specific variables that defines the 
+                      # prioritisation, the numbers are essentially just
+                      # rankings; NA = not boosted
+                      # this is future policy
+                      prioritisation_followup = prioritisation_followup,
+                      campaign_month = c(10:12,1:2),
+                      frequency = f)
+  return(para)
 }

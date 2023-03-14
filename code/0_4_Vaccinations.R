@@ -18,12 +18,30 @@
 
 # vaccine efficacy tested
 # key input locations for antibody levels
-data.table(v_i_o = c(0.7, 0.85, 0.9),
-           vr_i_o = c(0.75, 0.9, 0.95),
-           r_i_o = c(0.5),
-           v_d_o = c(0.7, 0.9, 0.95),
-           v_severe_o = c(0.85, 0.95, 0.96),
-           v_critical_o = c(0.85, 0.95, 0.97),
+# data.table(v_i_o = c(0.7, 0.85, 0.9),
+#            vr_i_o = c(0.75, 0.9, 0.95),
+#            r_i_o = c(0.5),
+#            v_d_o = c(0.7, 0.9, 0.95),
+#            v_severe_o = c(0.85, 0.95, 0.96),
+#            v_critical_o = c(0.85, 0.95, 0.97),
+#            v_mort_o = c(0.85, 0.95, 0.98),
+#            protection_level_label = c("l", "m", "h")) %>% 
+#   # the following lines do not explicit reflect existing changes in infection
+#   # which has been explicitly modelled as changes in u
+#   # This equation is explained in Liu et al. 
+#   # https://www.medrxiv.org/content/10.1101/2022.05.09.22274846v1.supplementary-material
+#   # Supplemental material, p37, version 1
+#   mutate(v_d_condition = 1 - (1-v_d_o)/((1-v_i_o)),
+#          v_severe_condition = 1 - (1-v_severe_o)/((1-v_i_o)),
+#          v_critical_condition = 1 - (1-v_critical_o)/((1-v_i_o)),
+#          v_mort_condition = 1 - (1-v_mort_o)/((1-v_i_o))) -> efficacy_all
+
+data.table(v_i_o = c(0.33, 0.6, 0.75),
+           vr_i_o = c(0.6, 0.7, 0.8),
+           r_i_o = c(0.7),
+           v_d_o = c(0.44, 0.69, 0.85),
+           v_severe_o = c(0.75, 0.95, 0.96),
+           v_critical_o = c(0.8, 0.95, 0.97),
            v_mort_o = c(0.85, 0.95, 0.98),
            protection_level_label = c("l", "m", "h")) %>% 
   # the following lines do not explicit reflect existing changes in infection
@@ -87,6 +105,7 @@ fread(paste0(data_path, "vaccinations.csv")) %>%
 
 source("code/0_4_1_Staged_Vac.R")
 source("code/0_4_2_Primary.R")
+source("code/0_4_3_Boost_initial.R")
 
 # owid_date_total <- data.frame(date = seq(range(owid_vac$date)[1], range(owid_vac$date)[2], by = "day"))
 # owid_vac |> full_join(owid_date_total, by = "date")

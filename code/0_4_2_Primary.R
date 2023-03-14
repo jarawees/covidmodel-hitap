@@ -85,11 +85,11 @@ primary_allocation_plan[[pre_tag_children]][2] <- 0.1
 #                                 name %in% 3:4 ~ "adolescents",
 #                                 name %in% 5:11 ~ "adults",
 #                                 name >= 12 ~ "older adults")) -> p_table
-# 
+# # 
 # ggplot(data = p_table, aes(x = date, y = value, color = age_group3)) +
 #   geom_line() +
 #   facet_wrap(~name) -> p
-# 
+# # 
 # ggsave("figs/diagnostics/age_specific_primary_allocation_plan.png",
 #        plot = p,
 #        width = 10, height = 8)

@@ -5,6 +5,8 @@ sn <- excel_sheets(fn)
 doc <- list()
 for(i in c(1:3)) {doc[[i]] <- read_excel(fn, sheet = sn[i])}
 
+vac_type_list <- c("sv", "az", "sp", "pf", "md")
+
 fn <- paste0(data_path, "vaccine combo possibilities.csv")
 combo <- read_csv(fn) %>% 
   .[,1:5] %>% 
@@ -96,23 +98,23 @@ dose3 %>%
   ggplot(., aes(x = date, y = value, group = name, color = name)) +
   geom_line()
 
-method_1 <- read_rds(paste0(data_path,"vaccine_market_identical_results.rds"))
-method_2 <- read_rds(paste0(data_path,"vaccine_market_proportional_results.rds"))
+# method_1 <- read_rds(paste0(data_path,"vaccine_market_identical_results.rds"))
+# method_2 <- read_rds(paste0(data_path,"vaccine_market_proportional_results.rds"))
 
-method_1 %>% 
-  pivot_longer(starts_with(c("2_", "3_")),
-               names_to = "combo") %>%
-  mutate(method = "identical") %>% 
-  bind_rows(method_2 %>% 
-              pivot_longer(starts_with(c("1_", "2_", "3_")),
-                           names_to = "combo") %>% 
-              mutate(method = "proportional")) %>% 
-  ggplot(., aes(x = date, y = value, color = method)) +
-geom_line() +
-  facet_wrap(~combo)
+# method_1 %>% 
+#   pivot_longer(starts_with(c("2_", "3_")),
+#                names_to = "combo") %>%
+#   mutate(method = "identical") %>% 
+#   bind_rows(method_2 %>% 
+#               pivot_longer(starts_with(c("1_", "2_", "3_")),
+#                            names_to = "combo") %>% 
+#               mutate(method = "proportional")) %>% 
+#   ggplot(., aes(x = date, y = value, color = method)) +
+# geom_line() +
+#   facet_wrap(~combo)
 
-tail(method_1)
-tail(method_2)
+# tail(method_1)
+# tail(method_2)
 
 # dose3 %>% 
 #   dplyr::select(-ends_with("daily")) %>% 
@@ -131,18 +133,18 @@ tail(method_2)
 #   geom_line(aes(y = imputed)) +
 #   facet_wrap(~vac_type_imputed)
 
-combo %>% 
-  filter(applicability == "Y") %>% 
-  dplyr::select(dose1, dose2, dose3) %>% 
-  unique() -> combo_Y
-
-c(paste0("1_", unique(combo_Y$dose1)),
-  paste0("2_", unique(
-    paste(combo_Y$dose1, combo_Y$dose2, sep = "_")
-  )),
-  paste0("3_", unique(
-    paste(combo_Y$dose1, combo_Y$dose2, combo_Y$dose3, sep = "_")
-  ))) -> vaccine_compartments
+# combo %>% 
+#   filter(applicability == "Y") %>% 
+#   dplyr::select(dose1, dose2, dose3) %>% 
+#   unique() -> combo_Y
+# 
+# c(paste0("1_", unique(combo_Y$dose1)),
+#   paste0("2_", unique(
+#     paste(combo_Y$dose1, combo_Y$dose2, sep = "_")
+#   )),
+#   paste0("3_", unique(
+#     paste(combo_Y$dose1, combo_Y$dose2, combo_Y$dose3, sep = "_")
+#   ))) -> vaccine_compartments
 
 # check variability between data source
 # doc[[1]] |> 
@@ -171,79 +173,79 @@ c(paste0("1_", unique(combo_Y$dose1)),
 # ggsave("figs/diagnostics/market_share_validation.png",
 #        width = 10, height = 6)
   
-doc[[2]]|> 
-  dplyr::select(date, total_second) |> 
-  full_join(owid_vac |> 
-              dplyr::select(date, people_fully_vaccinated) |> 
-              dplyr::filter(!is.na(people_fully_vaccinated)) |> 
-              mutate(date = lubridate::ymd(date)),
-            by = "date") |> 
-  mutate(date = lubridate::ymd(date),
-         diff = abs(people_fully_vaccinated - total_second),
-         marker_100K = if_else(diff >= 100000, date, ymd(NA))) |> 
-  ggplot() +
-  geom_point(aes(x = date, y = total_second)) +
-  geom_point(aes(x = date, y = people_fully_vaccinated), color = "red") +
-    geom_vline(aes(xintercept = marker_100K, color = diff),
-               size = 1.5) 
+# doc[[2]]|> 
+#   dplyr::select(date, total_second) |> 
+#   full_join(owid_vac |> 
+#               dplyr::select(date, people_fully_vaccinated) |> 
+#               dplyr::filter(!is.na(people_fully_vaccinated)) |> 
+#               mutate(date = lubridate::ymd(date)),
+#             by = "date") |> 
+#   mutate(date = lubridate::ymd(date),
+#          diff = abs(people_fully_vaccinated - total_second),
+#          marker_100K = if_else(diff >= 100000, date, ymd(NA))) |> 
+#   ggplot() +
+#   geom_point(aes(x = date, y = total_second)) +
+#   geom_point(aes(x = date, y = people_fully_vaccinated), color = "red") +
+#     geom_vline(aes(xintercept = marker_100K, color = diff),
+#                size = 1.5) 
 
 # check for first boosters
-doc[[1]] |> 
-  dplyr::select(date, interval_boost) |> 
-  filter(interval_boost > 0) |> 
-  mutate(date = lubridate::ymd(date),
-         interval_boost_cumsum = cumsum(interval_boost )) |> 
-  full_join(owid_vac |> 
-              dplyr::select(date, total_boosters) |> 
-              filter(total_boosters > 0) |> 
-              mutate(date = ymd(date)),
-            by = "date") |> 
-  mutate(diff = total_boosters - interval_boost_cumsum ,
-         diff = abs(diff),
-         marker_100K = if_else(diff > 100000, date, ymd(NA))) |> 
-  # arrange(date) |> head(200)
-  ggplot() +
-  geom_point(aes(x = date, y = total_boosters), color = "red")+
-  geom_point(aes(x = date, y = interval_boost_cumsum)) + 
-  geom_vline(aes(xintercept = marker_100K, color = diff),
-             size = 1.5) 
+# doc[[1]] |> 
+#   dplyr::select(date, interval_boost) |> 
+#   filter(interval_boost > 0) |> 
+#   mutate(date = lubridate::ymd(date),
+#          interval_boost_cumsum = cumsum(interval_boost )) |> 
+#   full_join(owid_vac |> 
+#               dplyr::select(date, total_boosters) |> 
+#               filter(total_boosters > 0) |> 
+#               mutate(date = ymd(date)),
+#             by = "date") |> 
+#   mutate(diff = total_boosters - interval_boost_cumsum ,
+#          diff = abs(diff),
+#          marker_100K = if_else(diff > 100000, date, ymd(NA))) |> 
+#   # arrange(date) |> head(200)
+#   ggplot() +
+#   geom_point(aes(x = date, y = total_boosters), color = "red")+
+#   geom_point(aes(x = date, y = interval_boost_cumsum)) + 
+#   geom_vline(aes(xintercept = marker_100K, color = diff),
+#              size = 1.5) 
 
-doc[[1]] |> 
-  dplyr::select(date, interval_boost) |> 
-  filter(interval_boost > 0) |> 
-  mutate(date = lubridate::ymd(date),
-         interval_boost_cumsum = cumsum(interval_boost )) |> 
-  full_join(owid_vac |> 
-              dplyr::select(date, total_boosters) |> 
-              filter(total_boosters > 0) |> 
-              mutate(date = ymd(date)),
-            by = "date") |> 
-  mutate(diff = total_boosters - interval_boost_cumsum ,
-         diff = abs(diff),
-         marker_100K = if_else(diff > 100000, date, ymd(NA)))
+# doc[[1]] |> 
+#   dplyr::select(date, interval_boost) |> 
+#   filter(interval_boost > 0) |> 
+#   mutate(date = lubridate::ymd(date),
+#          interval_boost_cumsum = cumsum(interval_boost )) |> 
+#   full_join(owid_vac |> 
+#               dplyr::select(date, total_boosters) |> 
+#               filter(total_boosters > 0) |> 
+#               mutate(date = ymd(date)),
+#             by = "date") |> 
+#   mutate(diff = total_boosters - interval_boost_cumsum ,
+#          diff = abs(diff),
+#          marker_100K = if_else(diff > 100000, date, ymd(NA)))
 
 # check consistency among sums
 # what are these discrepancies?
-doc[[1]] |> 
-  dplyr::select(date, starts_with("interval") & ends_with("primary"), interval_first, interval_second, interval_dose, interval_boost) |> 
-  mutate(date = lubridate::ymd(date)) |> 
-  drop_na() %>%
-  mutate(rs = rowSums(.[,2:6]),
-         diff1 = interval_dose - interval_first - interval_second - interval_boost,
-         diff2 = rs - interval_second - interval_first) |> View()
-  
-doc[[1]] |> 
-  dplyr::select(date, starts_with("interval") & ends_with("primary"), interval_first, interval_second, interval_dose) |> 
-  mutate(date = lubridate::ymd(date)) |> 
-  drop_na() %>%
-  mutate(rs = rowSums(.[,2:6])) %>%
-  mutate_at(vars(starts_with("interval") & ends_with("primary")), function(x) x/.$rs) |> 
-  dplyr::select(date, starts_with("interval") & ends_with("primary")) |> 
-  drop_na() |> 
-  # mutate_at(vars(starts_with("interval")), function(x) c(0,diff(x))) |> 
-  pivot_longer(starts_with("interval")) |> 
-  filter(date >= ymd("2021-04-01")) |> 
-  separate(name, into = c("seg1","seg2", "seg3")) -> p_table
+# doc[[1]] |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("primary"), interval_first, interval_second, interval_dose, interval_boost) |> 
+#   mutate(date = lubridate::ymd(date)) |> 
+#   drop_na() %>%
+#   mutate(rs = rowSums(.[,2:6]),
+#          diff1 = interval_dose - interval_first - interval_second - interval_boost,
+#          diff2 = rs - interval_second - interval_first) |> View()
+#   
+# doc[[1]] |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("primary"), interval_first, interval_second, interval_dose) |> 
+#   mutate(date = lubridate::ymd(date)) |> 
+#   drop_na() %>%
+#   mutate(rs = rowSums(.[,2:6])) %>%
+#   mutate_at(vars(starts_with("interval") & ends_with("primary")), function(x) x/.$rs) |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("primary")) |> 
+#   drop_na() |> 
+#   # mutate_at(vars(starts_with("interval")), function(x) c(0,diff(x))) |> 
+#   pivot_longer(starts_with("interval")) |> 
+#   filter(date >= ymd("2021-04-01")) |> 
+#   separate(name, into = c("seg1","seg2", "seg3")) -> p_table
   
 # ggplot(data = p_table, 
 #          aes(x = date, y = value, color = seg2, fill = seg2)) +
@@ -265,31 +267,55 @@ doc[[1]] |>
 
 # aggregate data
 # boost, ignore sp and sv for boosting
-doc[[1]] |> 
-  dplyr::select(date, starts_with("interval") & ends_with("boost"), interval_boost) |> 
-  mutate(date = lubridate::ymd(date)) |> 
-  drop_na() %>%
-  mutate(rs = rowSums(.[,c(3:6)])) %>%
-  mutate_at(vars(starts_with("interval") & ends_with("boost")), function(x) x/.$rs) |> 
-  dplyr::select(date, starts_with("interval") & ends_with("boost")) |> 
-  drop_na() |> 
-  pivot_longer(starts_with("interval")) |> 
-  separate(name, into = c("seg1","seg2", "seg3")) |> 
-  dplyr::filter(!seg2 %in% c("boost", "sp", "sv")) |> 
-  dplyr::select(-seg1, -seg3) |> 
-  rename(vac_type = seg2) |> 
-  mutate(vac_type2 = "booster") -> seg_boost
+# doc[[1]] |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("boost"), interval_boost) |> 
+#   mutate(date = lubridate::ymd(date)) |> 
+#   drop_na() %>%
+#   mutate(rs = rowSums(.[,c(3:6)])) %>%
+#   mutate_at(vars(starts_with("interval") & ends_with("boost")), function(x) x/.$rs) |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("boost")) |> 
+#   drop_na() |> 
+#   pivot_longer(starts_with("interval")) |> 
+#   separate(name, into = c("seg1","seg2", "seg3")) |> 
+#   dplyr::filter(!seg2 %in% c("boost", "sp", "sv")) |> 
+#   dplyr::select(-seg1, -seg3) |> 
+#   rename(vac_type = seg2) |> 
+#   mutate(vac_type2 = "booster") -> seg_boost
 
-doc[[1]] |> 
-  dplyr::select(date, starts_with("interval") & ends_with("primary"), interval_first, interval_second, interval_dose) |> 
-  mutate(date = lubridate::ymd(date)) |> 
-  drop_na() %>%
-  mutate(rs = rowSums(.[,2:6])) %>% 
-  mutate_at(vars(starts_with("interval") & ends_with("primary")), function(x) x/.$rs) |> 
-  dplyr::select(date, starts_with("interval") & ends_with("primary")) |> 
-  drop_na() |> 
-  #vmutate_at(vars(starts_with("interval")), function(x) c(0,diff(x))) |> 
-  pivot_longer(starts_with("interval")) |> 
-  separate(name, into = c("seg1","seg2", "seg3")) |> 
-  dplyr::select(-seg1, -seg3) |> rename(vac_type = seg2) |> 
-  mutate(vac_type2 = "primary") -> seg_primary
+# doc[[1]] |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("primary"), interval_first, interval_second, interval_dose) |> 
+#   mutate(date = lubridate::ymd(date)) |> 
+#   drop_na() %>%
+#   mutate(rs = rowSums(.[,2:6])) %>% 
+#   mutate_at(vars(starts_with("interval") & ends_with("primary")), function(x) x/.$rs) |> 
+#   dplyr::select(date, starts_with("interval") & ends_with("primary")) |> 
+#   drop_na() |> 
+#   #vmutate_at(vars(starts_with("interval")), function(x) c(0,diff(x))) |> 
+#   pivot_longer(starts_with("interval")) |> 
+#   separate(name, into = c("seg1","seg2", "seg3")) |> 
+#   dplyr::select(-seg1, -seg3) |> rename(vac_type = seg2) |> 
+#   mutate(vac_type2 = "primary") -> seg_primary
+
+dose1 %>% 
+  left_join(dose2, by = "date") %>% 
+  left_join(dose3, by = "date") %>% 
+  dplyr::select(date, ends_with("daily")) %>% 
+  pivot_longer(ends_with("daily")) %>% 
+  separate(name, into = c("vac_type",
+                          "dose_index",
+                          "rm")) %>% 
+  dplyr::select(-rm) -> vaccine_daily
+
+expand.grid(dose1 = vac_type_list,
+            vac_type = vac_type_list) %>% 
+  dplyr::filter(dose1 == vac_type) %>% 
+  mutate(Vl = c(0.821, 0.129, 0.821, 0, 0),
+         Vm = c(0.171, 0.868, 0.171, 0.88, 0.88),
+         Vh = c(0.008, 0.003, 0.008, 0.12, 0.12)) -> vp_levels
+
+expand_grid(booster_type = vac_type_list) %>% 
+  filter(booster_type %in% c("pf", "md", "az")) %>% 
+  mutate(Vl2m = c(0.5,0,0),
+         Vl2h = c(0.5,1,1)) -> bp_levels
+
+source("code/0_7_3_consistent_primary_memoryless.R")

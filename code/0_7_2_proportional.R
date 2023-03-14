@@ -1,14 +1,3 @@
-vac_type_list <- c("sv", "az", "sp", "pf", "md")
-
-dose1 %>% 
-  left_join(dose2, by = "date") %>% 
-  left_join(dose3, by = "date") %>% 
-  dplyr::select(date, ends_with("daily")) %>% 
-  pivot_longer(ends_with("daily")) %>% 
-  separate(name, into = c("vac_type",
-                          "dose_index",
-                          "rm")) %>% 
-  dplyr::select(-rm) -> vaccine_daily
 
 vaccine_daily[,1] %>% distinct() -> tmp
 tmp[,vaccine_compartments] <- as.numeric(NA)

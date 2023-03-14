@@ -1,3 +1,4 @@
+
 dose2 %>% 
   dplyr::select(date, ends_with("daily")) %>% 
   setNames(c("date", "2_sv_sv", "2_az_az","2_sp_sp","2_pf_pf","2_md_md")) -> dose2_tmp
@@ -63,29 +64,29 @@ for(d in 2:nrow(tmp)){
 
 # write_rds(tmp, paste0(data_path,"vaccine_market_identical_results.rds"))
 
-tmp %>% 
-  pivot_longer(colnames(.)[2:17]) %>% 
-ggplot(., aes(x = date, y = value, group = name)) +
+tmp %>%
+  pivot_longer(colnames(.)[2:17]) %>%
+  ggplot(., aes(x = date, y = value, group = name)) +
   geom_line() +
   facet_wrap(~name, scales = "free")
 
-tmp %>%
-  mutate(tot = rowSums(.[,2:17])) %>% 
-  left_join(vaccine_daily %>% 
-              filter(dose_index == "second") %>% 
-              group_by(date) %>% 
-              summarise(dose2 = sum(value)) %>% 
-              mutate(dose2_cs = cumsum(dose2)),
-            by = "date") %>% 
-  left_join(vaccine_daily %>% 
-              filter(dose_index == "boost") %>% 
-              group_by(date) %>% 
-              summarise(dose3 = sum(value)) %>% 
-              mutate(dose3_cs = cumsum(dose3)),
-            by = "date") %>% 
-  mutate(doses_sum = dose3_cs + dose2_cs) %>% 
-  filter(round(tot) != round(doses_sum)) %>% 
-  mutate(doses_sum - tot)
+# tmp %>%
+#   mutate(tot = rowSums(.[,2:17])) %>% 
+#   left_join(vaccine_daily %>% 
+#               filter(dose_index == "second") %>% 
+#               group_by(date) %>% 
+#               summarise(dose2 = sum(value)) %>% 
+#               mutate(dose2_cs = cumsum(dose2)),
+#             by = "date") %>% 
+#   left_join(vaccine_daily %>% 
+#               filter(dose_index == "boost") %>% 
+#               group_by(date) %>% 
+#               summarise(dose3 = sum(value)) %>% 
+#               mutate(dose3_cs = cumsum(dose3)),
+#             by = "date") %>% 
+#   mutate(doses_sum = dose3_cs + dose2_cs) %>% 
+#   filter(round(tot) != round(doses_sum)) %>% 
+#   mutate(doses_sum - tot)
 
 
 # doc[[2]] %>% 

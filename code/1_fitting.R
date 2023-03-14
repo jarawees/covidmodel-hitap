@@ -1,8 +1,8 @@
 # have fitting window to end in August 2021
-owid_vac %>% 
-  filter(people_fully_vaccinated_per_hundred < 10) %>% 
-  pull(date) %>% 
-  range()
+# owid_vac %>% 
+#   filter(people_fully_vaccinated_per_hundred < 10) %>% 
+#   pull(date) %>% 
+#   range()
 
 fit_func <- function(input){
 
@@ -156,7 +156,7 @@ draw_fit <- function(input){
   return(p)
 }
 
-controlDE <- list(reltol=1e-6, steptol=20, itermax = 400, trace = 10,
+controlDE <- list(reltol=1e-4, steptol=20, itermax = 400, trace = 10,
                   parallelType = 2)
 
 DEoptim(fn = fit_func,
@@ -166,5 +166,10 @@ DEoptim(fn = fit_func,
         upper = c(8, 180, 1),
         control = controlDE) -> out
 
-draw_fit(out$optim$bestmem)
-write_rds(out, "data/out.rds")
+# draw_fit(out$optim$bestmem)
+# write_rds(out, "data/out.rds")
+
+
+out <- read_rds("data/out.rds")
+# input <- c(1.78887360, 0.05408726, 0.04184677 )
+draw_fit(input)

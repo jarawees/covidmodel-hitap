@@ -3,40 +3,59 @@ source("code/0_LoadAll.R")
 # params <- cm_parameters_SEI3R("Thailand")
 # res <- cm_simulate(params)
 
+out <- read_rds("data/out.rds")
+date_switch <- c("2021-01-15", "2021-07-05", "2021-12-31")
+
 #### Simple example ####
-params <- gen_country_basics(country = "Thailand",
-                             R0_assumed = 2.7,
-                             date_start = "2020-01-01",
-                             date_end = "2030-12-31",
-                             contact = contact_schedule,
-                             processes = gen_burden_processes(VE = efficacy_all),
-                             period_wn  = 3*365, # duration, waning of natural immunity
-                             period_wv_m2l = 1*365, # duration, waning from medium to low levels vaccine induced 
-                             period_wv_h2m = 1*365, # duration, waning from medium to low levels vaccine induced 
-                             prob_v_p_2l = 1,
-                             prob_v_p_2m = 0,
-                             prob_v_b_l2m = 0.5,
-                             deterministic = TRUE) %>% 
-  update_u_y(para = .,
-             date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
-             rc_u = c(1, 1.5, 0.5), # relative changes in u
-             rc_y = c(1, 0.5, 0.5), # relative changes in y
-             rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
-             efficacy_baseline = efficacy_all,
-             efficacy_weights = efficacy_weights_test
-  ) %>%
-  emerge_VOC_burden(para = .,
-    rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
-    efficacy_baseline = efficacy_all) %>%
-  vaccinate_primary(para = .,
-                    vac_data = owid_vac,
-                    values = primary_allocation_plan) %>%
-  vaccinate_booster_annual(para = .,
-                           vac_data = owid_vac,
-                           uptake_by_existing = 0.9,
-                           prioritisation_initial = c(rep(NA, 4), rep(1,12)),
-                           prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
-                           campaign_month = c(10:12,1:2))
+panel <- expand.grid(f = c(1:2), boosting_level = c(0.00001, seq(0.1, 0.9, 0.1)), prioritisation = c(T, F))
+setting_list <- list()
+for(i in 1:nrow(panel)) {
+  if (panel$prioritisation[i] == T) {
+    setting_list[[i]] <- parameterise_setting(
+      f = panel$f[i],
+      prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+      boosting_level = panel$boosting_level[i]
+    )
+  }
+  if (panel$prioritisation[i] == F) {
+    setting_list[[i]] <- parameterise_setting(
+      f = panel$f[i],
+      prioritisation_followup = c(NA,rep(1,15)),
+      boosting_level = panel$boosting_level[i]
+    )
+  }
+}
+
+res_all <- list()
+for(i in 1:length(setting_list)){
+  cm_simulate(setting_list[[i]])$dynamics %>% 
+    filter(grepl("case|sever|critical|death", compartment)) %>% 
+    filter(!grepl("_p|reported", compartment)) %>% 
+    mutate(date = t + ymd("2020-10-01") + out$optim$bestmem[2],
+           year = year(date))  %>% 
+    pivot_wider(names_from = compartment, values_from = value) %>% 
+    mutate(severe_all = case_when(date <= date_switch[1] ~ severe_i,
+                                  date > date_switch[1] & date <= date_switch[2] ~ severe_voc1_i,
+                                  date > date_switch[2] & date <= date_switch[3] ~ severe_voc2_i,
+                                  date > date_switch[3] ~ severe_voc3_i),
+           critical_all = case_when(date <= date_switch[1] ~ critical_i,
+                                    date > date_switch[1] & date <= date_switch[2] ~ critical_voc1_i,
+                                    date > date_switch[2] & date <= date_switch[3] ~ critical_voc2_i,
+                                    date > date_switch[3] ~ critical_voc3_i),
+           death_all = case_when(date <= date_switch[1] ~ death_o,
+                                 date > date_switch[1] & date <= date_switch[2] ~ death_voc1_o,
+                                 date > date_switch[2] & date <= date_switch[3] ~ death_voc2_o,
+                                 date > date_switch[3] ~ death_voc3_o)) %>% 
+    dplyr::select(date, year, group, cases, ends_with("all")) -> res_all[[i]]
+}
+
+write_rds(res_all, "data/res_all.rds")
+  # vaccinate_booster_annual(para = .,
+  #                          vac_data = owid_vac,
+  #                          uptake_by_existing = 0.9,
+  #                          prioritisation_initial = c(rep(NA, 4), rep(1,12)),
+  #                          prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+  #                          campaign_month = c(10:12,1:2))
 
 check_vaccination_program(type = "booster",
                           para = params) -> p_booster
@@ -46,27 +65,23 @@ check_vaccination_program(type = "primary_course",
 
 
 # check schedule objects generated
-params$schedule$primary_course$values |> 
-  map(data.frame) |> map(t) |> map(data.frame) |> bind_rows() |> 
-  mutate(rn = 1:n()) |> set_rownames(NULL) |> 
-  pivot_longer(starts_with("X")) |> 
-  mutate(name = factor(name, levels = paste0("X",1:16))) |> 
-  ggplot(aes(x = rn, y = value, group = name)) +
-  geom_point() +
-  facet_wrap(~name)
 
-params$schedule$booster$times
-
-params$schedule$booster$values |> 
-  map(data.frame) |> map(t) |> map(data.frame) |> bind_rows() |> 
-  mutate(rn = 1:n()) |> set_rownames(NULL) |> 
-  pivot_longer(starts_with("X")) |> 
-  mutate(name = factor(name, levels = paste0("X",1:16))) |> 
-  ggplot(aes(x = rn, y = value, group = name)) +
-  geom_point() +
-  facet_wrap(~name)
 
 res <- cm_simulate(params)
+
+res$dynamics %>%
+  filter(compartment == "death_o") %>% 
+  mutate(date = ymd(ymd("2020-10-01") + out$optim$bestmem[2]) + t,
+         year = year(date)) %>% 
+  group_by(year) %>% 
+  summarise(deaths = sum(value))
+
+res$dynamics %>% 
+  filter(compartment == "death_o") %>% 
+  ggplot(., aes(x = t, y = value)) +
+  geom_line() +
+  facet_wrap(~group)
+
 # res$dynamics |> 
 #   filter(t == 458) |> 
 #   filter(grepl("v_l",compartment))

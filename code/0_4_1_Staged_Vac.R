@@ -1,16 +1,12 @@
 # impute people fully vaccinated and then convert to daily
-owid_vac |> 
-  ggplot(aes(x = date, y = people_fully_vaccinated)) +
-  geom_point()
-
 model <- gam(people_fully_vaccinated ~ s(total_vaccinations), data = owid_vac)
 summary(model)
 
-fitted_values <- (predict.gam(model, newdata = data.frame(total_vaccinations = owid_vac$total_vaccinations))) %>% 
+fitted_values <- (predict.gam(model, newdata = data.frame(total_vaccinations = owid_vac$total_vaccinations))) %>%
   replace(., .<0,0)
-
+#
 owid_vac[,"people_fully_vaccinated_imputed"] <- fitted_values
-owid_vac |> 
+owid_vac |>
   mutate(people_fully_vaccinated_daily = c(0,diff(people_fully_vaccinated_imputed))) -> owid_vac
 
 # plot(owid_vac$people_fully_vaccinated_daily)
@@ -38,8 +34,8 @@ owid_vac %<>%
   ))
 # 
 # target_distribution <- list()
-# target_distribution[["OA"]] <- rnorm(10000, 0.7, 0.02) %>% .[.<1]
-# target_distribution[["A"]] <- rnorm(10000, 0.7, 0.02) %>% .[.<1]
+# target_distribution[["OA"]] <- rnorm(10000, 0.8, 0.02) %>% .[.<1]
+# target_distribution[["A"]] <- rnorm(10000, 0.8, 0.02) %>% .[.<1]
 # target_distribution[["UA"]] <- rnorm(10000, 0.5, 0.02) %>% .[.<1]
 # 
 # fit_beta <- list()
@@ -81,18 +77,17 @@ owid_vac %<>%
 #     left_join(covered_by_age, by = "age_group2") |>
 #     mutate(p_covered = covered/tot_age) -> res
 # 
-# 
-#   return(data.frame(ll = sum(dbeta(res |> filter(age_group2 == "children") |> pull(p_covered), 
-#                                    fit$UA$parameters[1], 
-#                                    fit$UA$parameters[2], 
+#   return(data.frame(ll = sum(dbeta(res |> filter(age_group2 == "children") |> pull(p_covered),
+#                                    fit_beta$UA$parameters[1],
+#                                    fit_beta$UA$parameters[2],
 #                                    log = T),
-#                              dbeta(res |> filter(age_group2 == "adolescent") |> pull(p_covered), 
-#                                    fit$A$parameters[1], 
-#                                    fit$A$parameters[2], 
+#                              dbeta(res |> filter(age_group2 == "adolescent") |> pull(p_covered),
+#                                    fit_beta$A$parameters[1],
+#                                    fit_beta$A$parameters[2],
 #                                    log = T),
-#                              dbeta(res |> filter(age_group2 == "adult") |> pull(p_covered), 
-#                                    fit$OA$parameters[1], 
-#                                    fit$OA$parameters[2], 
+#                              dbeta(res |> filter(age_group2 == "adult") |> pull(p_covered),
+#                                    fit_beta$OA$parameters[1],
+#                                    fit_beta$OA$parameters[2],
 #                                    log = T)),
 #               cov_child = res$p_covered[3],
 #               cov_adolescent = res$p_covered[1],
@@ -102,7 +97,8 @@ owid_vac %<>%
 # CJ(input1 = seq(0,1,0.05),
 #    input2 = seq(0,1,0.05),
 #    input3 = seq(0,1,0.05)) %>%
-#   filter(input2 + input <= 1) %>%
+#   filter(input1 <= 1,
+#          input2 + input3 <= 1) %>% 
 #   split(seq(nrow(.))) |>
 #   map(unlist)  -> grid
 # 
@@ -127,10 +123,10 @@ owid_vac %<>%
 #                          children = c(  0, 0,          1-grid[[logLikRank$set[1]]][2]-grid[[logLikRank$set[1]]][3]),
 #                          vaccination_phase = c(1:3)) |>
 #   set_rownames(NULL)
-# 
-# write_rds(coef_phase_final, "data/phased_introduction.rds")
+#  
+# write_rds(coef_phase_final, "data/phased_introduction2.rds")
 
-phased_introduction <- read_rds(paste0(data_path, "phased_introduction.rds"))
+phased_introduction <- read_rds(paste0("data/phased_introduction.rds"))
 
 owid_vac |> 
   left_join(phased_introduction, by = "vaccination_phase") |> 
