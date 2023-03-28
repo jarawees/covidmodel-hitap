@@ -3,7 +3,9 @@ p_load(ggsci)
 theme_hitap <- theme_cowplot() +
   theme(legend.position = "top",
         axis.title = element_text(size = 14),
-        legend.text = element_text(size = 14))
+        legend.text = element_text(size = 14),
+        strip.background = element_rect(fill = "white", size = 1, color = "black")
+        )
 
 fig1_date_range <- data.frame(date = seq(ymd("2020-01-01"),
                        ymd("2022-09-30"),

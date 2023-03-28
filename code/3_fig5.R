@@ -1,6 +1,6 @@
 panel %>% 
   rownames_to_column() %>% 
-  filter(f == 1) %>% 
+  filter(f == 1, prioritisation != "OA then A") %>% 
   pull(rowname) %>% 
   as.numeric -> to_pull
 
@@ -13,12 +13,12 @@ lapply(to_pull, function(x){
   bind_rows() %>% 
   bind_cols(panel %>% 
               rownames_to_column() %>% 
-              filter(f == 1)) %>% 
+              filter(f == 1, prioritisation != "OA then A")) %>% 
   pivot_longer(cols = c("cases", "hospitalisation", "death")) %>% 
   dplyr::select(boosting_level, prioritisation, name, value) %>% 
   pivot_wider(names_from = prioritisation,
               values_from = value) %>% 
-  mutate(r = 1-`FALSE`/`TRUE`,
+  mutate(r = `OA and A`/`OA only`,
          name = factor(name,
                        levels = c("cases", "hospitalisation", "death"),
                        labels = c("Cases", "Hospitalisations", "Deaths"))) %>% 
@@ -29,9 +29,9 @@ lapply(to_pull, function(x){
   geom_line(aes(group = name)) +
   theme_hitap +
   labs(x = "Annual boosting level",
-       y = "Percentage health outcome averted due to prioritisation",
+       y = "Percentage health outcome averted due to including 5-64 year olds",
        color = "") +
   ggsci::scale_color_lancet() -> p
 
-ggsave("figs/fig5_v0.png", plot = p,
+ggsave("figs/fig5_v1.png", plot = p,
        width = 10, height = 10)

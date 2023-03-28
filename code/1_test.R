@@ -3,24 +3,33 @@ source("code/0_LoadAll.R")
 # params <- cm_parameters_SEI3R("Thailand")
 # res <- cm_simulate(params)
 
-out <- read_rds("data/out.rds")
+out <- read_rds("data/out_20230328.rds")
 date_switch <- c("2021-01-15", "2021-07-05", "2021-12-31")
 
 #### Simple example ####
-panel <- expand.grid(f = c(1:2), boosting_level = c(0.00001, seq(0.1, 0.9, 0.1)), prioritisation = c(T, F))
+panel <- expand.grid(f = c(1:2), boosting_level = c(0.00001, seq(0.1, 0.9, 0.1)), prioritisation = c("OA only",
+                                                                                                     "OA then A",
+                                                                                                     "OA and A"))
 setting_list <- list()
 for(i in 1:nrow(panel)) {
-  if (panel$prioritisation[i] == T) {
+  if (panel$prioritisation[i] == "OA then A") {
     setting_list[[i]] <- parameterise_setting(
       f = panel$f[i],
       prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
       boosting_level = panel$boosting_level[i]
     )
   }
-  if (panel$prioritisation[i] == F) {
+  if (panel$prioritisation[i] == "OA and A") {
     setting_list[[i]] <- parameterise_setting(
       f = panel$f[i],
       prioritisation_followup = c(NA,rep(1,15)),
+      boosting_level = panel$boosting_level[i]
+    )
+  }
+  if (panel$prioritisation[i] == "OA only") {
+    setting_list[[i]] <- parameterise_setting(
+      f = panel$f[i],
+      prioritisation_followup = c(rep(NA,12),rep(1,4)),
       boosting_level = panel$boosting_level[i]
     )
   }
@@ -31,7 +40,7 @@ for(i in 1:length(setting_list)){
   cm_simulate(setting_list[[i]])$dynamics %>% 
     filter(grepl("case|sever|critical|death", compartment)) %>% 
     filter(!grepl("_p|reported", compartment)) %>% 
-    mutate(date = t + ymd("2020-10-01") + out$optim$bestmem[2],
+    mutate(date = t + ymd("2021-02-01"),
            year = year(date))  %>% 
     pivot_wider(names_from = compartment, values_from = value) %>% 
     mutate(severe_all = case_when(date <= date_switch[1] ~ severe_i,
@@ -49,7 +58,7 @@ for(i in 1:length(setting_list)){
     dplyr::select(date, year, group, cases, ends_with("all")) -> res_all[[i]]
 }
 
-write_rds(res_all, "data/res_all.rds")
+write_rds(res_all, "data/res_all_low_transmissibility.rds")
   # vaccinate_booster_annual(para = .,
   #                          vac_data = owid_vac,
   #                          uptake_by_existing = 0.9,

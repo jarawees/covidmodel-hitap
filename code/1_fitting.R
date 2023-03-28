@@ -4,13 +4,18 @@
 #   pull(date) %>% 
 #   range()
 
+# ymd("2021-04-01")-ymd("2021-02-01")
+# ymd("2021-06-01")-ymd("2021-02-01")
+# 
+# 
+
 fit_func <- function(input){
 
   suppressWarnings(
     gen_country_basics(
       country = "Thailand",
       R0_assumed = input[1],
-      date_start = as.character(ymd("2020-10-01") + input[2]),
+      date_start = "2021-02-01",
       date_end = "2021-08-26",
       contact = contact_schedule,
       processes = gen_burden_processes(VE = efficacy_all),
@@ -23,7 +28,10 @@ fit_func <- function(input){
       prob_v_p_2l = 1,
       prob_v_p_2m = 0,
       prob_v_b_l2m = 0.5,
-      deterministic = TRUE
+      deterministic = TRUE,
+      scenario_primary = scenario3_primary,
+      scenario_booster = scenario3_booster,
+      seed = input[2]
     ) %>%
       update_u_y(
         para = .,
@@ -35,7 +43,7 @@ fit_func <- function(input){
         rc_ve = c(1, 0.9),
         # relative evasiveness
         efficacy_baseline = efficacy_all,
-        efficacy_weights = efficacy_weights_test
+        efficacy_weights = efficacy_weights_one
       ) %>%
       emerge_VOC_burden(
         para = .,
@@ -52,7 +60,7 @@ fit_func <- function(input){
       filter(grepl("death", compartment)) %>%
       group_by(t, compartment) %>%
       summarise(value = sum(value), .groups = "drop") %>%
-      mutate(date = ymd("2020-10-01") + input[2] + t) %>%
+      mutate(date = ymd("2021-02-01") + t) %>%
       pivot_wider(names_from = compartment,
                   values_from = value) %>%
       mutate(deaths_sim = case_when(date <= "2021-01-15" ~ death_o,
@@ -66,7 +74,8 @@ fit_func <- function(input){
       right_join(epi %>% 
                   mutate(txn_date = ymd(txn_date)),
                 by = c("date" = "txn_date")) %>%
-    mutate(scaled = if_else(is.na(scaled), 0.000001, scaled)) %>% 
+    mutate(scaled = if_else(is.na(scaled), 0.001, scaled),
+           scaled = if_else((scaled) == 0, 0.001, scaled)) %>% 
     arrange(date) %>% 
     filter(date <= "2021-08-26") %>% 
     dplyr::select(date, scaled, new_death) %>% 
@@ -85,7 +94,7 @@ draw_fit <- function(input){
     gen_country_basics(
       country = "Thailand",
       R0_assumed = input[1],
-      date_start = as.character(ymd("2020-10-01") + input[2]),
+      date_start = "2021-02-01",
       date_end = "2021-08-26",
       contact = contact_schedule,
       processes = gen_burden_processes(VE = efficacy_all),
@@ -98,7 +107,8 @@ draw_fit <- function(input){
       prob_v_p_2l = 1,
       prob_v_p_2m = 0,
       prob_v_b_l2m = 0.5,
-      deterministic = TRUE
+      deterministic = TRUE,
+      seed = input[2]
     ) %>%
       update_u_y(
         para = .,
@@ -110,7 +120,7 @@ draw_fit <- function(input){
         rc_ve = c(1, 0.9),
         # relative evasiveness
         efficacy_baseline = efficacy_all,
-        efficacy_weights = efficacy_weights_test
+        efficacy_weights = efficacy_weights_one
       ) %>%
       emerge_VOC_burden(
         para = .,
@@ -127,7 +137,7 @@ draw_fit <- function(input){
     filter(grepl("death", compartment)) %>%
     group_by(t, compartment) %>%
     summarise(value = sum(value), .groups = "drop") %>%
-    mutate(date = ymd("2020-10-01") + input[2] + t) %>%
+    mutate(date = ymd("2021-02-01") + t) %>%
     pivot_wider(names_from = compartment,
                 values_from = value) %>%
     mutate(deaths_sim = case_when(date <= "2021-01-15" ~ death_o,
@@ -156,20 +166,22 @@ draw_fit <- function(input){
   return(p)
 }
 
-controlDE <- list(reltol=1e-4, steptol=20, itermax = 400, trace = 10,
+controlDE <- list(reltol=1e-6, steptol=20, itermax = 400, trace = 10,
                   parallelType = 2)
 
 DEoptim(fn = fit_func,
-        # lower = c(1, stop_fitting$fw_LL[index], 0.01),
-        # upper = c(5, stop_fitting$fw_UL[index], 1),
-        lower = c(1, 0, 0.01),
-        upper = c(8, 180, 1),
+        lower = c(1, 1, 0.5),
+        upper = c(5, 90, 0.9),
         control = controlDE) -> out
 
-# draw_fit(out$optim$bestmem)
-# write_rds(out, "data/out.rds")
-
-
-out <- read_rds("data/out.rds")
+# write_rds(out, "data/out_20230328.rds")
+# 
+# 
+# out <- read_rds("data/out.rds")
+# out_20230327 <- read_rds("data/out_20230327.rds")
+# out_20230328 <- read_rds("data/out_20230328.rds")
 # input <- c(1.78887360, 0.05408726, 0.04184677 )
-draw_fit(input)
+# draw_fit(out$optim$bestmem)
+# draw_fit(out_20230327$optim$bestmem)
+# draw_fit(out_20230328$optim$bestmem)
+# draw_fit(input)

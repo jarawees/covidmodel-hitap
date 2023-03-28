@@ -1,6 +1,6 @@
 panel %>% 
   rownames_to_column() %>% 
-  filter(prioritisation == T) %>% 
+  filter(prioritisation == "OA and A") %>% 
   pull(rowname) %>% 
   as.numeric -> to_pull
 
@@ -13,7 +13,7 @@ lapply(to_pull, function(x){
   bind_rows() %>% 
   bind_cols(panel %>% 
               rownames_to_column() %>% 
-              filter(prioritisation == T)) %>% 
+              filter(prioritisation == "OA and A")) %>% 
   pivot_longer(cols = c("cases", "hospitalisation", "death")) %>% 
   dplyr::select(boosting_level, f, name, value) %>% 
   pivot_wider(names_from = f,
@@ -33,5 +33,5 @@ lapply(to_pull, function(x){
        color = "") +
   ggsci::scale_color_lancet() -> p
 
-ggsave("figs/fig6_v0.png", plot = p,
+ggsave("figs/fig6_v1.png", plot = p,
        width = 10, height = 10)

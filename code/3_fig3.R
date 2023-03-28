@@ -1,9 +1,8 @@
-# vaccination vs no vaccination, 1 vs 11
 n = 1
 setting_list[[n]]$schedule$booster$values %>%
   map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
   mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
-  full_join(data.frame(t = seq(setting_list[[n]]$time0, para$time1)) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
               mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
             by = "t") |>
   arrange(date) |>
@@ -12,14 +11,31 @@ setting_list[[n]]$schedule$booster$values %>%
   pivot_longer(starts_with("X")) |>
   mutate(name = factor(name,
                        levels = paste0("X", 1:16))) %>% 
-  filter(name == "X16") %>% 
-  mutate(setting = "no vaccine") -> a
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "no vaccine",
+         frequency = "annual") -> p_1
+
+setting_list[[n]]$schedule$booster$values %>%
+  map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
+  mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
+              mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
+            by = "t") |>
+  arrange(date) |>
+  mutate_at(vars(starts_with("X")),
+            imputeTS::na_locf) |>
+  pivot_longer(starts_with("X")) |>
+  mutate(name = factor(name,
+                       levels = paste0("X", 1:16))) %>% 
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "no vaccine",
+         frequency = "bi-annual") -> p_2
 
 n = 11
 setting_list[[n]]$schedule$booster$values %>%
   map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
   mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
-  full_join(data.frame(t = seq(setting_list[[n]]$time0, para$time1)) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
               mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
             by = "t") |>
   arrange(date) |>
@@ -28,25 +44,14 @@ setting_list[[n]]$schedule$booster$values %>%
   pivot_longer(starts_with("X")) |>
   mutate(name = factor(name,
                        levels = paste0("X", 1:16))) %>% 
-  filter(name == "X16") %>% 
-  mutate(setting = "50% uptake, with prioritisation, annual") -> b
-  
-bind_rows(a, b) %>% 
-  mutate(setting = factor(setting, levels = c("no vaccine",
-                             "50% uptake, with prioritisation, annual"))) %>% 
-  ggplot(., aes(x = date, y = value)) +
-  geom_line() +
-  facet_wrap(~setting, ncol = 1) +
-  theme_hitap +
-  labs(x = "Date", y = "Daily doses administered by age group",
-       title = "Comparing uptake") -> dim_1
-
-# with and without prioritisation
-n = 11
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "50% uptake, older adults only",
+         frequency = "annual") -> p_3
+n = 12
 setting_list[[n]]$schedule$booster$values %>%
   map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
   mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
-  full_join(data.frame(t = seq(setting_list[[n]]$time0, para$time1)) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
               mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
             by = "t") |>
   arrange(date) |>
@@ -55,14 +60,15 @@ setting_list[[n]]$schedule$booster$values %>%
   pivot_longer(starts_with("X")) |>
   mutate(name = factor(name,
                        levels = paste0("X", 1:16))) %>% 
-  filter(name == "X16") %>% 
-  mutate(setting = "50% uptake, with prioritisation, annual") -> a
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "50% uptake, older adults only",
+         frequency = "bi-annual") -> p_4
 
 n = 31
 setting_list[[n]]$schedule$booster$values %>%
   map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
   mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
-  full_join(data.frame(t = seq(setting_list[[n]]$time0, para$time1)) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
               mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
             by = "t") |>
   arrange(date) |>
@@ -71,82 +77,84 @@ setting_list[[n]]$schedule$booster$values %>%
   pivot_longer(starts_with("X")) |>
   mutate(name = factor(name,
                        levels = paste0("X", 1:16))) %>% 
-  filter(name == "X16") %>% 
-  mutate(setting = "50% uptake, without prioritisation, annual") -> b
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "50% uptake, older adults then adults",
+         frequency = "annual") -> p_5
 
-bind_rows(a, b) %>% 
-  mutate(setting = factor(setting, levels = c("50% uptake, with prioritisation, annual",
-                                              "50% uptake, without prioritisation, annual"))) %>% 
-  ggplot(., aes(x = date, y = value)) +
+n = 32
+setting_list[[n]]$schedule$booster$values %>%
+  map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
+  mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
+              mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
+            by = "t") |>
+  arrange(date) |>
+  mutate_at(vars(starts_with("X")),
+            imputeTS::na_locf) |>
+  pivot_longer(starts_with("X")) |>
+  mutate(name = factor(name,
+                       levels = paste0("X", 1:16))) %>% 
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "50% uptake, older adults then adults",
+         frequency = "bi-annual") -> p_6
+
+
+n = 51
+setting_list[[n]]$schedule$booster$values %>%
+  map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
+  mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
+              mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
+            by = "t") |>
+  arrange(date) |>
+  mutate_at(vars(starts_with("X")),
+            imputeTS::na_locf) |>
+  pivot_longer(starts_with("X")) |>
+  mutate(name = factor(name,
+                       levels = paste0("X", 1:16))) %>% 
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "50% uptake, older adults and adults",
+         frequency = "annual") -> p_7
+
+n = 52
+setting_list[[n]]$schedule$booster$values %>%
+  map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
+  mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
+  full_join(data.frame(t = seq(setting_list[[n]]$time0, setting_list[[n]]$time1)) |>
+              mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
+            by = "t") |>
+  arrange(date) |>
+  mutate_at(vars(starts_with("X")),
+            imputeTS::na_locf) |>
+  pivot_longer(starts_with("X")) |>
+  mutate(name = factor(name,
+                       levels = paste0("X", 1:16))) %>% 
+  filter(name %in% c("X16", "X5")) %>% 
+  mutate(setting = "50% uptake, older adults and adults",
+         frequency = "bi-annual") -> p_8
+
+
+bind_rows(p_1, p_2, p_3, p_4, p_5, p_6, p_7, p_8) %>%
+  mutate(setting = factor(setting, 
+                          levels = c("no vaccine",
+                                     "50% uptake, older adults only",
+                                     "50% uptake, older adults and adults",
+                                     "50% uptake, older adults then adults"),
+                          labels = c("No vaccine use",
+                                     "50% uptake\nolder adults only",
+                                     "50% uptake\nolder adults and adults",
+                                     "50% uptake\nolder adults then adults")),
+         name = factor(name,
+                       levels = c("X5", "X16"),
+                       labels = c("20-24", "75+"))) %>% 
+  ggplot(., aes(x = date, y = value, group = name, color = name)) +
   geom_line() +
-  facet_wrap(~setting, ncol = 1) +
+  facet_grid(setting~frequency) +
   theme_hitap +
   labs(x = "Date", y = "Daily doses administered by age group",
-       title = "Comparing prioritisation strategy") -> dim_2
+       title = "Comparison by target age group and prioritisation", color = "Age Group (examples)") +
+  ggsci::scale_color_lancet() +
+  geom_vline(xintercept = ymd("2022-09-30"), linetype = 2)
 
-# annual vs bi annual, 11 compare to 12
-n = 9
-setting_list[[n]]$schedule$booster$values %>%
-  map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
-  mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
-  full_join(data.frame(t = seq(setting_list[[n]]$time0, para$time1)) |>
-              mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
-            by = "t") |>
-  arrange(date) |>
-  mutate_at(vars(starts_with("X")),
-            imputeTS::na_locf) |>
-  pivot_longer(starts_with("X")) |>
-  mutate(name = factor(name,
-                       levels = paste0("X", 1:16))) %>% 
-  filter(name == "X16") %>% 
-  mutate(setting = "40% uptake, with prioritisation, annual") -> a
-
-n = 10
-setting_list[[n]]$schedule$booster$values %>%
-  map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
-  mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
-  full_join(data.frame(t = seq(setting_list[[n]]$time0, para$time1)) |>
-              mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
-            by = "t") |>
-  arrange(date) |>
-  mutate_at(vars(starts_with("X")),
-            imputeTS::na_locf) |>
-  pivot_longer(starts_with("X")) |>
-  mutate(name = factor(name,
-                       levels = paste0("X", 1:16))) %>% 
-  filter(name == "X16") %>% 
-  mutate(setting = "40% uptake, with prioritisation, bi-annual") -> b
-
-n = 17
-setting_list[[n]]$schedule$booster$values %>%
-  map(data.frame) %>% map(t) %>% map(data.frame) %>% bind_rows() %>% 
-  mutate(t = setting_list[[n]]$schedule[["booster"]]$t) |>
-  full_join(data.frame(t = seq(setting_list[[n]]$time0, para$time1)) |>
-              mutate(date = lubridate::ymd(setting_list[[n]]$date0) + as.numeric(t)),
-            by = "t") |>
-  arrange(date) |>
-  mutate_at(vars(starts_with("X")),
-            imputeTS::na_locf) |>
-  pivot_longer(starts_with("X")) |>
-  mutate(name = factor(name,
-                       levels = paste0("X", 1:16))) %>% 
-  filter(name == "X16") %>% 
-  mutate(setting = "80% uptake, with prioritisation, bi-annual") -> c
-
-bind_rows(a, b, c) %>% 
-  mutate(setting = factor(setting, levels = c("40% uptake, with prioritisation, annual",
-                                              "40% uptake, with prioritisation, bi-annual",
-                                              "80% uptake, with prioritisation, bi-annual"))) %>% 
-  ggplot(., aes(x = date, y = value)) +
-  geom_line() +
-  facet_wrap(~setting, ncol = 1) +
-  theme_hitap +
-  labs(x = "Date", y = "Daily doses administered by age group",
-       title = "Comparing frequency") -> dim_3
-
-plot_grid(dim_1 + geom_vline(xintercept = seq(ymd("2023-01-01"), ymd("2030-01-01"), by = "year"), linetype = 2), 
-          dim_2 + geom_vline(xintercept = seq(ymd("2023-01-01"), ymd("2030-01-01"), by = "year"), linetype = 2), 
-          dim_3 + geom_vline(xintercept = seq(ymd("2023-01-01"), ymd("2030-01-01"), by = "year"), linetype = 2), ncol = 1) -> p
-
-ggsave("figs/fig3_v0.png", height = 15, width = 9)
+ggsave("figs/fig3_v1.png", height = 12, width = 12)
 

@@ -2,7 +2,7 @@
 gen_country_basics <- function(country = "Thailand",
                                # fitting
                                R0_assumed  = 2.7,
-                               date_start = "2020-01-01",
+                               date_start = "2021-02-01",
                                date_end = "2030-12-31",
                                contact = contact_schedule,
                                processes = gen_burden_processes(VE = efficacy_all),
@@ -22,14 +22,15 @@ gen_country_basics <- function(country = "Thailand",
                                # infected individuals
                                deterministic = TRUE,
                                scenario_primary = scenario3_primary,
-                               scenario_booster = scenario3_booster){
+                               scenario_booster = scenario3_booster,
+                               seed = 60){
   
   require(countrycode)
-  
+# 
   # country = "Thailand"
   # R0_assumed = out$optim$bestmem[1]
-  # date_start = as.character(ymd("2020-10-01") + out$optim$bestmem[2])
-  # date_end = "2030-12-31"
+  # date_start = "2021-02-01"
+  # date_end = "2021-08-26"
   # contact = contact_schedule
   # processes = gen_burden_processes(VE = efficacy_all)
   # period_wn  = 3*365 # duration, waning of natural immunity
@@ -41,7 +42,10 @@ gen_country_basics <- function(country = "Thailand",
   # deterministic = TRUE
   # scenario_primary = scenario3_primary
   # scenario_booster = scenario3_booster
-  
+  # rate_birth = c((9.532/1000)/365, rep(0,15)) # rate per day
+  # rate_death = mu_inuse$mu_mean_day
+  # seed_time = 60
+
   iso3c_tmp = countrycode(country, "country.name", "iso3c")
   
   c_tmp = 
@@ -68,8 +72,8 @@ gen_country_basics <- function(country = "Thailand",
                                                   t_max = 15, t_step = 0.25)$p,
                              deterministic = deterministic)
   
-
   n_age_groups <- length(para$pop[[1]]$size)
+  seeds <- seed:(seed+14)
   
   for(i in 1:length(para$pop)){
     
@@ -111,7 +115,7 @@ gen_country_basics <- function(country = "Thailand",
                           5 * (0:length(para$pop[[i]]$size))) 
     
     # 1 new infections each day for 14 days to see the outbreak
-    para$pop[[i]]$seed_times <- c(1:14)
+    para$pop[[i]]$seed_times <- seeds
   }
   
   para$processes = processes
@@ -144,6 +148,14 @@ gen_country_basics <- function(country = "Thailand",
     mutate(t = 1:n()) %>% 
     filter(date %in% scenario_primary$date) %>% 
     arrange(t) -> vaccine_product_t
+  
+  scenario_primary %>% 
+    filter(date >= date_start, 
+           date <= date_end) -> scenario_primary
+  
+  scenario_booster %>% 
+    filter(date >= date_start, 
+           date <= date_end) -> scenario_booster
   
   para$schedule[["prob_v_p_2l"]] = list(
     parameter = "v_p_2l",
@@ -798,7 +810,7 @@ parameterise_setting <- function(f = 1,
                                  boosting_level = 0.3){
   para <- gen_country_basics(country = "Thailand",
                              R0_assumed = out$optim$bestmem[1],
-                             date_start = as.character(ymd("2020-10-01") + out$optim$bestmem[2]),
+                             date_start = "2021-02-01",
                              date_end = "2030-12-31",
                              contact = contact_schedule,
                              processes = gen_burden_processes(VE = efficacy_all),
@@ -810,14 +822,15 @@ parameterise_setting <- function(f = 1,
                              prob_v_b_l2m = 0.5,
                              deterministic = TRUE,
                              scenario_primary = scenario3_primary,
-                             scenario_booster = scenario3_booster) %>% 
+                             scenario_booster = scenario3_booster,
+                             seed = out$optim$bestmem[2]) %>% 
     update_u_y(para = .,
                date_switch = c("2021-01-15", "2021-07-05", "2021-12-31"),
-               rc_u = c(1, 1.5, 1.5), # relative changes in u
+               rc_u = c(1, 1.5, 1.1), # relative changes in u
                rc_y = c(1, 1, 1), # relative changes in y
                rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
                efficacy_baseline = efficacy_all,
-               efficacy_weights = efficacy_weights_test
+               efficacy_weights = efficacy_weights_one
     ) %>%
     emerge_VOC_burden(para = .,
                       rc_severity = c(1, 1.5, 0.7), # relative change in ihr and ifr

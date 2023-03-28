@@ -95,7 +95,12 @@ pop_by1 |>
 
 source("code/0_5_1_VoCs.R")
 
-owid_epi <- read_csv(url("https://github.com/owid/covid-19-data/blob/master/public/data/owid-covid-data.csv?raw=true"))
+# owid_epi <- read_csv(url("https://github.com/owid/covid-19-data/blob/master/public/data/owid-covid-data.csv?raw=true")) %>% 
+#   filter(location == "Thailand")
+# write_rds(owid_epi, paste0(data_path, "owid_epi.rds"))
+
+owid <- read_rds(paste0(data_path, "owid_epi.rds"))
+
 
 # is this consistent with what we know about the population proejct outlook?
 # test <- cm_parameters_SEI3R(dem_locations = "Thailand", 
