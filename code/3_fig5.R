@@ -6,6 +6,7 @@ panel %>%
 
 lapply(to_pull, function(x){
   res_all[[x]] %>% 
+    dplyr::filter(year >= 2023) %>% 
     summarise(cases = sum(cases),
               hospitalisation = sum(severe_all) + sum(critical_all),
               death = sum(death_all))
@@ -21,7 +22,12 @@ lapply(to_pull, function(x){
   mutate(r = `OA and A`/`OA only`,
          name = factor(name,
                        levels = c("cases", "hospitalisation", "death"),
-                       labels = c("Cases", "Hospitalisations", "Deaths"))) %>% 
+                       labels = c("Cases", "Hospitalisations", "Deaths"))) -> p_table
+
+p_table %>% 
+  filter(boosting_level == 0.5)
+
+p_table %>% 
   ggplot(., aes(x = boosting_level,
                 y = r,
                 color = name)) +
@@ -29,7 +35,7 @@ lapply(to_pull, function(x){
   geom_line(aes(group = name)) +
   theme_hitap +
   labs(x = "Annual boosting level",
-       y = "Percentage health outcome averted due to including 5-64 year olds",
+       y = "Proportion of health outcome averted due to including 5-64 year olds",
        color = "") +
   ggsci::scale_color_lancet() -> p
 
