@@ -531,7 +531,7 @@ vaccinate_primary <- function(para = NULL,
   # vac_data = owid_vac,
   # values = primary_allocation_plan
   # 
-  require(lurbidate)
+  require(lubridate)
   n_age_groups <- length(para$pop[[1]]$size)
   date_start <- ymd(para$date0)
   date_end <- date_start + para$time1
