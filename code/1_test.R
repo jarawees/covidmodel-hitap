@@ -66,30 +66,30 @@ write_rds(res_all, "data/res_all_low_transmissibility.rds")
   #                          prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
   #                          campaign_month = c(10:12,1:2))
 
-check_vaccination_program(type = "booster",
-                          para = params) -> p_booster
-
-check_vaccination_program(type = "primary_course",
-                          para = params) -> p_primary
+# check_vaccination_program(type = "booster",
+#                           para = params) -> p_booster
+# 
+# check_vaccination_program(type = "primary_course",
+#                           para = params) -> p_primary
 
 
 # check schedule objects generated
 
 
-res <- cm_simulate(params)
-
-res$dynamics %>%
-  filter(compartment == "death_o") %>% 
-  mutate(date = ymd(ymd("2020-10-01") + out$optim$bestmem[2]) + t,
-         year = year(date)) %>% 
-  group_by(year) %>% 
-  summarise(deaths = sum(value))
-
-res$dynamics %>% 
-  filter(compartment == "death_o") %>% 
-  ggplot(., aes(x = t, y = value)) +
-  geom_line() +
-  facet_wrap(~group)
+# res <- cm_simulate(params)
+# 
+# res$dynamics %>%
+#   filter(compartment == "death_o") %>% 
+#   mutate(date = ymd(ymd("2020-10-01") + out$optim$bestmem[2]) + t,
+#          year = year(date)) %>% 
+#   group_by(year) %>% 
+#   summarise(deaths = sum(value))
+# 
+# res$dynamics %>% 
+#   filter(compartment == "death_o") %>% 
+#   ggplot(., aes(x = t, y = value)) +
+#   geom_line() +
+#   facet_wrap(~group)
 
 # res$dynamics |> 
 #   filter(t == 458) |> 
@@ -114,26 +114,26 @@ res$dynamics %>%
 # if(tmp != 0) print("population unbalanced!")
 
 # (2) people moving to vaccinated stages
-res$dynamics |>
-  filter(compartment %in% c("Rv_l", "Rv_m", "R", "Rv_h", "S", "Sv_l", "Sv_m", "Sv_h")) |>
-  # filter(compartment %in% compartment_labels) |>
-  group_by(t, compartment) |> summarise(value = sum(value)) |>
-  mutate(date = ymd("2020-01-01") + t) |>
-  ggplot(aes(x = date, y = value, group = compartment, color = compartment, fill = compartment)) +
-  # geom_bar(position = "stack", stat = "identity")
-  geom_point() +
-  facet_wrap(~compartment)
-
-res$dynamics |>
-  filter(compartment %in% c("Sv_l", "Rvl")) |>
-  group_by(t) |> summarise(value = sum(value)) |> 
-  ggplot(aes(x = t, y = value)) +geom_point()
-
-res$dynamics |>
-  filter(compartment %in% c("Sv_l")) |> 
-  ggplot(aes(x = t, y = value)) +
-  geom_point() +
-  facet_wrap(~group)
+# res$dynamics |>
+#   filter(compartment %in% c("Rv_l", "Rv_m", "R", "Rv_h", "S", "Sv_l", "Sv_m", "Sv_h")) |>
+#   # filter(compartment %in% compartment_labels) |>
+#   group_by(t, compartment) |> summarise(value = sum(value)) |>
+#   mutate(date = ymd("2020-01-01") + t) |>
+#   ggplot(aes(x = date, y = value, group = compartment, color = compartment, fill = compartment)) +
+#   # geom_bar(position = "stack", stat = "identity")
+#   geom_point() +
+#   facet_wrap(~compartment)
+# 
+# res$dynamics |>
+#   filter(compartment %in% c("Sv_l", "Rvl")) |>
+#   group_by(t) |> summarise(value = sum(value)) |> 
+#   ggplot(aes(x = t, y = value)) +geom_point()
+# 
+# res$dynamics |>
+#   filter(compartment %in% c("Sv_l")) |> 
+#   ggplot(aes(x = t, y = value)) +
+#   geom_point() +
+#   facet_wrap(~group)
 
 # res$dynamics |> 
 #   filter( grepl("Sv|Rv|R|S",compartment)) |> 
