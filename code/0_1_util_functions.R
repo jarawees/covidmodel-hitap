@@ -850,7 +850,7 @@ parameterise_setting <- function(f = 1,
                       # rankings; NA = not boosted
                       # this is future policy
                       prioritisation_followup = prioritisation_followup,
-                      campaign_month = c(10:12,1:2),
+                      campaign_month = c(5:8),
                       frequency = f)
   return(para)
 }
