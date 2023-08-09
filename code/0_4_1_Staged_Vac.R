@@ -98,7 +98,7 @@ owid_vac %<>%
 #    input2 = seq(0,1,0.05),
 #    input3 = seq(0,1,0.05)) %>%
 #   filter(input1 <= 1,
-#          input2 + input3 <= 1) %>% 
+#          input2 + input3 <= 1) %>%
 #   split(seq(nrow(.))) |>
 #   map(unlist)  -> grid
 # 
