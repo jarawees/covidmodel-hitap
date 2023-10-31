@@ -69,7 +69,7 @@ epi_round1to <- fread(paste0(data_path, "epi_round1to2.csv")) # snapshot from 20
 epi_update <- fread(paste0(data_path, "epi_update.csv")) # time-series from 2021-04-01 onward
 
 epi <- bind_rows(epi_round1to, epi_update) %>%
-  select(txn_date, new_case_excludeabroad, new_death)
+  dplyr::select(txn_date, new_case_excludeabroad, new_death)
 
 rm(epi_round1to, epi_update)
 

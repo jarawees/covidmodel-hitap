@@ -79,8 +79,20 @@ P.hosp <- P.critical + P.severe
 # the delay function for each outputs
 delay_2death <- cm_delay_gamma(26, 5, 60, 0.25)$p
 delay_2severe <- cm_delay_gamma(8.5, 5, 60, 0.25)$p
-delay_2hosp <- cm_delay_gamma(14.6, 5, 60, 0.25)$p
-delay_2hosp_critical <- cm_delay_gamma(15.6, 5, 60, 0.25)$p
+delay_2hosp_old <- cm_delay_gamma(14.6, 5, 60, 0.25)$p
+delay_2hosp <- cm_delay_gamma(27.445666/2.826859, 27.445666, 60, 0.25)$p
+delay_2hosp_critical_old <- cm_delay_gamma(15.6, 5, 60, 0.25)$p
+delay_2hosp_critical <- cm_delay_gamma((27.445666/2.826859)*15.6/14.6, 27.445666, 60, 0.25)$p
+
+bind_cols(delay_2hosp_old, delay_2hosp) %>%
+  set_colnames(c("old", "new")) %>% 
+  mutate(p = seq(0,60,0.25)) %>% 
+  pivot_longer(cols = c("old", 
+                        "new")) %>% 
+  ggplot(., aes(x = p, y = value, group = name, color = name)) +
+  geom_line() +
+  labs(x = "days")
+
 
 # data.frame(delay_2death = delay_2death,
 #            delay_2severe = delay_2severe) |> 

@@ -778,10 +778,11 @@ check_vaccination_program <- function(type = "booster_initial", # or primary_cou
 parameterise_setting <- function(f = 1,
                                  prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
                                  boosting_level = 0.3){
+  
   para <- gen_country_basics(country = "Thailand",
                              R0_assumed = out$optim$bestmem[1],
                              date_start = "2021-02-01",
-                             date_end = "2030-12-31",
+                             date_end = "2027-12-31",
                              contact = contact_schedule,
                              processes = gen_burden_processes(VE = efficacy_all),
                              period_wn  = 3*365, # duration, waning of natural immunity
@@ -819,7 +820,7 @@ parameterise_setting <- function(f = 1,
                       # rankings; NA = not boosted
                       # this is future policy
                       prioritisation_followup = prioritisation_followup,
-                      campaign_month = c(10:12,1:2),
+                      campaign_month = c(5:9),
                       frequency = f)
   return(para)
 }
@@ -835,12 +836,13 @@ vaccinate_booster <- function(para = NULL,
                               # prioritisation, the numbers are essentially just
                               # rankings; NA = not boosted
                               # this is future policy
+                              # prioritisation_followup = c(NA, rep(1,15)),
                               prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
-                              campaign_month = c(10:12,1:2),
+                              # campaign_month = c(10:12,1:2),
+                              campaign_month = c(5:9),
                               frequency = 1
                               # boosters_daily = 300000
 ){
-  
   require(lubridate)
   # debug
   # para <- params
@@ -867,7 +869,7 @@ vaccinate_booster <- function(para = NULL,
            year = lubridate::year(date),
            vaccination_phase = NA) |> 
     group_by(year) %>% 
-    filter(date >= "2023-09-30")
+    filter(date >= "2023-10-01")
   
   time_range |> ungroup() |> filter(m == campaign_month[1], d == 1) -> season_start 
   time_range |> filter(doy >= 365) |> pull(doy) -> season_size
@@ -909,8 +911,8 @@ vaccinate_booster <- function(para = NULL,
     pop = para$pop[[1]]$size,
     cov_primary = c(NA, 
                     0.524, 
-                    rep(0.703, 2),
-                    rep(0.849, 12))
+                    rep(0.811, 2),
+                    rep(0.832, 12))
   ) |>
     mutate(
       cov_followup = uptake_by_existing_tmp * cov_primary,
@@ -926,7 +928,7 @@ vaccinate_booster <- function(para = NULL,
     filter(!is.na(prioritisation_followup)) |>
     arrange(prioritisation_followup)  -> follow_up_order
   
-  follow_up_t <- c(0, follow_up_order$campaign_duration_bygroup, 366)
+  follow_up_t <- c(0, cumsum(follow_up_order$campaign_duration_bygroup), 366)
   
   for(i in 1:(nrow(follow_up_order))){
     time_range[time_range$t_within <= follow_up_t[i+1] & time_range$t_within > follow_up_t[i], "vaccination_phase"] <- i
@@ -941,7 +943,8 @@ vaccinate_booster <- function(para = NULL,
     group_by(vaccination_phase, year) |> 
     mutate(start = min(t_within)) |> 
     filter(start == t_within,
-           date >= max(vac_data$date)) -> phase_list
+           date >= max(vac_data$date)) %>% 
+    mutate(year_switch = (year%%frequency == 0))  -> phase_list
   
   # proportions OA rescaled
   testthat::expect_equal(length(unique(follow_up_order$campaign_daily_dose)),1)
@@ -956,9 +959,10 @@ vaccinate_booster <- function(para = NULL,
     tmp[is.na(tmp)] <- 0
     proportions_allocation_rescaled[[i]] <- tmp
   }
+  
   # taking care of the pause phase
-  tmp_len <- length(proportions_allocation_rescaled)
-  proportions_allocation_rescaled[[tmp_len+1]] <- (rep(0,16))
+  # tmp_len <- length(proportions_allocation_rescaled)
+  # proportions_allocation_rescaled[[tmp_len+1]] <- (rep(0,16))
   
   tmp_times[["campaign"]] <- phase_list$t
   tmp_allocation[["campaign"]] <- list()
@@ -969,31 +973,15 @@ vaccinate_booster <- function(para = NULL,
         tmp_allocation[["campaign"]][[j]] <-
           proportions_allocation_rescaled[phase_list$vaccination_phase[j]]
       }
-      if (phase_list$vaccination_phase[j] == nrow(follow_up_order) + 1) {
-        tmp_allocation[["campaign"]][[j]] <-
-          proportions_allocation_rescaled[phase_list$vaccination_phase[[phase_list$vaccination_phase[j]]]]
+      if (phase_list$vaccination_phase[j] == max(phase_list$vaccination_phase) |
+          phase_list$year_switch[j] == F) {
+        tmp_allocation[["campaign"]][[j]] <- list(rep(0,16))
       }
     }
   }
   
   tmp_times_move <- c(unlist(tmp_times) |> array())
   tmp_values_move <- c(tmp_allocation$campaign |> purrr::flatten()) |> setNames(NULL)
-  
-  if(frequency == 2 & max(prioritisation_followup, na.rm = T) == 1){
-    to_alter <- which(((1:length(tmp_values_move))%%4) == 3)
-    for(a in to_alter){
-      tmp_values_move[[a]] <- rep(0,16)
-    }
-  }
-  
-  if(frequency == 2 & max(prioritisation_followup, na.rm = T) == 2){
-    to_alter <- c(4, 5, 10, 11, 16, 17, 22, 23)
-    for(a in to_alter){
-      tmp_values_move[[a]] <- rep(0,16)
-    }
-  }
-  
-  
   testthat::expect_equal(length(tmp_times_move),
                          length(tmp_values_move))
   
