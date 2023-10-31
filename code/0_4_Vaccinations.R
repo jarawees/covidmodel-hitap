@@ -16,26 +16,6 @@
 # ve_severe, ve_critical, ve_mort: observed VE against different outcomes
 # ve_severe_condition, ve_critical_condition, ve_mort_condition: VE against different outcomes condition on infection
 
-# vaccine efficacy tested
-# key input locations for antibody levels
-# data.table(v_i_o = c(0.7, 0.85, 0.9),
-#            vr_i_o = c(0.75, 0.9, 0.95),
-#            r_i_o = c(0.5),
-#            v_d_o = c(0.7, 0.9, 0.95),
-#            v_severe_o = c(0.85, 0.95, 0.96),
-#            v_critical_o = c(0.85, 0.95, 0.97),
-#            v_mort_o = c(0.85, 0.95, 0.98),
-#            protection_level_label = c("l", "m", "h")) %>% 
-#   # the following lines do not explicit reflect existing changes in infection
-#   # which has been explicitly modelled as changes in u
-#   # This equation is explained in Liu et al. 
-#   # https://www.medrxiv.org/content/10.1101/2022.05.09.22274846v1.supplementary-material
-#   # Supplemental material, p37, version 1
-#   mutate(v_d_condition = 1 - (1-v_d_o)/((1-v_i_o)),
-#          v_severe_condition = 1 - (1-v_severe_o)/((1-v_i_o)),
-#          v_critical_condition = 1 - (1-v_critical_o)/((1-v_i_o)),
-#          v_mort_condition = 1 - (1-v_mort_o)/((1-v_i_o))) -> efficacy_all
-
 data.table(v_i_o = c(0.33, 0.6, 0.75),
            vr_i_o = c(0.6, 0.7, 0.8),
            r_i_o = c(0.7),
@@ -91,17 +71,6 @@ fread(paste0(data_path, "vaccinations.csv")) %>%
          daily_vaccinations_per_million = as.numeric(daily_vaccinations_per_million),
          # daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
          date_numeric = as.numeric(date)) -> owid_vac
-
-
-# owid_vac |> 
-#   ggplot() +
-# <<<<<<< HEAD
-#   geom_point(aes(x = date, y = people_vaccinated), color = "red") +
-# =======
-#   geom_point(aes(x = date+28, y = people_vaccinated), color = "red") +
-# >>>>>>> 5e99ec1c5b059d8acf60cd9805b0a72f12dc64cc
-#   geom_point(aes(x = date, y = people_fully_vaccinated), color = "blue") +
-#   geom_point(aes(x = date, y = total_boosters), color = "green")
 
 source("code/0_4_1_Staged_Vac.R")
 source("code/0_4_2_Primary.R")

@@ -35,15 +35,7 @@ cm_populations |>
   summarise(tot_age = (f + m) * 1000) |> 
   ungroup() |> mutate(tot = sum(tot_age)) -> popTH_cm
 
-# pop_TH |> 
-#   rename(pop_age_hitap = pop_age) |> 
-#   mutate(pop_tot_hitap = sum(pop_age_hitap)) |> 
-#   left_join(popTH_cm, by = "age_group") |> 
-#   rename(pop_tot_cm = tot,
-#          pop_age_cm = tot_age) |> 
-#   mutate(diff = pop_age_cm/pop_tot_hitap)
-
-# F. Vaccine uptake
+# B. Vaccine uptake
 source("code/0_4_Vaccinations.R")
 
 # B. load custom functions
