@@ -16,12 +16,56 @@ picu_cocin_func <- function(age) {
 }
 picu_cocin <- picu_cocin_func(0:85)
 
+# This processing code does not need to be ran every time
+# source("code/0_6_1_IFR_Reed_Lancet.R")
+ifr_reed_data <- read_rds(paste0(data_path,  "ifr_reed.rds")) %>% 
+  rename(age = Age)
+
+fread(paste0(data_path, "pop_str_2021.csv")) %>%
+  gather(key = "sex", value = "pop", both) %>%
+  mutate(pop = parse_number(pop)) %>% 
+  dplyr::select(-male, -female, -sex) %>% 
+  left_join(ifr_reed_data, by = "age") %>% 
+  mutate(point = na_locf(point),
+         UL = na_locf(UL),
+         LL = na_locf(LL)) %>% 
+  mutate(age = if_else(age > 85, 85, age),
+         pop_weighted = pop*point) %>% 
+  group_by(age) %>% 
+  mutate(pop_tot = sum(pop),
+         pop_weight = pop/pop_tot,
+         point_weight = sum(pop_weight*point)) %>% 
+  dplyr::select(age, point_weight) %>% 
+  distinct %>% 
+  ungroup %>% 
+  pull(point_weight) -> ifr_reed
+
+  # mutate(levin = ifr_levin) %>% 
+  # ggplot(., aes(x = point_weight, y = ifr_levin)) +
+  # geom_point() +
+  # geom_abline(intercept = 0, slope = 1)
+  # 
+  # summarise(pop = sum(pop),
+  #           point = sum(pop*point)/sum(pop)) %>% tail()
+
+
 # Infection fatality rate (derived from Levin et al., preprint)
 ifr_levin <- 100 * exp(-7.56 + 0.121 * 0:85) / (100 + exp(-7.56 + 0.121 * 0:85)) / 100
+# ifr_reed %>% 
+#   head(86) %>% 
+#   mutate(levin = ifr_levin) %>% 
+#   ggplot(., aes(x = point, y = levin, color = Age)) +
+#   geom_point() +
+#   geom_abline(intercept = 0,
+#               slope = 1) +
+#   labs(x = "reed") +
+#   scale_x_log10() +
+#   scale_y_log10()
+
 # Infection hospitalisation rate (derived from Salje et al., Science)
 ihr_salje <- exp(-7.37 + 0.068 * 0:85) / (1 + exp(-7.37 + 0.068 * 0:85))
 # Amalgamate probabilities
-probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_levin, picu = picu_cocin)
+probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_reed, picu = picu_cocin)
 probabilities[, age_group := pmin(15, age %/% 5)]
 probabilities <- probabilities[, lapply(.SD, mean), by = age_group, .SDcols = 2:4]
 
