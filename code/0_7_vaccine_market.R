@@ -90,13 +90,13 @@ dose3 %>%
          sv_boost_daily = if_else(sv_boost_daily != 0, 0, sv_boost_daily))  -> dose3
 
 
-dose3 %>% 
-  dplyr::select(date, ends_with("daily")) %>% 
-  arrange(date) %>% 
-  mutate_at(vars(ends_with("daily")), cumsum) %>% 
-  pivot_longer(ends_with("daily")) %>% 
-  ggplot(., aes(x = date, y = value, group = name, color = name)) +
-  geom_line()
+# dose3 %>% 
+#   dplyr::select(date, ends_with("daily")) %>% 
+#   arrange(date) %>% 
+#   mutate_at(vars(ends_with("daily")), cumsum) %>% 
+#   pivot_longer(ends_with("daily")) %>% 
+#   ggplot(., aes(x = date, y = value, group = name, color = name)) +
+#   geom_line()
 
 # method_1 <- read_rds(paste0(data_path,"vaccine_market_identical_results.rds"))
 # method_2 <- read_rds(paste0(data_path,"vaccine_market_proportional_results.rds"))

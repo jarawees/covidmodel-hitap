@@ -35,15 +35,7 @@ cm_populations |>
   summarise(tot_age = (f + m) * 1000) |> 
   ungroup() |> mutate(tot = sum(tot_age)) -> popTH_cm
 
-# pop_TH |> 
-#   rename(pop_age_hitap = pop_age) |> 
-#   mutate(pop_tot_hitap = sum(pop_age_hitap)) |> 
-#   left_join(popTH_cm, by = "age_group") |> 
-#   rename(pop_tot_cm = tot,
-#          pop_age_cm = tot_age) |> 
-#   mutate(diff = pop_age_cm/pop_tot_hitap)
-
-# F. Vaccine uptake
+# B. Vaccine uptake
 source("code/0_4_Vaccinations.R")
 
 # B. load custom functions
@@ -77,7 +69,7 @@ epi_round1to <- fread(paste0(data_path, "epi_round1to2.csv")) # snapshot from 20
 epi_update <- fread(paste0(data_path, "epi_update.csv")) # time-series from 2021-04-01 onward
 
 epi <- bind_rows(epi_round1to, epi_update) %>%
-  select(txn_date, new_case_excludeabroad, new_death)
+  dplyr::select(txn_date, new_case_excludeabroad, new_death)
 
 rm(epi_round1to, epi_update)
 
