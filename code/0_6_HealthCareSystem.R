@@ -16,28 +16,12 @@ picu_cocin_func <- function(age) {
 }
 picu_cocin <- picu_cocin_func(0:85)
 
-# Infection fatality rate (derived from COVID-19 Forecasting Team, Lancet, age-specific global estimates)
-ifr_c19forecast <- c(0.0054, 0.0054, 0.0040, 0.00320, 0.0027, 0.0024, 
-               0.0023, 0.0023, 0.0023, 0.0025,0.0028,
-               0.0031, 0.0036, 0.00420, 0.0050, 0.0060, 
-               0.0071, 0.0085, 0.0100, 0.0118, 0.0138,
-               0.0162, 0.0188, 0.02190, 0.0254, 0.293, 
-               0.0337, 0.0386, 0.0442, 0.0504, 0.0573,
-               0.0650, 0.0735, 0.08290, 0.0932, 0.1046, 
-               0.1171, 0.1307, 0.1455, 0.1616, 0.1789,
-               0.1976, 0.2177, 0.2391, 0.2620, 0.2863, 
-               0.3119, 0.3389, 0.3672, 0.3968, 0.4278,
-               0.4606, 0.4958, 0.5342, 0.5766, 0.6242, 
-               0.6785, 0.7413, 0.8149, 0.9022, 1.0035,
-               1.1162, 1.2413, 1.3803, 1.5346, 1.7058, 
-               1.8957, 2.1064, 2.3399, 2.5986, 2.8851,
-               3.2022, 3.5527, 3.9402, 4.3679, 4.8397, 
-               5.3597, 5.9320, 6.5612, 7.2520, 8.0093,
-               8.8381, 9.7437, 10.7311, 11.8054, 12.9717)/100
+# Infection fatality rate (derived from Levin et al., preprint)
+ifr_levin <- 100 * exp(-7.56 + 0.121 * 0:85) / (100 + exp(-7.56 + 0.121 * 0:85)) / 100
 # Infection hospitalisation rate (derived from Salje et al., Science)
 ihr_salje <- exp(-7.37 + 0.068 * 0:85) / (1 + exp(-7.37 + 0.068 * 0:85))
 # Amalgamate probabilities
-probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_c19forecast, picu = picu_cocin)
+probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_levin, picu = picu_cocin)
 probabilities[, age_group := pmin(15, age %/% 5)]
 probabilities <- probabilities[, lapply(.SD, mean), by = age_group, .SDcols = 2:4]
 
