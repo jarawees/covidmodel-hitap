@@ -48,9 +48,6 @@ fread(paste0(data_path, "pop_str_2021.csv")) %>%
   # summarise(pop = sum(pop),
   #           point = sum(pop*point)/sum(pop)) %>% tail()
 
-
-# Infection fatality rate (derived from Levin et al., preprint)
-ifr_levin <- 100 * exp(-7.56 + 0.121 * 0:85) / (100 + exp(-7.56 + 0.121 * 0:85)) / 100
 # ifr_reed %>% 
 #   head(86) %>% 
 #   mutate(levin = ifr_levin) %>% 
@@ -62,6 +59,11 @@ ifr_levin <- 100 * exp(-7.56 + 0.121 * 0:85) / (100 + exp(-7.56 + 0.121 * 0:85))
 #   scale_x_log10() +
 #   scale_y_log10()
 
+# Amalgamate probabilities
+# Infection fatality rate (derived from Levin et al., preprint)
+ifr_levin <- 100 * exp(-7.56 + 0.121 * 0:85) / (100 + exp(-7.56 + 0.121 * 0:85)) / 100
+# Infection hospitalisation rate (derived from Salje et al., Science)
+ihr_salje <- exp(-7.37 + 0.068 * 0:85) / (1 + exp(-7.37 + 0.068 * 0:85))
 # Amalgamate probabilities
 probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_reed, picu = picu_cocin)
 probabilities[, age_group := pmin(15, age %/% 5)]

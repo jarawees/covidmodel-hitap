@@ -10,8 +10,7 @@ vaccinate_booster <- function(para = NULL,
                               # rankings; NA = not boosted
                               # this is future policy
                               prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
-                              # booster campaign from May to August
-                              campaign_month = c(5:8),
+                              campaign_month = c(10:12,1:2),
                               frequency = 1
                               # boosters_daily = 300000
 ){
