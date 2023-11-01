@@ -62,8 +62,6 @@ ifr_levin <- 100 * exp(-7.56 + 0.121 * 0:85) / (100 + exp(-7.56 + 0.121 * 0:85))
 #   scale_x_log10() +
 #   scale_y_log10()
 
-# Infection hospitalisation rate (derived from Salje et al., Science)
-ihr_salje <- exp(-7.37 + 0.068 * 0:85) / (1 + exp(-7.37 + 0.068 * 0:85))
 # Amalgamate probabilities
 probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_reed, picu = picu_cocin)
 probabilities[, age_group := pmin(15, age %/% 5)]
