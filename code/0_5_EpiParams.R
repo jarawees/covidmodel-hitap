@@ -101,7 +101,6 @@ source("code/0_5_1_VoCs.R")
 
 owid <- read_rds(paste0(data_path, "owid_epi.rds"))
 
-
 # is this consistent with what we know about the population proejct outlook?
 # test <- cm_parameters_SEI3R(dem_locations = "Thailand", 
 #                             date_start = "2020-01-01", 

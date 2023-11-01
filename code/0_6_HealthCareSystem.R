@@ -16,28 +16,54 @@ picu_cocin_func <- function(age) {
 }
 picu_cocin <- picu_cocin_func(0:85)
 
-# Infection fatality rate (derived from COVID-19 Forecasting Team, Lancet, age-specific global estimates)
-ifr_c19forecast <- c(0.0054, 0.0054, 0.0040, 0.00320, 0.0027, 0.0024, 
-               0.0023, 0.0023, 0.0023, 0.0025,0.0028,
-               0.0031, 0.0036, 0.00420, 0.0050, 0.0060, 
-               0.0071, 0.0085, 0.0100, 0.0118, 0.0138,
-               0.0162, 0.0188, 0.02190, 0.0254, 0.293, 
-               0.0337, 0.0386, 0.0442, 0.0504, 0.0573,
-               0.0650, 0.0735, 0.08290, 0.0932, 0.1046, 
-               0.1171, 0.1307, 0.1455, 0.1616, 0.1789,
-               0.1976, 0.2177, 0.2391, 0.2620, 0.2863, 
-               0.3119, 0.3389, 0.3672, 0.3968, 0.4278,
-               0.4606, 0.4958, 0.5342, 0.5766, 0.6242, 
-               0.6785, 0.7413, 0.8149, 0.9022, 1.0035,
-               1.1162, 1.2413, 1.3803, 1.5346, 1.7058, 
-               1.8957, 2.1064, 2.3399, 2.5986, 2.8851,
-               3.2022, 3.5527, 3.9402, 4.3679, 4.8397, 
-               5.3597, 5.9320, 6.5612, 7.2520, 8.0093,
-               8.8381, 9.7437, 10.7311, 11.8054, 12.9717)/100
-# Infection hospitalisation rate (derived from Salje et al., Science)
-ihr_salje <- exp(-7.37 + 0.068 * 0:85) / (1 + exp(-7.37 + 0.068 * 0:85))
+# This processing code does not need to be ran every time
+# source("code/0_6_1_IFR_Reed_Lancet.R")
+ifr_reed_data <- read_rds(paste0(data_path,  "ifr_reed.rds")) %>% 
+  rename(age = Age)
+
+fread(paste0(data_path, "pop_str_2021.csv")) %>%
+  gather(key = "sex", value = "pop", both) %>%
+  mutate(pop = parse_number(pop)) %>% 
+  dplyr::select(-male, -female, -sex) %>% 
+  left_join(ifr_reed_data, by = "age") %>% 
+  mutate(point = na_locf(point),
+         UL = na_locf(UL),
+         LL = na_locf(LL)) %>% 
+  mutate(age = if_else(age > 85, 85, age),
+         pop_weighted = pop*point) %>% 
+  group_by(age) %>% 
+  mutate(pop_tot = sum(pop),
+         pop_weight = pop/pop_tot,
+         point_weight = sum(pop_weight*point)) %>% 
+  dplyr::select(age, point_weight) %>% 
+  distinct %>% 
+  ungroup %>% 
+  pull(point_weight) -> ifr_reed
+
+  # mutate(levin = ifr_levin) %>% 
+  # ggplot(., aes(x = point_weight, y = ifr_levin)) +
+  # geom_point() +
+  # geom_abline(intercept = 0, slope = 1)
+  # 
+  # summarise(pop = sum(pop),
+  #           point = sum(pop*point)/sum(pop)) %>% tail()
+
+
+# Infection fatality rate (derived from Levin et al., preprint)
+ifr_levin <- 100 * exp(-7.56 + 0.121 * 0:85) / (100 + exp(-7.56 + 0.121 * 0:85)) / 100
+# ifr_reed %>% 
+#   head(86) %>% 
+#   mutate(levin = ifr_levin) %>% 
+#   ggplot(., aes(x = point, y = levin, color = Age)) +
+#   geom_point() +
+#   geom_abline(intercept = 0,
+#               slope = 1) +
+#   labs(x = "reed") +
+#   scale_x_log10() +
+#   scale_y_log10()
+
 # Amalgamate probabilities
-probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_c19forecast, picu = picu_cocin)
+probabilities <- data.table(age = 0:85, ihr = ihr_salje, ifr = ifr_reed, picu = picu_cocin)
 probabilities[, age_group := pmin(15, age %/% 5)]
 probabilities <- probabilities[, lapply(.SD, mean), by = age_group, .SDcols = 2:4]
 
@@ -51,8 +77,20 @@ P.hosp <- P.critical + P.severe
 # the delay function for each outputs
 delay_2death <- cm_delay_gamma(26, 5, 60, 0.25)$p
 delay_2severe <- cm_delay_gamma(8.5, 5, 60, 0.25)$p
-delay_2hosp <- cm_delay_gamma(14.6, 5, 60, 0.25)$p
-delay_2hosp_critical <- cm_delay_gamma(15.6, 5, 60, 0.25)$p
+delay_2hosp_old <- cm_delay_gamma(14.6, 5, 60, 0.25)$p
+delay_2hosp <- cm_delay_gamma(27.445666/2.826859, 27.445666, 60, 0.25)$p
+delay_2hosp_critical_old <- cm_delay_gamma(15.6, 5, 60, 0.25)$p
+delay_2hosp_critical <- cm_delay_gamma((27.445666/2.826859)*15.6/14.6, 27.445666, 60, 0.25)$p
+
+bind_cols(delay_2hosp_old, delay_2hosp) %>%
+  set_colnames(c("old", "new")) %>% 
+  mutate(p = seq(0,60,0.25)) %>% 
+  pivot_longer(cols = c("old", 
+                        "new")) %>% 
+  ggplot(., aes(x = p, y = value, group = name, color = name)) +
+  geom_line() +
+  labs(x = "days")
+
 
 # data.frame(delay_2death = delay_2death,
 #            delay_2severe = delay_2severe) |> 

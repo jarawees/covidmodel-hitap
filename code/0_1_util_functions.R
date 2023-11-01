@@ -103,9 +103,6 @@ gen_country_basics <- function(country = "Thailand",
     para$pop[[i]]$yv_l <- para$pop[[i]]$y
     para$pop[[i]]$yv_m <- para$pop[[i]]$y
     para$pop[[i]]$yv_h <- para$pop[[i]]$y
-    para$pop[[i]]$yvr_l <- para$pop[[i]]$y
-    para$pop[[i]]$yvr_m <- para$pop[[i]]$y
-    para$pop[[i]]$yvr_h <- para$pop[[i]]$y
 
     ## Set seeds to control start of outbreak
     # infections start in individuals aged 20-50
@@ -211,33 +208,6 @@ gen_country_basics <- function(country = "Thailand",
   return(para)
 }
 
-# CJ(date = seq(ymd("2019-12-01"),
-#               ymd("2030-12-31"),
-#               by = "day")) %>%
-#   mutate(weights_v_i_l = rnorm(nrow(.), 1, 0),
-#          weights_v_i_m = rnorm(nrow(.), 1, 0),
-#          weights_v_i_h = rnorm(nrow(.), 1, 0),
-#          weights_v_d_l = rnorm(nrow(.), 1, 0),
-#          weights_v_d_m = rnorm(nrow(.), 1, 0),
-#          weights_v_d_h = rnorm(nrow(.), 1, 0)) -> efficacy_weights_one
-# 
-# write_rds(efficacy_weights_one,
-#           paste0(data_path,
-#                  "intermediate/efficacy_weights_one.rds"))
-
-efficacy_weights_test <- read_rds(paste0(data_path, 
-                                         "intermediate/efficacy_weights_test.rds"))
-efficacy_weights_one <- read_rds(paste0(data_path, 
-                                         "intermediate/efficacy_weights_one.rds"))
-
-# efficacy_weights_test |> 
-#   mutate_at(vars(starts_with("weights")), function(x) x <- 1) -> efficacy_weights_one
-
-# efficacy_weights_test |> 
-#   ggplot(aes(x = date, y = weights_v_d_h)) +
-#   geom_point() +
-#   geom_line()
-
 # this function will update u and y
 # there's two sources for u and y changes
 # (1) emerging VOCs, changes in susceptibility and clinical fraction, immune 
@@ -257,9 +227,7 @@ update_u_y <- function(para = NULL,
                        # wildtype, rc_ve will be all 1s
                        rc_ve = c(1, 0.9, 0.7), # relative changes in evasiveness (infection part)
                        # group (2) changes 
-                       efficacy_baseline = NULL, # vaccine efficacy
-                       # will need something to check 
-                       efficacy_weights = efficacy_weights_test # as a result of different vaccine composition
+                       efficacy_baseline = NULL # vaccine efficacy
 ){
   # debug
   # date_switch = c("2021-01-15", "2021-04-15", "2021-12-15")
@@ -267,13 +235,11 @@ update_u_y <- function(para = NULL,
   # rc_y = c(1, 0.5, 0.5)
   # rc_ve = c(1, 0.9, 0.7)
   # efficacy_baseline = efficacy_all
-  # efficacy_weights = efficacy_weights_test
 
-  date_range <- c(lubridate::ymd(para$date0),
-                  date_switch,
-                  lubridate::ymd(para$date0) + para$time1)
-  
-  t_range <- c(para$time0:para$time1)
+  date_marker <- c(date_switch, as.character(lubridate::ymd(para$date0) + para$time1))
+  if(para$date0 < date_marker[1]) date_marker <- c(para$date0, date_marker)
+  if(para$date0 > date_marker[1]) date_marker[1] <- para$date0
+  t_range <- as.numeric(ymd(date_marker) - ymd(para$date0))
   
   # this is the table that will help us keep track of the names of things to be
   # changed in the schedule
@@ -306,37 +272,43 @@ update_u_y <- function(para = NULL,
   )
   
   n_age_groups <- para$pop[[1]]$n_groups
-  
-  # assign initial estimates
+
+  para$pop[[1]]$uv_l <- (1 - efficacy_baseline %>% dplyr::filter(protection_level_label == "l") %>%  pull(v_i_o)) * para$pop[[1]]$u
+  para$pop[[1]]$uv_m <- (1 - efficacy_baseline %>% dplyr::filter(protection_level_label == "m") %>%  pull(v_i_o)) * para$pop[[1]]$u
+  para$pop[[1]]$uv_h <- (1 - efficacy_baseline %>% dplyr::filter(protection_level_label == "h") %>%  pull(v_i_o)) * para$pop[[1]]$u
   para$pop[[1]]$ur    <- (1 - efficacy_baseline$r_i_o[1]) * para$pop[[1]]$u
-  para$pop[[1]]$uvr_l <- (1 - efficacy_baseline |> 
-                            filter(protection_level_label == "l") |> 
-                            pull(vr_i_o)) * para$pop[[1]]$u
-  para$pop[[1]]$uvr_m <- (1 - efficacy_baseline |> 
-                            filter(protection_level_label == "m") |> 
-                            pull(vr_i_o)) * para$pop[[1]]$u
-  para$pop[[1]]$uvr_h <- (1 - efficacy_baseline |> 
-                            filter(protection_level_label == "h") |> 
-                            pull(vr_i_o)) * para$pop[[1]]$u
+  para$pop[[1]]$uvr_l <- (1 - efficacy_baseline %>%  dplyr::filter(protection_level_label == "l") %>%  pull(vr_i_o)) * para$pop[[1]]$u
+  para$pop[[1]]$uvr_m <- (1 - efficacy_baseline %>%  dplyr::filter(protection_level_label == "m") %>%  pull(vr_i_o)) * para$pop[[1]]$u
+  para$pop[[1]]$uvr_h <- (1 - efficacy_baseline %>%  dplyr::filter(protection_level_label == "h") %>%  pull(vr_i_o)) * para$pop[[1]]$u
   
+  para$pop[[1]]$yv_l <- para$pop[[1]]$y*(1 - efficacy_baseline$v_d_condition[1])
+  para$pop[[1]]$yv_m <- para$pop[[1]]$y*(1 - efficacy_baseline$v_d_condition[2])
+  para$pop[[1]]$yv_h <- para$pop[[1]]$y*(1 - efficacy_baseline$v_d_condition[3])
+
   # create modifier table
-  CJ(date = seq(lubridate::ymd(para$date0),
-                lubridate::ymd(para$date0) + para$time1,
-                by = "day")) |> 
-    mutate(phase = as.numeric(NA)) -> modifier
+  data.frame(date = date_marker,
+             phase = as.numeric(NA)) -> modifier
   
-  for(i in 1:length(date_range)){
-    modifier[modifier$date >= date_range[i] & 
-               modifier$date <= date_range[i+1],"phase"] <- i
-    modifier[modifier$date >= date_range[i] & 
-               modifier$date <= date_range[i+1],"rc_u_prod"] <- prod(c(1,rc_u)[1:i])
-    modifier[modifier$date >= date_range[i] & 
-               modifier$date <= date_range[i+1],"rc_y_prod"] <- prod(c(1,rc_y)[1:i])
-    modifier[modifier$date >= date_range[i] & 
-               modifier$date <= date_range[i+1],"rc_ve_prod"] <- prod(c(1,rc_ve)[1:i])
+  for(i in 1:length(date_marker)){
+    if(nrow(modifier) == (length(date_switch) + 1)){
+    modifier[modifier$date == date_marker[i],"phase"] <- i
+    modifier[modifier$date == date_marker[i],"rc_u_prod"] <- prod(c(rc_u)[1:i])
+    modifier[modifier$date == date_marker[i],"rc_y_prod"] <- prod(c(rc_y)[1:i])
+    modifier[modifier$date == date_marker[i],"rc_ve_prod"] <- prod(c(rc_ve)[1:i])
+    }
+    
+    if(nrow(modifier) == (length(date_switch) + 2)){
+      modifier[modifier$date == date_marker[i],"phase"] <- i
+      modifier[modifier$date == date_marker[i],"rc_u_prod"] <- prod(c(1,rc_u)[1:i])
+      modifier[modifier$date == date_marker[i],"rc_y_prod"] <- prod(c(1,rc_y)[1:i])
+      modifier[modifier$date == date_marker[i],"rc_ve_prod"] <- prod(c(1,rc_ve)[1:i])
+    }
   }
   
-
+  modifier %<>% 
+    mutate(rc_u_prod = na_locf(rc_u_prod),
+           rc_y_prod = na_locf(rc_y_prod),
+           rc_ve_prod = na_locf(rc_ve_prod))
   
   # VEs against infection and disease are implemented over "compartments"
   # VEs against severe, critical and mortality cases are implemented over "processes" 
@@ -346,22 +318,20 @@ update_u_y <- function(para = NULL,
   
   # in the context of this model, disease preventing = clinical preventing
   modifier |> 
-    left_join(efficacy_weights,
-              by = "date") |> 
     mutate(u_scaler     = rc_u_prod,
-           uv_l_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[1]*weights_v_i_l*rc_ve_prod),
-           uv_m_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[2]*weights_v_i_m*rc_ve_prod),
-           uv_h_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[3]*weights_v_i_h*rc_ve_prod),
+           uv_l_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[1]*rc_ve_prod)/(1 - efficacy_baseline$v_i_o[1]),
+           uv_m_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[2]*rc_ve_prod)/(1 - efficacy_baseline$v_i_o[2]),
+           uv_h_scaler  = rc_u_prod*(1 - efficacy_baseline$v_i_o[3]*rc_ve_prod)/(1 - efficacy_baseline$v_i_o[3]),
            ur_scaler    = rc_u_prod,
-           uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$v_i_o[1]*weights_v_i_l*rc_ve_prod),
-           uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$v_i_o[2]*weights_v_i_m*rc_ve_prod),
-           uvr_h_scaler = rc_u_prod*(1 - efficacy_baseline$v_i_o[3]*weights_v_i_h*rc_ve_prod),
-           yv_l_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[1]*weights_v_d_l*rc_ve_prod),
-           yv_m_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[2]*weights_v_d_m*rc_ve_prod),
-           yv_h_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[3]*weights_v_d_h*rc_ve_prod)) -> modifier
+           uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$vr_i_o[1]*rc_ve_prod)/(1 - efficacy_baseline$vr_i_o[1]),
+           uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$vr_i_o[2]*rc_ve_prod)/(1 - efficacy_baseline$vr_i_o[2]),
+           uvr_h_scaler = rc_u_prod*(1 - efficacy_baseline$vr_i_o[3]*rc_ve_prod)/(1 - efficacy_baseline$vr_i_o[3]),
+           yv_l_scaler  = rc_y_prod,
+           yv_m_scaler  = rc_y_prod,
+           yv_h_scaler  = rc_y_prod) -> modifier
   
   modifier |> 
-    select(ends_with("scaler")) |> 
+    dplyr::select(ends_with("scaler")) |> 
     pivot_longer(targets$scaler_label) |> 
     group_by(name) |> summarise(value = min(value)) |> 
     pull(value) |> (function(y) y > 0)() |> all() -> test_range
@@ -808,10 +778,11 @@ check_vaccination_program <- function(type = "booster_initial", # or primary_cou
 parameterise_setting <- function(f = 1,
                                  prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
                                  boosting_level = 0.3){
+  
   para <- gen_country_basics(country = "Thailand",
                              R0_assumed = out$optim$bestmem[1],
                              date_start = "2021-02-01",
-                             date_end = "2030-12-31",
+                             date_end = "2027-12-31",
                              contact = contact_schedule,
                              processes = gen_burden_processes(VE = efficacy_all),
                              period_wn  = 3*365, # duration, waning of natural immunity
@@ -829,8 +800,7 @@ parameterise_setting <- function(f = 1,
                rc_u = c(1, 1.5, 1.1), # relative changes in u
                rc_y = c(1, 1, 1), # relative changes in y
                rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
-               efficacy_baseline = efficacy_all,
-               efficacy_weights = efficacy_weights_one
+               efficacy_baseline = efficacy_all
     ) %>%
     emerge_VOC_burden(para = .,
                       rc_severity = c(1, 1.5, 0.7), # relative change in ihr and ifr
@@ -850,7 +820,191 @@ parameterise_setting <- function(f = 1,
                       # rankings; NA = not boosted
                       # this is future policy
                       prioritisation_followup = prioritisation_followup,
-                      campaign_month = c(5:8),
+                      campaign_month = c(5:9),
                       frequency = f)
+  return(para)
+}
+
+vaccinate_booster <- function(para = NULL,
+                              vac_data = owid_vac,
+                              booster_plan =  booster_allocation_plan,
+                              # this is paused time
+                              # program_interval = 30*6, #default set to 6 months
+                              # should this be age-specific as well?
+                              uptake_by_existing = 0.9, 
+                              # age-specific variables that defines the 
+                              # prioritisation, the numbers are essentially just
+                              # rankings; NA = not boosted
+                              # this is future policy
+                              # prioritisation_followup = c(NA, rep(1,15)),
+                              prioritisation_followup = c(NA,rep(2,11),rep(1,4)),
+                              # campaign_month = c(10:12,1:2),
+                              campaign_month = c(5:9),
+                              frequency = 1
+                              # boosters_daily = 300000
+){
+  require(lubridate)
+  # debug
+  # para <- params
+  # vac_data = owid_vac
+  # uptake_by_existing = 0.3
+  # prioritisation_followup = c(NA,rep(1,15))
+  # campaign_month = c(10:12,1:2)
+  # frequency = 1
+  
+  uptake_by_existing_tmp <- uptake_by_existing
+  if(length(uptake_by_existing_tmp) == 1) uptake_by_existing_tmp <- rep(uptake_by_existing_tmp, 16)
+  testthat::expect_length(uptake_by_existing_tmp, 16)
+  
+  time_range <- data.frame(date = seq(# ymd("2021-05-08"),
+    ymd(para$date0),
+    ymd(para$date0) + (para$time1) + 365,
+    by = "day")) |> 
+    rownames_to_column(var = "t") |> 
+    mutate(t = as.numeric(t),
+           m = lubridate::month(date),
+           d = lubridate::day(date),
+           campaign_days = if_else(m %in% campaign_month, T, F),
+           doy = lubridate::yday(date),
+           year = lubridate::year(date),
+           vaccination_phase = NA) |> 
+    group_by(year) %>% 
+    filter(date >= "2023-10-01")
+  
+  time_range |> ungroup() |> filter(m == campaign_month[1], d == 1) -> season_start 
+  time_range |> filter(doy >= 365) |> pull(doy) -> season_size
+  
+  time_range |>
+    ungroup() |> 
+    mutate(t_within = dplyr::lead(doy, (season_size[1] - season_start$doy[1] + 2))) |> 
+    filter(date <= ymd(para$date0) + (para$time1)) -> time_range
+  
+  time_range |> mutate(year = lubridate::year(date)) |> filter(year == 2025) |> pull(campaign_days) |> sum() -> campaign_durations
+  
+  tmp_allocation <- tmp_times <- list()
+  
+  # initial boosting programmes
+  # with owid data
+  proportions_allocated_initial <- para$pop[[1]]$size/sum(para$pop[[1]]$size)
+  # n_age_groups <- length(proportions_allocated_initial)
+  # # we want the initial stage to not divide by stage and target all adults
+  # proportions_allocated_initial_rescaled <- (prioritisation_initial*proportions_allocated_initial)/sum(prioritisation_initial*proportions_allocated_initial, na.rm = T)
+  # proportions_allocated_initial_rescaled[is.na(proportions_allocated_initial_rescaled)] <- 0
+  # 
+  # vac_data |> 
+  #   select(total_boosters_daily) %>%
+  #   split(seq(nrow(.))) |> 
+  #   map(unlist) |> 
+  #   map(.f = function(x) x*proportions_allocated_initial_rescaled) |> 
+  #   setNames(NULL) -> tmp_allocation[["initial"]]
+  # 
+  # vac_data |> 
+  #   mutate(date = lubridate::date(date)) |> 
+  #   left_join(time_range, by = "date") |> 
+  #   dplyr::select(date, t) |> 
+  #   pull(t) -> tmp_times[["initial"]]
+  
+  # follow-up campaigns
+  # children coverage = 0.787; adolescent coverage = 0.812; adult coverage = 0.813
+  data.frame(
+    prioritisation_followup = prioritisation_followup,
+    pop = para$pop[[1]]$size,
+    cov_primary = c(NA, 
+                    0.524, 
+                    rep(0.811, 2),
+                    rep(0.832, 12))
+  ) |>
+    mutate(
+      cov_followup = uptake_by_existing_tmp * cov_primary,
+      cov_followup_doses = cov_followup * pop,
+      cov_followup_doses_all = sum(cov_followup_doses, na.rm = T),
+      campaign_daily_dose =  round(cov_followup_doses_all / campaign_durations)
+      # campaign_duration = round(cov_followup_doses_all / boosters_daily)
+    ) |>
+    group_by(prioritisation_followup) |>
+    mutate(cov_followup_doses_bygroup = sum(cov_followup_doses, na.rm = T)) |> ungroup() |>
+    mutate(campaign_duration_bygroup = round(cov_followup_doses_bygroup / campaign_daily_dose)) |>
+    dplyr::select(prioritisation_followup, campaign_duration_bygroup, campaign_daily_dose) |> unique() |>
+    filter(!is.na(prioritisation_followup)) |>
+    arrange(prioritisation_followup)  -> follow_up_order
+  
+  follow_up_t <- c(0, cumsum(follow_up_order$campaign_duration_bygroup), 366)
+  
+  for(i in 1:(nrow(follow_up_order))){
+    time_range[time_range$t_within <= follow_up_t[i+1] & time_range$t_within > follow_up_t[i], "vaccination_phase"] <- i
+  }
+  
+  time_range |> 
+    mutate(vaccination_phase = if_else(is.na(vaccination_phase), 
+                                       as.numeric(nrow(follow_up_order)+1),
+                                       as.numeric(vaccination_phase))) -> time_range
+  
+  time_range |> 
+    group_by(vaccination_phase, year) |> 
+    mutate(start = min(t_within)) |> 
+    filter(start == t_within,
+           date >= max(vac_data$date)) %>% 
+    mutate(year_switch = (year%%frequency == 0))  -> phase_list
+  
+  # proportions OA rescaled
+  testthat::expect_equal(length(unique(follow_up_order$campaign_daily_dose)),1)
+  proportions_allocation_rescaled <- list()
+  # when we are vaccinating people
+  for(i in 1:nrow(follow_up_order)){
+    tmp <-   as.numeric(prioritisation_followup == i) * proportions_allocated_initial /
+      (sum(
+        as.numeric(prioritisation_followup == i) * proportions_allocated_initial,
+        na.rm = T
+      )) * unique(follow_up_order$campaign_daily_dose)
+    tmp[is.na(tmp)] <- 0
+    proportions_allocation_rescaled[[i]] <- tmp
+  }
+  
+  # taking care of the pause phase
+  # tmp_len <- length(proportions_allocation_rescaled)
+  # proportions_allocation_rescaled[[tmp_len+1]] <- (rep(0,16))
+  
+  tmp_times[["campaign"]] <- phase_list$t
+  tmp_allocation[["campaign"]] <- list()
+  
+  for (j in 1:nrow(phase_list)) {
+    for (i in 1:nrow(follow_up_order)) {
+      if (phase_list$vaccination_phase[j] == i) {
+        tmp_allocation[["campaign"]][[j]] <-
+          proportions_allocation_rescaled[phase_list$vaccination_phase[j]]
+      }
+      if (phase_list$vaccination_phase[j] == max(phase_list$vaccination_phase) |
+          phase_list$year_switch[j] == F) {
+        tmp_allocation[["campaign"]][[j]] <- list(rep(0,16))
+      }
+    }
+  }
+  
+  tmp_times_move <- c(unlist(tmp_times) |> array())
+  tmp_values_move <- c(tmp_allocation$campaign |> purrr::flatten()) |> setNames(NULL)
+  testthat::expect_equal(length(tmp_times_move),
+                         length(tmp_values_move))
+  
+  # booster activities already observed
+  n_age_groups <- length(para$pop[[1]]$size)
+  date_start <- ymd(para$date0)
+  date_end <- date_start + para$time1
+  data.frame(date = seq(date_start, date_end, by = "day")) |> 
+    mutate(t = 0:para$time1,
+           empirical = date %in% (vac_data$date)) |> 
+    filter(empirical == T) |> 
+    pull(t) -> tmp_times_initial
+  c(0, tmp_times_initial, max(tmp_times_initial)+1) -> tmp_times_initial
+  c(list(rep(0,16)), booster_plan, list(rep(0,16))) -> tmp_values_initial
+  testthat::expect_equal(length(tmp_times_initial), length(tmp_values_initial))
+  
+  para$schedule[["booster"]] <- list(
+    parameter = "v_b",
+    pops = numeric(),
+    mode = "assign",
+    values = c(tmp_values_initial, tmp_values_move),
+    times = c(tmp_times_initial, tmp_times_move)
+  )
+  
   return(para)
 }

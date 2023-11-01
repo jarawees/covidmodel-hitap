@@ -35,6 +35,8 @@ for(i in 1:nrow(panel)) {
   }
 }
 
+
+
 res_all <- list()
 for(i in 1:length(setting_list)){
   cm_simulate(setting_list[[i]])$dynamics %>% 
