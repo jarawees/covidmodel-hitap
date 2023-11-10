@@ -58,7 +58,7 @@ for(i in 1:length(setting_list)){
 ### Create a list of matrices for the heatmap ###
 # IMPORTANT: Estimates are from 2023 onwards (i.e. not Oct-Dec 2022)
 
-panel_heatmap <- rownames_to_column(panel) # adds a column with row number for reference
+panel_heatmap <- panel
 
 
 # Calculate total cases, hospitalisations, deaths for each scenario
@@ -78,7 +78,8 @@ for (row in 1:nrow(panel_heatmap)){
   
 }
 
-panel_heatmap <- cbind(panel_heatmap,temp_res)
+panel_heatmap <- cbind(panel_heatmap,temp_res) %>%
+  mutate(f = ifelse(f==1,"Annual", "Biannual"))
 
 
 # Prepare the dataframe for heatmap (HOSPITALISATION ONLY)
@@ -123,4 +124,30 @@ p_dead <- ggplot(dead_heatmap, aes(x = target_pop, y = boosting_level, fill = de
        y = "Coverage (as a percentage of the eligible population)") +
   facet_grid(rows = hosp_heatmap$f, labeller = as_labeller(c(
     "1"= "Annual", "2" = "Biannual")))
+
+
+# Scatter plot (HOSPITALISATION)
+p2_hosp <- ggplot(hosp_heatmap, aes(x=target_pop, y=hospn, col=boosting_level, shape=f)) +
+  geom_point(position = position_dodge(width = 0.5), size=3) +
+  scale_shape_manual(values=c(4,16), name = "Campaign frequency") +
+  scale_color_gradient2(midpoint=0.5, low="indianred4", mid="khaki1", high = "mediumseagreen", 
+                        name = "Coverage") +
+  labs(x = "Eligible population", 
+       y = "Hospitalisations (2023-2030)") +
+  scale_y_continuous(labels = scales::label_number_si(""), # set scale to millions
+                     limits = c(0,NA),
+                     breaks = seq(0,6000000,500000)) + 
+  theme_minimal_hgrid() +
+  theme(text = element_text(size = 12),
+        axis.line.x.bottom=element_line(color="white"))
+
+
+# Scatter plot (DEATH)
+p2_dead <- ggplot(dead_heatmap, aes(x=target_pop, y=dead, col=boosting_level, shape=f)) +
+  geom_point(position = position_dodge(width = 0.5)) +
+  scale_shape_manual(values=c(4,16)) 
+
+
+
+
 

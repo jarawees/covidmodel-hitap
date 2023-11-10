@@ -37,3 +37,24 @@ vaccine_daily %>%
   mutate(prob_v_b_l2m = weighted_Vl2m/unweighted,
          prob_v_b_l2m = na_locf(prob_v_b_l2m)) -> scenario3_booster
 
+
+### FOR 2024 ONWARDS - additional booster doses ###
+# NOTE: a lot of this is hard-coded, need to update
+
+# assume 50% Pfizer and 50% Moderna for future additional booster doses
+phase3_prob <- as.numeric(bp_levels[2,"Vl2m"])*0.5 + as.numeric(bp_levels[3,"Vl2m"])*0.5
+date_df3 <- as.Date("2022-10-29")
+
+require(lubridate)
+df_phase3 <- data.frame(
+  date = seq(date_df3, date_end, by = "day")) |>
+  mutate(prob_v_b_l2m = phase3_prob)
+
+
+scenario3_booster <- scenario3_booster |> 
+  select(date,prob_v_b_l2m) |> 
+  bind_rows(df_phase3)
+  
+
+  
+  
