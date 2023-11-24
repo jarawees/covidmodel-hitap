@@ -39,10 +39,10 @@ vaccinate_additional <- function(para = NULL,
   
   # Create time list covering all phases
   date_start <- ymd(para$date0)
-  date_additional_booster <- "2024-01-01" # Start of additional booster doses (phase 3)
+  date_additional_booster <- as.Date("2024-01-01") # Start of additional booster doses (phase 3)
   date_end <- date_start + para$time1
   
-  data.frame(date = seq(date_start, date_end, by = "day")) |> 
+  data.frame(date = seq(ymd(para$date0), ymd(para$date0) + para$time1, by = "day")) |> 
     mutate(t = 0:para$time1) -> tmp_times_full
   
   
@@ -71,7 +71,7 @@ vaccinate_additional <- function(para = NULL,
     pull(t) 
   
   # Phase 2 list of daily vaccine doses (assumes no vaccination)
-  tmp_values_phase2 <- c(rep(list(rep(0,16)),length(tmp_times_phase2)))
+  tmp_values_phase2 <- c(rep(list(rep(NA,16)),length(tmp_times_phase2)))
   testthat::expect_equal(length(tmp_times_phase2), length(tmp_values_phase2))
   
   
@@ -99,13 +99,13 @@ vaccinate_additional <- function(para = NULL,
   doses_total_6m <- cov_2024 * pop * cov_primary * eligible_6m
     # total vaccine doses per age group in additional 6m vaccination round
   
-  additional_booster <- tmp_times_full |> 
+   additional_booster <- tmp_times_full |> 
     filter(date >= date_additional_booster) |>
     mutate(m = lubridate::month(date),
            y = lubridate::year(date),
            campaign_annual = (m %in% month_annual),
            campaign_6m = (m %in% month_6m)
-           )
+           ) # add a column to indicate whether there is an ongoing campaign
   
   duration_annual <- additional_booster |> 
     filter(y == 2025) |> 
@@ -117,15 +117,23 @@ vaccinate_additional <- function(para = NULL,
   
   additional_booster <- additional_booster |> 
     mutate(doses_per_day = case_when(
-      campaign_annual == T ~ list(eligible_annual * doses_total_annual / duration_annual),
-      campaign_6m == T ~ list(eligible_6m * doses_total_6m / duration_6m),
+      campaign_annual == T ~ list(doses_total_annual / duration_annual),
+      campaign_6m == T ~ list(doses_total_6m / duration_6m),
       TRUE ~ list(rep(0,16)))) # calculate doses per day for each age group
   
-  tmp_values_phase3 <- c(additional_booster$doses_per_day)
+  tmp_values_phase3 <- additional_booster[,"doses_per_day"] %>% 
+                           map(unlist) %>% 
+                           map(unname) %>% 
+                           unname
   testthat::expect_equal(length(tmp_times_phase3), length(tmp_values_phase3))
   
   
   ### CREATE SCHEDULE OBJECT ###
+  
+  # all times must be an array
+  tmp_times_phase1 <- c(unlist(tmp_times_phase1) |> array())
+  tmp_times_phase2 <- c(unlist(tmp_times_phase2) |> array())
+  tmp_times_phase3 <- c(unlist(tmp_times_phase3) |> array())
   
   para$schedule[["booster"]] <- list(
     parameter = "v_b",

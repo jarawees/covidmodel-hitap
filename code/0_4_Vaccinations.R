@@ -18,7 +18,7 @@
 
 data.table(v_i_o = c(0.33, 0.6, 0.75),
            vr_i_o = c(0.6, 0.7, 0.8),
-           r_i_o = c(0.7),
+           r_i_o = c(0.85), # from https://www.thelancet.com/article/S0140-6736(22)02465-5/fulltext
            v_d_o = c(0.44, 0.69, 0.85),
            v_severe_o = c(0.75, 0.95, 0.96),
            v_critical_o = c(0.8, 0.95, 0.97),
