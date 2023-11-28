@@ -19,7 +19,9 @@
 data.table(v_i_o = c(0.33, 0.6, 0.75),
            vr_i_o = c(0.6, 0.7, 0.8),
            r_i_o = c(0.7),
-           v_d_o = c(0.44, 0.69, 0.85),
+           # v_d_o = c(0.44, 0.69, 0.85),
+           # Update v_d_o using our recent meta-analysis
+           v_d_o = c(0.28, 0.72, 0.94),
            v_severe_o = c(0.75, 0.95, 0.96),
            v_critical_o = c(0.8, 0.95, 0.97),
            v_mort_o = c(0.85, 0.95, 0.98),
