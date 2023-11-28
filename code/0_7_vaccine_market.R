@@ -306,12 +306,20 @@ dose1 %>%
                           "rm")) %>% 
   dplyr::select(-rm) -> vaccine_daily
 
+# expand.grid(dose1 = vac_type_list,
+#             vac_type = vac_type_list) %>% 
+#   dplyr::filter(dose1 == vac_type) %>% 
+#   mutate(Vl = c(0.821, 0.129, 0.821, 0, 0),
+#          Vm = c(0.171, 0.868, 0.171, 0.88, 0.88),
+#          Vh = c(0.008, 0.003, 0.008, 0.12, 0.12)) -> vp_levels
+
+## Update vp_levels using our recent meta-analysis
 expand.grid(dose1 = vac_type_list,
             vac_type = vac_type_list) %>% 
   dplyr::filter(dose1 == vac_type) %>% 
-  mutate(Vl = c(0.821, 0.129, 0.821, 0, 0),
-         Vm = c(0.171, 0.868, 0.171, 0.88, 0.88),
-         Vh = c(0.008, 0.003, 0.008, 0.12, 0.12)) -> vp_levels
+  mutate(Vl = c(0.570, 0.2225, 0.599, 0.130, 0.022),
+         Vm = c(0.364, 0.523, 0.338, 0.455, 0.255),
+         Vh = c(0.066, 0.2545, 0.063, 0.415, 0.723)) -> vp_levels
 
 expand_grid(booster_type = vac_type_list) %>% 
   filter(booster_type %in% c("pf", "md", "az")) %>% 
