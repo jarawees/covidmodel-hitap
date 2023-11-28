@@ -45,16 +45,17 @@ vaccine_daily %>%
 phase3_prob <- as.numeric(bp_levels[2,"Vl2m"])*0.5 + as.numeric(bp_levels[3,"Vl2m"])*0.5
 date_df3 <- as.Date("2022-10-29")
 
+
 require(lubridate)
 df_phase3 <- data.frame(
-  date = seq(date_df3, date_end, by = "day")) |>
+  date = seq(date_df3, as.Date("2030-12-31"), by = "day")) |>
   mutate(prob_v_b_l2m = phase3_prob)
 
 
 scenario3_booster <- scenario3_booster |> 
   select(date,prob_v_b_l2m) |> 
-  bind_rows(df_phase3)
-  
+  bind_rows(df_phase3) 
 
-  
+scenario3_booster$t <- c(0:(nrow(scenario3_booster)-1))
+
   

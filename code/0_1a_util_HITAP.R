@@ -203,7 +203,10 @@ gen_country_basics <- function(country = "Thailand",
       map(unlist) %>% 
       map(unname) %>% 
       unname, #remove list structure, convert to vector, and remove item names
-    times = vaccine_product_t$t)
+    times = scenario_booster[,"t"] %>% 
+      unlist %>% 
+      unname %>%
+      simplify2array) #convert to array
   
   return(para)
 }
