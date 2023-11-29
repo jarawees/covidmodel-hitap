@@ -58,11 +58,12 @@ for(i in 1:length(setting_list)){
 # IMPORTANT: Estimates are from 2023 onwards (i.e. not Oct-Dec 2022)
 
 panel_cua <- panel_final
-
+pop_2024 <- 71886000 # estimate from UN data for 2024 https://data.un.org/Data.aspx?q=thailand&d=PopDiv&f=variableID%3A12%3BcrID%3A764
+                  # ! update population from CovidM if possible
 
 # Calculate total cases, hospitalisations, deaths for each scenario
 temp_res <- data.frame(cases = numeric(0),
-                       hospitalisation = numeric(0),
+                       hospital_noICU = numeric(0),
                        ICU = numeric(0),
                        death = numeric(0))
 
@@ -70,13 +71,22 @@ for (row in 1:nrow(panel_cua)){
   
   # calculate total cases, hospitalisations, deaths for each scenario
   res_all[[row]] %>%
-    filter(date >= "2023-01-01") %>%
+    filter(date >= "2024-01-01") %>%
+    filter(date < "2025-01-01") %>%
     summarise(cases = sum(cases),
-              hospitalisation = sum(severe_all) + sum(critical_all),
+              hospital_noICU = sum(severe_all),
               ICU = sum(critical_all),
               death = sum(death_all)) -> new_row_temp
   temp_res <- rbind(temp_res,new_row_temp)
   
 }
 
-panel_cua <- cbind(panel_cua,temp_res)
+panel_cua <- cbind(panel_cua,temp_res) %>%
+  mutate(p_dead = death/pop_2024,
+         p_ICU = ICU/pop_2024,
+         p_hosp = hospital_noICU/pop_2024,
+         p_case = (cases - hospital_noICU - ICU - death)/pop_2024)
+  
+  
+  
+  
