@@ -228,7 +228,9 @@ update_u_y <- function(para = NULL,
                        rc_y = c(1, 0.5, 0.5), # relative changes in y
                        # if ve can be specific to VOCs in relation to the 
                        # wildtype, rc_ve will be all 1s
-                       rc_ve = c(1, 0.9, 0.7), # relative changes in evasiveness (infection part)
+                       # rc_ve = c(1, 0.9, 0.7), # relative changes in evasiveness (infection part)
+                       # Update rc_ve based on our recent meta-analysis
+                       rc_ve = c(1, 0.62, 0.19),
                        # group (2) changes 
                        efficacy_baseline = NULL # vaccine efficacy
 ){
@@ -615,7 +617,9 @@ parameterise_setting <- function(start_age_annual = 55,
                date_switch = c("2021-01-15", "2021-07-05", "2021-12-31"),
                rc_u = c(1, 1.5, 1.1), # relative changes in u
                rc_y = c(1, 1, 1), # relative changes in y
-               rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
+               #rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
+               # Update rc_ve based on our recent meta-analysis
+               rc_ve = c(1, 0.62, 0.19), # relative evasiveness 
                efficacy_baseline = efficacy_all
     ) %>%
     emerge_VOC_burden(para = .,
@@ -635,5 +639,3 @@ parameterise_setting <- function(start_age_annual = 55,
                          )
   return(para)
 }
-
-

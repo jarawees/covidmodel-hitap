@@ -1,4 +1,4 @@
-source("code/0_LoadAll.R")
+source("code/0_LoadAll_hitap.R")
 
 # params <- cm_parameters_SEI3R("Thailand")
 # res <- cm_simulate(params)
