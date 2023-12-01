@@ -52,7 +52,7 @@ for(i in 1:length(setting_list)){
                                  date > date_switch[3] ~ death_voc3_o)) %>% 
     dplyr::select(date, year, group, cases, ends_with("all")) -> res_all[[i]]
 }
-
+write_rds(res_all, "data/20231201_res_all.rds")
 
 ### OUTPUT TABLE ###
 # IMPORTANT: Estimates are from 2023 onwards (i.e. not Oct-Dec 2022)
