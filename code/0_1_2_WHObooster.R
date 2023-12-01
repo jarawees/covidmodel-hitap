@@ -37,6 +37,16 @@ vaccinate_additional <- function(para = NULL,
   
   require(lubridate)
   
+  # debug
+  # para = parameterise_setting()
+  # vac_data = owid_vac
+  # booster_plan = booster_allocation_plan
+  # start_age_annual = 55
+  # start_age_6m = 75
+  # cov_2024 = 0.00001
+  # month_annual = c(5:6)
+  # month_6m = c(11:12)
+
   # Create time list covering all phases
   date_start <- ymd(para$date0)
   date_additional_booster <- as.Date("2024-01-01") # Start of additional booster doses (phase 3)
@@ -53,7 +63,7 @@ vaccinate_additional <- function(para = NULL,
     mutate(empirical = date %in% (vac_data$date)) |> 
     filter(empirical == T) |> 
     pull(t) 
-  tmp_times_phase1 <- c(0, tmp_times_phase1, max(tmp_times_phase1)+1) 
+  tmp_times_phase1 <- c(0, tmp_times_phase1, max(tmp_times_phase1)+1)
   #### Ja - I have zeros each end as it is in Yang's code. Can you check if it is still needed?
   
   # Phase 1 list of daily vaccine doses
@@ -66,7 +76,8 @@ vaccinate_additional <- function(para = NULL,
   # Phase 2 time array
   tmp_times_phase2 <- tmp_times_full |> 
     filter(date < date_additional_booster) |> 
-    mutate(empirical2 = !(date %in% (vac_data$date))) |> 
+    mutate(empirical2 = date > max(vac_data$date) + 1) |> 
+    #mutate(empirical2 = !(date %in% (vac_data$date))) |> 
     filter(empirical2 == T) |>
     pull(t) 
   
@@ -84,7 +95,7 @@ vaccinate_additional <- function(para = NULL,
   
   # Phase 3 list of daily vaccine doses
   
-  eligible_annual <- c(rep(NA,(start_age_annual/5)), rep(1,(16-start_age_annual/5))) 
+  eligible_annual <- c(rep(NA,(start_age_annual/5)), rep(1,(16-start_age_annual/5)))
     # eligible age groups for annual (12m + 6m) => eligible is 1, ineligible is NA
   eligible_6m <- c(rep(NA,(start_age_6m/5)), rep(1,(16-start_age_6m/5)))
     # eligible age groups for additional booster (6m only) => eligible is 1, ineligible is NA
