@@ -215,7 +215,7 @@ gen_country_basics <- function(country = "Thailand",
 # there's two sources for u and y changes
 # (1) emerging VOCs, changes in susceptibility and clinical fraction, immune 
 # evading characteristics
-# (2) different vaccine efficacy values intput at different time steps due to 
+# (2) different vaccine efficacy values input at different time steps due to 
 # composition of vaccines
 update_u_y <- function(para = NULL,
                        # group (1) changes
@@ -605,7 +605,7 @@ parameterise_setting <- function(start_age_annual = 55,
                              processes = gen_burden_processes(VE = efficacy_all),
                              period_wn  = 3*365, # duration, waning of natural immunity
                              period_wv_m2l = 1*365, # duration, waning from medium to low levels vaccine induced 
-                             period_wv_h2m = 1*365, # duration, waning from medium to low levels vaccine induced 
+                             period_wv_h2m = 1*365, # duration, waning from high to medium levels vaccine induced 
                              prob_v_p_2l = 1,
                              prob_v_p_2m = 0,
                              prob_v_b_l2m = 0.5,
@@ -631,9 +631,9 @@ parameterise_setting <- function(start_age_annual = 55,
     vaccinate_additional(para = .,
                          vac_data = owid_vac,
                          booster_plan = booster_allocation_plan, 
-                         start_age_annual = 55,
-                         start_age_6m = 75,
-                         cov_2024 = 0.5,
+                         start_age_annual = start_age_annual,
+                         start_age_6m = start_age_6m,
+                         cov_2024 = cov_2024,
                          month_annual = c(5:6),
                          month_6m = c(11:12)
                          )
