@@ -223,14 +223,14 @@ update_u_y <- function(para = NULL,
                        # check function to make sure that date_switch and rc_x
                        # have the same size
                        # rc - relative changes
-                       date_switch = c("2021-01-15", "2021-04-15", "2021-12-15"),
-                       rc_u = c(1, 1.5, 0.5), # relative changes in u
-                       rc_y = c(1, 0.5, 0.5), # relative changes in y
+                       date_switch = c("2021-01-15", "2021-04-15", "2021-12-15", "2025-01-01"),
+                       rc_u = c(1, 1.5, 0.5, 0.5), # relative changes in u
+                       rc_y = c(1, 0.5, 0.5, 0.5), # relative changes in y
                        # if ve can be specific to VOCs in relation to the 
                        # wildtype, rc_ve will be all 1s
                        # rc_ve = c(1, 0.9, 0.7), # relative changes in evasiveness (infection part)
                        # Update rc_ve based on our recent meta-analysis
-                       rc_ve = c(1, 0.62, 0.19),
+                       rc_ve = c(0.785, 0.62, 0.358, 0.19),
                        # group (2) changes 
                        efficacy_baseline = NULL # vaccine efficacy
 ){
@@ -374,7 +374,7 @@ emerge_VOC_burden <- function(
     para = NULL,
     # could add another variable for ve_against >= severe outcomes to change by
     # VOC stages, to-do
-    rc_severity = c(1, 1.5,1.5), # relative change in ihr and ifr
+    rc_severity = c(1, 1.5, 1.5, 1.5), # relative change in ihr and ifr
     efficacy_baseline = NULL){
   
   # debug
@@ -614,16 +614,16 @@ parameterise_setting <- function(start_age_annual = 55,
                              scenario_booster = scenario3_booster,
                              seed = out$optim$bestmem[2]) %>% 
     update_u_y(para = .,
-               date_switch = c("2021-01-15", "2021-07-05", "2021-12-31"),
-               rc_u = c(1, 1.5, 1.1), # relative changes in u
-               rc_y = c(1, 1, 1), # relative changes in y
+               date_switch = c("2021-01-15", "2021-07-05", "2021-12-31", "2025-01-01"),
+               rc_u = c(1, 1.5, 1.1, 1.1), # relative changes in u
+               rc_y = c(1, 1, 1, 1), # relative changes in y
                #rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
                # Update rc_ve based on our recent meta-analysis
-               rc_ve = c(1, 0.62, 0.19), # relative evasiveness 
+               rc_ve = c(1, 0.62, 0.19, 0.19), # relative evasiveness 
                efficacy_baseline = efficacy_all
     ) %>%
     emerge_VOC_burden(para = .,
-                      rc_severity = c(1, 1.5, 0.7), # relative change in ihr and ifr
+                      rc_severity = c(1, 1.5, 0.7, 0.7), # relative change in ihr and ifr
                       efficacy_baseline = efficacy_all) %>%
     vaccinate_primary(para = .,
                       vac_data = owid_vac,

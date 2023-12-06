@@ -313,7 +313,7 @@ dose1 %>%
 #          Vm = c(0.171, 0.868, 0.171, 0.88, 0.88),
 #          Vh = c(0.008, 0.003, 0.008, 0.12, 0.12)) -> vp_levels
 
-## Update vp_levels using our recent meta-analysis
+## Update vp_levels using our recent meta-analysis Dec2023
 expand.grid(dose1 = vac_type_list,
             vac_type = vac_type_list) %>% 
   dplyr::filter(dose1 == vac_type) %>% 
@@ -321,9 +321,10 @@ expand.grid(dose1 = vac_type_list,
          Vm = c(0.364, 0.523, 0.338, 0.455, 0.255),
          Vh = c(0.066, 0.2545, 0.063, 0.415, 0.723)) -> vp_levels
 
+# update bp_levels from meta-analysis Dec2023
 expand_grid(booster_type = vac_type_list) %>% 
   filter(booster_type %in% c("pf", "md", "az")) %>% 
-  mutate(Vl2m = c(0.5,0,0),
-         Vl2h = c(0.5,1,1)) -> bp_levels
+  mutate(Vl2m = c(0.5,0.12,0.19),
+         Vl2h = c(0.5,0.88,0.8)) -> bp_levels # assumption for AZ (no NAb data) - get from Dream
 
 source("code/0_7_3_consistent_primary_memoryless.R")
