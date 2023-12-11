@@ -95,9 +95,9 @@ vaccinate_additional <- function(para = NULL,
   
   # Phase 3 list of daily vaccine doses
   
-  eligible_annual <- c(rep(NA,(start_age_annual/5)), rep(1,(16-start_age_annual/5)))
+  eligible_annual <- c(rep(0,(start_age_annual/5)), rep(1,(16-start_age_annual/5)))
     # eligible age groups for annual (12m + 6m) => eligible is 1, ineligible is NA
-  eligible_6m <- c(rep(NA,(start_age_6m/5)), rep(1,(16-start_age_6m/5)))
+  eligible_6m <- c(rep(0,(start_age_6m/5)), rep(1,(16-start_age_6m/5)))
     # eligible age groups for additional booster (6m only) => eligible is 1, ineligible is NA
   
   pop <- para$pop[[1]]$size 
