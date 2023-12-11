@@ -54,6 +54,21 @@ for(i in 1:length(setting_list)){
 }
 write_rds(res_all, "data/20231201_res_all.rds")
 
+
+### Extract future population from CovidM ###
+pop_future <- cm_simulate(setting_list[[1]])$dynamics %>% 
+    filter(!grepl("case|sever|critical|death", compartment)) %>% 
+    filter(!grepl("_p|reported", compartment)) %>% 
+    filter(!grepl("foi", compartment)) %>%
+    filter(!grepl("subclinical", compartment)) %>% 
+    mutate(date = t + ymd("2021-02-01"),
+           year = year(date)) %>% 
+    group_by(t, group) %>% 
+    mutate(total_pop = sum(value)) %>% 
+  distinct(t, total_pop, .keep_all = T) %>% 
+  select(-c(compartment, population, value))
+
+
 ### OUTPUT TABLE ###
 # IMPORTANT: Estimates are from 2023 onwards (i.e. not Oct-Dec 2022)
 
