@@ -618,8 +618,7 @@ parameterise_setting <- function(start_age_annual = 55,
                rc_u = c(1, 1.5, 1.1, 1.1), # relative changes in u
                rc_y = c(1, 1, 1, 1), # relative changes in y
                #rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
-               # Update rc_ve based on our recent meta-analysis
-               rc_ve = c(1, 0.62, 0.19, 0.19), # relative evasiveness 
+               rc_ve = c(1, 0.62, 0.19, 0.19), # update rc_ve using meta-analysis from Dec2023
                efficacy_baseline = efficacy_all
     ) %>%
     emerge_VOC_burden(para = .,
