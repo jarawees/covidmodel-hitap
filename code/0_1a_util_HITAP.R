@@ -229,16 +229,15 @@ update_u_y <- function(para = NULL,
                        # if ve can be specific to VOCs in relation to the 
                        # wildtype, rc_ve will be all 1s
                        # rc_ve = c(1, 0.9, 0.7), # relative changes in evasiveness (infection part)
-                       # Update rc_ve based on our recent meta-analysis
-                       rc_ve = c(0.785, 0.62, 0.358, 0.19),
+                       rc_ve = c(1, 0.785, 0.62, 0.358), # update rc_ve using meta-analysis from Dec2023
                        # group (2) changes 
                        efficacy_baseline = NULL # vaccine efficacy
 ){
   # debug
-  # date_switch = c("2021-01-15", "2021-04-15", "2021-12-15")
-  # rc_u = c(1, 1.5, 0.5)
-  # rc_y = c(1, 0.5, 0.5)
-  # rc_ve = c(1, 0.9, 0.7)
+  # date_switch = c("2021-01-15", "2021-04-15", "2021-12-15", "2025-01-01")
+  # rc_u = c(1, 1.5, 0.5, 0.5)
+  # rc_y = c(1, 0.5, 0.5, 0.5)
+  # rc_ve = c(1, 0.9, 0.7, 0.7)
   # efficacy_baseline = efficacy_all
   
   date_marker <- c(date_switch, as.character(lubridate::ymd(para$date0) + para$time1))
@@ -331,9 +330,12 @@ update_u_y <- function(para = NULL,
            uvr_l_scaler = rc_u_prod*(1 - efficacy_baseline$vr_i_o[1]*rc_ve_prod)/(1 - efficacy_baseline$vr_i_o[1]),
            uvr_m_scaler = rc_u_prod*(1 - efficacy_baseline$vr_i_o[2]*rc_ve_prod)/(1 - efficacy_baseline$vr_i_o[2]),
            uvr_h_scaler = rc_u_prod*(1 - efficacy_baseline$vr_i_o[3]*rc_ve_prod)/(1 - efficacy_baseline$vr_i_o[3]),
-           yv_l_scaler  = rc_y_prod,
-           yv_m_scaler  = rc_y_prod,
-           yv_h_scaler  = rc_y_prod) -> modifier
+           yv_l_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[1]*rc_ve_prod)/(1 - efficacy_baseline$v_d_condition[1]),
+           yv_m_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[2]*rc_ve_prod)/(1 - efficacy_baseline$v_d_condition[2]),
+           yv_h_scaler  = rc_y_prod*(1 - efficacy_baseline$v_d_condition[3]*rc_ve_prod)/(1 - efficacy_baseline$v_d_condition[3])) -> modifier
+           # yv_l_scaler  = rc_y_prod,
+           # yv_m_scaler  = rc_y_prod,
+           # yv_h_scaler  = rc_y_prod) -> modifier
   
   modifier |> 
     dplyr::select(ends_with("scaler")) |> 
@@ -617,8 +619,7 @@ parameterise_setting <- function(start_age_annual = 55,
                date_switch = c("2021-01-15", "2021-07-05", "2021-12-31", "2025-01-01"),
                rc_u = c(1, 1.5, 1.1, 1.1), # relative changes in u
                rc_y = c(1, 1, 1, 1), # relative changes in y
-               #rc_ve = c(1, 0.9, 0.7), # relative evasiveness 
-               rc_ve = c(1, 0.62, 0.19, 0.19), # update rc_ve using meta-analysis from Dec2023
+               rc_ve = c(1, 0.785, 0.62, 0.358), # update rc_ve using meta-analysis from Dec2023
                efficacy_baseline = efficacy_all
     ) %>%
     emerge_VOC_burden(para = .,
