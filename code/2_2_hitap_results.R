@@ -21,7 +21,8 @@ panel_baseline <- data.frame(cov_2024 = 0,
                              scenario = "base_case")
 
 # PANEL for all scenarios
-panel_final <- bind_rows(panel_baseline,panel_WHO,panel_additional)
+panel_final <- bind_rows(panel_baseline,panel_WHO,panel_additional) %>%
+  arrange(scenario, cov_2024)
 
 
 # Parameters for each scenario
@@ -75,16 +76,17 @@ pop_future <- cm_simulate(setting_list[[1]])$dynamics %>%
 
 ### OUTPUT TABLE 2024 to 2030 ###
 
-panel_cua <- panel_final
+years <- c(2024,2025,2026,2027,2028,2029,2030)
+panel_cua <- panel_final[rep(1:nrow(panel_final),times = length(years)),]
 
 # Calculate total cases, hospitalisations, deaths for each scenario
 temp_res <- data.frame(cases = numeric(0),
                        hospital_noICU = numeric(0),
                        ICU = numeric(0),
                        death = numeric(0),
-                       year = (0))
+                       year = numeric(0))
 
-for (row in 1:nrow(panel_cua)){
+for (row in 1:nrow(panel_final)){
   
   # calculate total cases, hospitalisations, deaths for each scenario
   res_all[[row]] %>%
@@ -106,59 +108,76 @@ for (row in 1:nrow(panel_cua)){
               year = 2025) -> new_row_temp25
   
   res_all[[row]] %>%
-    filter(date >= "2024-01-01") %>%
-    filter(date < "2025-01-01") %>%
+    filter(date >= "2026-01-01") %>%
+    filter(date < "2027-01-01") %>%
     summarise(cases = sum(cases),
               hospital_noICU = sum(severe_all),
               ICU = sum(critical_all),
               death = sum(death_all),
-              year = 2024) -> new_row_temp24
+              year = 2026) -> new_row_temp26
   
   res_all[[row]] %>%
-    filter(date >= "2024-01-01") %>%
-    filter(date < "2025-01-01") %>%
+    filter(date >= "2027-01-01") %>%
+    filter(date < "2028-01-01") %>%
     summarise(cases = sum(cases),
               hospital_noICU = sum(severe_all),
               ICU = sum(critical_all),
               death = sum(death_all),
-              year = 2024) -> new_row_temp24
+              year = 2027) -> new_row_temp27
   
   res_all[[row]] %>%
-    filter(date >= "2024-01-01") %>%
-    filter(date < "2025-01-01") %>%
+    filter(date >= "2028-01-01") %>%
+    filter(date < "2029-01-01") %>%
     summarise(cases = sum(cases),
               hospital_noICU = sum(severe_all),
               ICU = sum(critical_all),
               death = sum(death_all),
-              year = 2024) -> new_row_temp24
+              year = 2028) -> new_row_temp28
   
-  temp_res <- rbind(temp_res,new_row_temp)
+  res_all[[row]] %>%
+    filter(date >= "2029-01-01") %>%
+    filter(date < "2030-01-01") %>%
+    summarise(cases = sum(cases),
+              hospital_noICU = sum(severe_all),
+              ICU = sum(critical_all),
+              death = sum(death_all),
+              year = 2029) -> new_row_temp29
+  
+  res_all[[row]] %>%
+    filter(date >= "2030-01-01") %>%
+    filter(date < "2031-01-01") %>%
+    summarise(cases = sum(cases),
+              hospital_noICU = sum(severe_all),
+              ICU = sum(critical_all),
+              death = sum(death_all),
+              year = 2030) -> new_row_temp30
+  
+  temp_res <- rbind(temp_res,new_row_temp24,new_row_temp25,new_row_temp26,
+                    new_row_temp27,new_row_temp28,new_row_temp29,new_row_temp30)
   
 }
 
- 
-panel_cua <- cbind(panel_cua,temp_res)
+temp_res <- temp_res %>% arrange(year)
+
+panel_cua <- cbind(panel_cua,temp_res) %>%
+  select(-c(start_age_annual,start_age_6m)) %>%
+  arrange(year,scenario,cov_2024) %>%
+  rename(coverage = cov_2024)
 
 
-### OUTPUT TABLE 2024-2030 ###
+### HOSPITALISATION CHARTS 2024 ###
+p_load(scales)
 
+#1 Scatter chart for 2024
 
-
-
-### CHART 2024 ###
-
-
-# Prepare the dataframe (HOSPITALISATION ONLY)
-
+# Prepare the dataframe
 hosp_chart <- panel_cua %>%
-  select(cov_2024, scenario, hospital_noICU) %>%
-  filter(cov_2024 > 0) %>%
-  pivot_wider(names_from = cov_2024, values_from = hospital_noICU)%>%
-  pivot_longer(cols = c(2:9),
-               names_to = "coverage",
-               values_to = "hospn") %>%
-  mutate(coverage = as.numeric(coverage))
-hosp_base <- panel_cua[1,"hospital_noICU"]
+  filter(year == 2024, coverage > 0) %>%
+  select(coverage, scenario, hospital_noICU) %>%
+  mutate(coverage = as.numeric(coverage)) %>%
+  rename(hospn = hospital_noICU)
+
+hosp_base <- with(panel_cua, hospital_noICU[which (scenario == "base_case" )])[1] # base case (no vaccination) for the year 2024
 
 # Scatter plot
 p_hosp <- ggplot(hosp_chart, aes(x=scenario, y=hospn, col=coverage)) +
@@ -168,41 +187,25 @@ p_hosp <- ggplot(hosp_chart, aes(x=scenario, y=hospn, col=coverage)) +
                         name = "Coverage") +
   labs(x = "Scenario", 
        y = "Number of hospitalisations (2024)") + 
-  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale()), # set scale to millions
-                     limits = c(9800000,10200000),
-                     breaks = seq(8000000,11000000,100000)) +
+  
   theme_minimal_hgrid() +
   theme(text = element_text(size = 12),
         axis.line.x.bottom=element_line(color="white")) +
   geom_hline(yintercept=hosp_base, linetype="dashed", color = "grey")
 p_hosp
 
+#2 Bar chart for 2024-2030
 
-# Prepare the dataframe (DEATH ONLY)
+# scenarios to compare
+comparison_bar <- c("WHO","50 y+")
+hosp_bar <- panel_cua %>%
+  filter(scenario %in% comparison_bar, coverage == 0.5) %>%
+  select(scenario, year, hospital_noICU)
 
-death_chart <- panel_cua %>%
-  select(cov_2024, scenario, death) %>%
-  filter(cov_2024 > 0) %>%
-  pivot_wider(names_from = cov_2024, values_from = death)%>%
-  pivot_longer(cols = c(2:9),
-               names_to = "coverage",
-               values_to = "dead") %>%
-  mutate(coverage = as.numeric(coverage))
-dead_base <- panel_cua[1,"death"]
-
-# Scatter plot
-p_dead <- ggplot(death_chart, aes(x=scenario, y=dead, col=coverage)) +
-  geom_point(size=3) +
-  scale_shape_manual(values=4) +
-  scale_color_gradient2(midpoint=0.5, low="indianred4", mid="khaki1", high = "mediumseagreen", 
-                        name = "Coverage") +
-  labs(x = "Scenario", 
-       y = "Number of deaths (2024)") + 
-  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale()), # set scale to millions
-                     limits = c(4620000,4670000),
-                     breaks = seq(4620000,4670000,10000)) +
-  theme_minimal_hgrid() +
-  theme(text = element_text(size = 12),
-        axis.line.x.bottom=element_line(color="white")) +
-  geom_hline(yintercept=dead_base, linetype="dashed", color = "grey")
-p_dead
+# Bar chart
+bar_hosp <- ggplot(hosp_bar, aes(x=year,y=hospital_noICU,fill=scenario)) +
+  geom_bar(stat="identity",position=position_dodge())  +
+  labs(x = "Year", 
+       y = "Number of hospitalisations") + 
+  scale_y_continuous(labels = label_comma())
+bar_hosp
