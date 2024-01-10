@@ -73,8 +73,7 @@ pop_future <- cm_simulate(setting_list[[1]])$dynamics %>%
   select(-c(compartment, population, value))
 
 
-### OUTPUT TABLE 2024 ###
-# IMPORTANT: Estimates are from 2023 onwards (i.e. not Oct-Dec 2022)
+### OUTPUT TABLE 2024 to 2030 ###
 
 panel_cua <- panel_final
 
@@ -82,7 +81,8 @@ panel_cua <- panel_final
 temp_res <- data.frame(cases = numeric(0),
                        hospital_noICU = numeric(0),
                        ICU = numeric(0),
-                       death = numeric(0))
+                       death = numeric(0),
+                       year = (0))
 
 for (row in 1:nrow(panel_cua)){
   
@@ -93,7 +93,45 @@ for (row in 1:nrow(panel_cua)){
     summarise(cases = sum(cases),
               hospital_noICU = sum(severe_all),
               ICU = sum(critical_all),
-              death = sum(death_all)) -> new_row_temp
+              death = sum(death_all),
+              year = 2024) -> new_row_temp24
+  
+  res_all[[row]] %>%
+    filter(date >= "2025-01-01") %>%
+    filter(date < "2026-01-01") %>%
+    summarise(cases = sum(cases),
+              hospital_noICU = sum(severe_all),
+              ICU = sum(critical_all),
+              death = sum(death_all),
+              year = 2025) -> new_row_temp25
+  
+  res_all[[row]] %>%
+    filter(date >= "2024-01-01") %>%
+    filter(date < "2025-01-01") %>%
+    summarise(cases = sum(cases),
+              hospital_noICU = sum(severe_all),
+              ICU = sum(critical_all),
+              death = sum(death_all),
+              year = 2024) -> new_row_temp24
+  
+  res_all[[row]] %>%
+    filter(date >= "2024-01-01") %>%
+    filter(date < "2025-01-01") %>%
+    summarise(cases = sum(cases),
+              hospital_noICU = sum(severe_all),
+              ICU = sum(critical_all),
+              death = sum(death_all),
+              year = 2024) -> new_row_temp24
+  
+  res_all[[row]] %>%
+    filter(date >= "2024-01-01") %>%
+    filter(date < "2025-01-01") %>%
+    summarise(cases = sum(cases),
+              hospital_noICU = sum(severe_all),
+              ICU = sum(critical_all),
+              death = sum(death_all),
+              year = 2024) -> new_row_temp24
+  
   temp_res <- rbind(temp_res,new_row_temp)
   
 }
