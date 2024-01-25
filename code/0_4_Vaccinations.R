@@ -23,10 +23,10 @@ data.table(v_i_o = c(0.33, 0.6, 0.75),
            # r_i_o = c(0.85), # from https://www.thelancet.com/article/S0140-6736(22)02465-5/fulltext
            r_i_o = c(0.76), # update r_i_o using meta-analysis from Dec2023
            # v_d_o = c(0.44, 0.69, 0.85),
-           v_d_o = c(0.28, 0.72, 0.94), # update v_d_o using meta-analysis from Dec2023
+           v_d_o = c(0.33, 0.72, 0.94), # update v_d_o using meta-analysis from Dec2023
            v_severe_o = c(0.59, 0.95, 0.99), # update v_severe_o using meta-analysis from Dec2023
-           v_critical_o = c(0.8, 0.95, 0.97),
-           v_mort_o = c(0.85, 0.95, 0.98),
+           v_critical_o = c(0.8, 0.95, 0.99),
+           v_mort_o = c(0.85, 0.95, 0.99),
            protection_level_label = c("l", "m", "h")) %>% 
   # the following lines do not explicit reflect existing changes in infection
   # which has been explicitly modelled as changes in u
