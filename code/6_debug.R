@@ -44,7 +44,7 @@ para <- gen_country_basics(country = "Thailand",
                        booster_plan = booster_allocation_plan,
                        start_age_annual = 40,
                        start_age_6m = 80,
-                       cov_2024 = 0.5,
+                       cov_2024 = 0.9,
                        month_annual = c(5:6),
                        month_6m = c(11:12))
 
