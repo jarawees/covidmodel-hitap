@@ -619,7 +619,7 @@ parameterise_setting <- function(start_age_annual = 55,
                date_switch = c("2021-01-15", "2021-07-05", "2021-12-31", "2025-01-01"),
                rc_u = c(1, 1.5, 1.1, 1.1), # relative changes in u
                rc_y = c(1, 1, 1, 1), # relative changes in y
-               rc_ve = c(1, 0.785, 0.62, 0.358), # update rc_ve using meta-analysis from Dec2023
+               rc_ve = c(1, 0.79, 0.79, 0.58), # update rc_ve using meta-analysis from Dec2023
                efficacy_baseline = efficacy_all
     ) %>%
     emerge_VOC_burden(para = .,
