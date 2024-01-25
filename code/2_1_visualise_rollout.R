@@ -1,4 +1,4 @@
-i = 65
+i = 1
 
 data.frame(t_within = setting_list[[i]]$schedule$booster$times) %>% 
   mutate(date = t_within + ymd(setting_list[[i]]$date0)) -> date_grid1 
@@ -10,7 +10,8 @@ date_grid1 %>%
              by = "date") %>% 
   arrange(date) -> date_grid2
 
-setting_list[[i]]$schedule$booster$values %>% bind_cols() -> tmp
+setting_list[[i]]$schedule$booster$values %>% bind_cols() -> tmp_b
+setting_list[[i]]$schedule$primary_course$values %>% bind_cols() -> tmp_p
 
 # paste0("f = ", panel[i,1], 
 #        "; boosting level = ", panel[i,2],

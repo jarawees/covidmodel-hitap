@@ -78,7 +78,6 @@ mu <- read_csv(paste0(data_path, "THAI_MortalityRateByAge_2019.csv")) %>%
                                       age >= 70 & age <= 74 ~ 15,
                                       age >= 75 ~ 16))
 
-
 pop_by1 <- fread(paste0(data_path, "pop_str_2021.csv")) %>%
   gather(key = "sex", value = "pop", both) %>%
   mutate(pop = parse_number(pop)) |> 

@@ -3,7 +3,6 @@ source("code/0_LoadAll_hitap.R")
 out <- read_rds("data/out_20230328.rds")
 date_switch <- c("2021-01-15", "2021-07-05", "2021-12-31", "2025-01-01")
 
-
 # PANEL for baseline (no vaccination), WHO scenario, annual scenarios
 panel_WHO <- expand.grid(cov_2024 = c(seq(0.1, 0.8, 0.1)), 
                          start_age_annual = 55,
@@ -35,7 +34,9 @@ for(i in 1:nrow(panel_final)) {
 
 ### Populate the model with the parameters in setting_list ###
 res_all <- list()
-for(i in 1:length(setting_list)){
+
+# for(i in 1:length(setting_list)){
+for(i in 1:2){
   cm_simulate(setting_list[[i]])$dynamics %>% 
     filter(grepl("case|sever|critical|death", compartment)) %>% 
     filter(!grepl("_p|reported", compartment)) %>% 
@@ -59,6 +60,25 @@ for(i in 1:length(setting_list)){
                                  date > date_switch[4] ~ death_voc4_o)) %>% 
     dplyr::select(date, year, group, cases, ends_with("all")) -> res_all[[i]]
 }
+
+tmp <- cm_simulate(setting_list[[i]])$dynamics %>% 
+  mutate(date = t + ymd("2021-02-01"),
+         year = year(date))
+
+compartments_status <- c("S", "Sv_l", "Sv_m", "Sv_h",
+                         "E", "Ev_l", "Ev_m", "Ev_h",
+                         "Ip", "Ip_l", "Ip_m", "Ip_h",
+                         "Is", "Is_l", "Is_m", "Is_h",
+                         "Ia", "Ia_l", "Ia_m", "Ia_h",
+                         "R", "Rv_l", "Rv_m", "Rv_h")
+tmp %>% 
+  dplyr::filter(compartment %in% compartments_status) %>% 
+  dplyr::filter(group == "60-64") %>% 
+  mutate(compartment_general = substr(compartment, 1, 1)) %>% 
+  ggplot(., aes(x = date, y = value, color = compartment, fill = compartment)) +
+  geom_bar(position = "stack", stat = "identity") +
+  facet_wrap(~compartment, scales = "free")
+
 write_rds(res_all, "data/20231211_res_all.rds")
 
 ### Extract future population from CovidM ###
