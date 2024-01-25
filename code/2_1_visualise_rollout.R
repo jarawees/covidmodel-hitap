@@ -1,20 +1,20 @@
-i = 34
+i = 65
 
 data.frame(t_within = setting_list[[i]]$schedule$booster$times) %>% 
   mutate(date = t_within + ymd(setting_list[[i]]$date0)) -> date_grid1 
 
 date_grid1 %>%   
   right_join(data.frame(date = seq(ymd("2021-02-01"),
-                                   ymd("2027-12-31"),
+                                   ymd("2030-12-31"),
                                    by = "day")),
              by = "date") %>% 
   arrange(date) -> date_grid2
 
 setting_list[[i]]$schedule$booster$values %>% bind_cols() -> tmp
 
-paste0("f = ", panel[i,1], 
-       "; boosting level = ", panel[i,2],
-       "; prioritisation = ", panel[i,3]) -> tmp_title
+# paste0("f = ", panel[i,1], 
+#        "; boosting level = ", panel[i,2],
+#        "; prioritisation = ", panel[i,3]) -> tmp_title
 
 tmp %>% 
   t %>% 
@@ -43,5 +43,10 @@ tmp %>%
                                              "older adults"))) %>% 
   ggplot(., aes(x = date, y = daily_cov, group = age_group, color = age_group_broad)) +
   geom_line() +
-  facet_wrap(~age_group_broad, ncol = 1)
+  geom_vline(xintercept = seq(ymd("2021-01-01"),
+                              ymd("2031-01-01"),
+                              by = "year"),
+             linetype = 2) + 
+  facet_wrap(~age_group)
+
 
