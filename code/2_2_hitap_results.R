@@ -5,12 +5,12 @@ date_switch <- c("2021-01-15", "2021-07-05", "2021-12-31", "2024-01-01")
 
 # PANEL for baseline (no vaccination), WHO scenario, annual scenarios
 panel_WHO <- expand.grid(cov_2024 = c(seq(0.1, 0.8, 0.1)), 
-                         start_age_annual = 55,
+                         start_age_annual = 60,
                          start_age_6m = 75) %>%
   mutate(scenario = "WHO")
 
-panel_additional <- expand.grid(cov_2024 = c(seq(0.1, 0.8, 0.1)), 
-                                start_age_annual = c(40,45,50,55,60,65,70,75),
+panel_additional <- expand.grid(cov_2024 = c(seq(0.2, 0.8, 0.1)), 
+                                start_age_annual = seq(0,75,by=5),
                                 start_age_6m = 80) %>% # i.e. only annual vaccination
   mutate(scenario = paste(as.character(start_age_annual),"y+"))
 
