@@ -1,8 +1,7 @@
 ## Load required packages
 if(!require(pacman)) install.packages("pacman")
-library(pacman)
 p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr, imputeTS,
-       lubridate, mgcv, DEoptim, magrittr, progress, readxl, Rcpp, here)
+       lubridate, mgcv, DEoptim, magrittr, progress, readxl, Rcpp, here, testthat)
 
 ##### load covidm #####
 data_path <- "/Users/yangliu/Dropbox/Github_Data/HITAP_CovidM/"
@@ -137,3 +136,33 @@ source("code/0_6_HealthCareSystem.R")
 #### Vaccine Market ####
 source("code/0_7_vaccine_market.R")
 
+# birth rate
+cbr <- read_rds(paste0(data_path, "cbr.rds"))
+
+# death rate
+mu_weighted_16 <- read_rds(paste0(data_path, "mu_weighted_16.rds"))
+
+# fitted table (test)
+fitted_table_baseline <- read_rds(paste0(data_path, "fitted_table_baseline_THA.rds"))
+
+# states
+compartment_pop <- c("S", "Sv_l", "Sv_m", "Sv_h",
+                     "E", "Ev_l", "Ev_m", "Ev_h",
+                     "Ip", "Ip_l", "Ip_m", "Ip_h",
+                     "Ia", "Ia_l", "Ia_m", "Ia_h",
+                     "Is", "Is_l", "Is_m", "Is_h",
+                     "R", "Rv_l", "Rv_m", "Rv_h")
+
+compartment_process <- c("cases", "cases_reported",
+                         "subclinical",
+                         "foi", "foiv_l", "foiv_m", "foiv_h")
+
+compartment_process_voc <- c("severe", "critical", "death")
+
+# other index
+country_list <- read_rds(paste0(data_path, "country_list_thailand.rds"))
+voc_phases <- read_rds(paste0(data_path, "voc_phases_thailand.rds"))
+voc_phases_imputation_index <-  read_rds(paste0(data_path, "voc_phases_imputation_index_thailand.rds"))
+voc_features_test <- read_rds(paste0(data_path, "voc_features_test_thailand.rds"))
+HSR_cleaned <- read_rds(paste0(data_path, "HSR_cleaned_thailand.rds"))
+load(paste0(data_path, "severe_strain_thailand.rdata"))

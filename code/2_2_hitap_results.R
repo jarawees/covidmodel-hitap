@@ -101,6 +101,20 @@ for(i in 1:length(setting_list)){
     dplyr::select(date, year, group, cases, ends_with("all")) -> res_all[[i]]
 }
 
+res_all %>% 
+  bind_rows(.id = "list_index") %>% 
+  group_by(date, list_index) %>% 
+  summarise(cases = sum(cases),
+            severe = sum(severe_all),
+            critical = sum(critical_all),
+            deaths = sum(death_all)) %>% 
+  mutate(d_2_h_r = deaths/severe) -> p_tab
+  
+p_tab %>% 
+  ggplot(., aes(x = date, y = d_2_h_r, group = list_index)) +
+  geom_line() +
+  geom_hline(yintercept = 0.02, size = 2, linetype = 2)
+
 # write_rds(res_all, "data/20240129_res_all.rds")
 
 ## scenario 40 y+ coverage 80%

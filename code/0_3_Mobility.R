@@ -166,14 +166,17 @@ pre_tab_merged |>
          other = other_scaler) |> 
   mutate(school = school/max(school, na.rm = T),
          home = 1) %>%
-  dplyr::select(country_region, date, home, work, school, other) -> gm_scaled
+  dplyr::select(country_region, date, home, work, school, other) %>% 
+  rename(country_code = country_region,
+         others = other) %>% 
+  mutate(country_code = "THA") -> gm_scaled
 
 CJ(date = seq(as.Date("2019-12-01"), as.Date("2020-02-14"),1),
-   country_region = "Thailand") %>%
+   country_code = "THA") %>%
   .[,c("home",
        "work",
        "school",
-       "other",
+       "others",
        "date") :=
       list(1,1,1,1,(date))] -> schedule_before
 
