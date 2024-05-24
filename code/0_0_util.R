@@ -198,7 +198,7 @@ source("code/0_0_5_vaccinate_additional.R")
 #   return(para)
 # }
 
-source("code/0_1_1_AnnualProgram.R")
+# source("code/0_1_1_AnnualProgram.R")
 
 cm_multinom_process <- function(
     src, outcomes, delays,

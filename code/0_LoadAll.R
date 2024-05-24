@@ -38,7 +38,7 @@ cm_populations |>
 source("code/0_4_Vaccinations.R")
 
 # B. load custom functions
-source("code/0_1_util_functions.R")
+source("code/0_0_util.R")
 
 ## Load required data
 # A. Covid-19 deaths
@@ -68,7 +68,9 @@ epi_round1to <- fread(paste0(data_path, "epi_round1to2.csv")) # snapshot from 20
 epi_update <- fread(paste0(data_path, "epi_update.csv")) # time-series from 2021-04-01 onward
 
 epi <- bind_rows(epi_round1to, epi_update) %>%
-  dplyr::select(txn_date, new_case_excludeabroad, new_death)
+  dplyr::select(txn_date, new_case_excludeabroad, new_death) %>% 
+  distinct()
+  
 
 rm(epi_round1to, epi_update)
 
@@ -131,6 +133,8 @@ source("code/0_3_Mobility.R")
 source("code/0_5_EpiParams.R")
 
 #### L. Burden processes #### 
+country_list <- read_rds(paste0(data_path, "country_list_thailand.rds"))
+HSR_cleaned <- read_rds(paste0(data_path, "HSR_cleaned_thailand.rds"))
 source("code/0_6_HealthCareSystem.R")
 
 #### Vaccine Market ####
@@ -160,9 +164,8 @@ compartment_process <- c("cases", "cases_reported",
 compartment_process_voc <- c("severe", "critical", "death")
 
 # other index
-country_list <- read_rds(paste0(data_path, "country_list_thailand.rds"))
+
 voc_phases <- read_rds(paste0(data_path, "voc_phases_thailand.rds"))
 voc_phases_imputation_index <-  read_rds(paste0(data_path, "voc_phases_imputation_index_thailand.rds"))
 voc_features_test <- read_rds(paste0(data_path, "voc_features_test_thailand.rds"))
-HSR_cleaned <- read_rds(paste0(data_path, "HSR_cleaned_thailand.rds"))
 load(paste0(data_path, "severe_strain_thailand.rdata"))

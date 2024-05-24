@@ -1,5 +1,3 @@
-date_switch <- c("2021-01-15", "2021-07-05", "2021-12-31", "2024-01-01")
-
 # PANEL for baseline (no vaccination), WHO scenario, annual scenarios
 panel_WHO <- expand.grid(cov_2024 = c(seq(0.1, 0.8, 0.1)), 
                          start_age_annual = 60,
@@ -16,16 +14,22 @@ panel_baseline <- data.frame(cov_2024 = 0,
                              start_age_6m = 80,
                              scenario = "base_case")
 
+panel_final <- bind_rows(panel_baseline,panel_WHO,panel_additional) %>%
+  arrange(scenario, cov_2024)
+
+
 para <- gen_country_basics( date_start = "2020-01-01",
-                            date_end = "2023-12-31",
+                            date_end = "2030-12-31",
                             processes_set = burden_processes_all,
                             prob_v_p_2l = 0.33,
                             prob_v_p_2m = 0.33,
                             prob_v_b_l2m = 0,
-                            fitted_table_tmp = fitted_table_baseline, # sensitivity analysis 1
-                            wn_lt = 3*365, # sensitivity analysis 2
-                            period_wv_h2m = 1*365, # sensitivity analysis 3
-                            period_wv_m2l = 1*365, # sensitivity analysis 3
+                            # seed = fitted_table_baseline$seed_20200101,
+                            # R0_assumed = fitted_table_baseline$R0_assumed_2,
+                            # period_wn = fitted_table_baseline$wn,
+                            fitted_table_tmp = fitted_table_baseline,
+                            period_wv_h2m = 1*365, 
+                            period_wv_m2l = 1*365, 
                             deterministic = TRUE) %>% 
   update_u_y(para = .,
              country_tmp = "Thailand",
@@ -52,8 +56,6 @@ para <- gen_country_basics( date_start = "2020-01-01",
                        month_6m = c(11:12))
 
 
-check_vaccination_program(type = "primary_course", para = para)
-check_vaccination_program()
 res <- cm_simulate(para)
 
 res$dynamics %>% 

@@ -1,37 +1,35 @@
-gen_country_basics <- function(country_tmp = "Thailand",
-                               country_code_tmp = "THA",
-                               date_start = "2020-01-01",
-                               date_end = "2023-12-31",
-                               # things to fit
-                               # seed = NULL,
-                               # R0_assumed = NULL,
-                               # period_wn = NULL,
-                               processes_set = burden_processes_all,
-                               prob_v_p_2l = 0.5,
-                               prob_v_p_2m = 0.33,
-                               prob_v_b_l2m = 0,
-                               fitted_table_tmp = fitted_table_baseline, 
-                               period_wv_h2m = 1*365, 
-                               period_wv_m2l = 1*365, 
-                               deterministic = TRUE){
+fit_gen_country_basics <- function(country_tmp = "Thailand",
+                                   country_code_tmp = "THA",
+                                   date_start = "2020-01-01",
+                                   date_end = "2023-12-31",
+                                   R0_assumed = NULL,
+                                   period_wn = 3*365,
+                                   period_wv_m2l = 1*365, 
+                                   processes_set = burden_processes_all,
+                                   period_wv_h2m = 1*365, 
+                                   prob_v_p_2l = 0.33,
+                                   prob_v_p_2m = 0.33,
+                                   prob_v_b_l2m = 0,
+                                   seed = NULL,
+                                   deterministic = TRUE){
   
   # country_tmp = "Thailand"
   # country_code_tmp = "THA"
+  # date_start = params_tmp$fit_start
+  # date_end = params_tmp$fit_end
   # R0_assumed = 2
-  # date_start = "2020-01-01"
-  # date_end = "2030-12-31"
-  # wn_lt  = 3*365 # duration, waning of natural immunity
-  # period_wv_m2l = 1*365 # duration, waning from medium to low levels vaccine induced
-  # period_wv_h2m = 1*365 # duration, waning from medium to low levels vaccine induced
+  # period_wn = 3*365
+  # period_wv_m2l = 1*365 
   # processes_set = burden_processes_all
-  # prob_v_p_2l = 1
-  # prob_v_p_2m = 0
-  # prob_v_b_l2m = 0.5
+  # period_wv_h2m = 1*365 
+  # prob_v_p_2l = 0.33
+  # prob_v_p_2m = 0.33
+  # prob_v_b_l2m = 0
+  # seed = 10
   # deterministic = TRUE
-  # seed = 60
-  # fitted_table_tmp = fitted_table_baseline
-
+  # 
   if(!exists("contact_schedule")){stop("contact_schedule has not been loaded yet.")}
+  
   contact_tmp <- 
     contact_schedule %>% 
     filter(country_code == country_code_tmp) %>% 
@@ -42,7 +40,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
   processes_tmp <- 
     processes_set[[country_code_tmp]]
   
-  #### birth rate modifications ####ß
+  #### birth rate modifications ####
   if(!exists("cbr")){stop("cbr has not been loaded yet.")}
   rate_birth <- 
     cbr %>% 
@@ -54,7 +52,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
   seq(as.numeric(substr(date_start, 1, 4)),
       as.numeric(substr(date_end, 1, 4))) %>% 
     paste0(., "-01-01") %>% 
-    c(., date_start) %>% 
+    c(., as.character(date_start)) %>% 
     lubridate::ymd() %>% 
     sort %>% 
     enframe(value = "date") %>% 
@@ -112,7 +110,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
                              deterministic = deterministic)
   
   n_age_groups <- length(para$pop[[1]]$size)
-  seed <- fitted_table_tmp %>% dplyr::filter(country_code == country_code_tmp) %>% pull(seed_20200101)
+  # seed <- fitted_results_all %>% dplyr::filter(country_code == country_code_tmp) %>% pull(seed_20200101)
   seeds <- seed:(seed+14)
   
   for(i in 1:length(para$pop)){
@@ -125,7 +123,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
     
     # scale u (susceptibility) to achieve desired R0
     current_R0 = cm_calc_R0(para, i); # calculate R0 in population i of params
-    R0_assumed = fitted_table_tmp %>% dplyr::filter(country_code == country_code_tmp) %>% pull(R0_assumed_2)
+    # R0_assumed = fitted_table %>% dplyr::filter(country_code == country_code_tmp) %>% pull(R0_assumed)
     para$pop[[i]]$u = para$pop[[i]]$u * R0_assumed / current_R0
     
     # The purpose of this chunk of code is to update uv_l, uv_m, uv_h, ur, uvr_l
@@ -187,7 +185,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
       unname,
     times = cbr_changes$t)
   
-  # implement changing death rateså
+  # implement changing death rates
   para$schedule[["death"]] = list(
     parameter = "D",
     pops = numeric(),
@@ -200,8 +198,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
     times = sort(unique(mu_changes$t)))
   
   # waning vaccine-induced immunity
-  period_wn  <- (fitted_table_tmp %>% dplyr::filter(country_code == country_code_tmp) %>% pull(wn))*365
-  # period_wn <- 3*365
+  # period_wn  <- (fitted_results_all %>% dplyr::filter(country_code == country_code_tmp) %>% pull(wn))*365
   para$pop[[1]]$wn     <- rep(1/period_wn, n_age_groups)
   para$pop[[1]]$wv_m2l <-  rep(1/period_wv_m2l, n_age_groups)
   para$pop[[1]]$wv_h2m <-  rep(1/period_wv_h2m, n_age_groups)
@@ -210,8 +207,8 @@ gen_country_basics <- function(country_tmp = "Thailand",
   #   parameter = "wn",
   #   pops = numeric(),
   #   mode = "assign",
-  #   values = list(rep(1/(wn_lt), n_age_groups)),
-  #   times = 911)
+  #   values = list(rep(1/(3*365), n_age_groups)),
+  #   times = 1460)
   # lubridate::ymd("2023-12-31") - lubridate::ymd("2020-01-01") # 1460 days
   
   return(para)
