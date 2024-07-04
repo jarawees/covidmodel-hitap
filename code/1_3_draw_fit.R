@@ -5,6 +5,15 @@ draw_fit <- function(input,
                      fit_vac_threshold = 0.1,
                      dt_tmp = 0.3){
   
+  # debug
+  # input <- c(2, 10, 0.1, 2)
+  # country = "Thailand"
+  # draw_end = T
+  # voc_features = voc_features_test %>% 
+  #   mutate(change_u = 1)
+  # fit_vac_threshold = 0.3
+  # dt_tmp = 0.3
+  
   iso3c_tmp <- countrycode::countrycode(country, "country.name", "iso3c")
   if(country == "Kosovo") iso3c_tmp <- "XKX"
   params_tmp <- list()
@@ -141,6 +150,8 @@ draw_fit <- function(input,
                linetype = 2) +
     geom_point(aes(y = predicted), color = "green") +
     geom_point(aes(y = observed), color = "purple") -> p
+  
+  p
   
   return(p)
 }

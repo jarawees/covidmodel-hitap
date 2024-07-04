@@ -3,6 +3,12 @@ renew_fit_func <- function(country = "Thailand",
                            fit_vac_threshold = 0.1,
                            voc_features = voc_features_test){
   
+  # debug
+  # country = "Thailand"
+  # dt_tmp = 0.3
+  # fit_vac_threshold = 0.1
+  # voc_features = voc_features_test
+  
   iso3c_tmp <- countrycode::countrycode(country, "country.name", "iso3c")
   if(country == "Kosovo") iso3c_tmp <- "XKX"
   params_tmp <- list()
@@ -71,7 +77,7 @@ renew_fit_func <- function(country = "Thailand",
       fit_gen_country_basics(
         country_tmp = "Thailand",
         country_code_tmp = "THA",
-        date_start =  as.character(ymd(params_tmp[["fit_start"]]) - 30),
+        date_start =  as.character(ymd(params_tmp[["fit_start"]])),
         date_end = params_tmp[["fit_end"]],
         R0_assumed = input[1],
         period_wn = input[4]*365,
@@ -107,7 +113,7 @@ renew_fit_func <- function(country = "Thailand",
       filter(grepl("death", compartment)) %>%
       group_by(t, compartment) %>%
       summarise(value = sum(value), .groups = "drop") %>%
-      mutate(date = ymd(as.character(ymd(params_tmp[["fit_start"]]) - 30)) + t) %>%
+      mutate(date = ymd(as.character(ymd(params_tmp[["fit_start"]]))) + t) %>%
       pivot_wider(names_from = compartment,
                   values_from = value) -> sim_deaths
     
@@ -144,7 +150,7 @@ renew_fit_func <- function(country = "Thailand",
       rename(observed = deaths,
              predicted = scaled) %>% 
       mutate(observed = round(observed, 0),
-             ll = dpois(observed, predicted, log = T)) %>%
+             ll = dpois(observed, predicted, log = T)) %>% 
       pull(ll) %>% sum -> a
     
     return(-a)

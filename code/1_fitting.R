@@ -4,10 +4,9 @@ source("code/1_3_draw_fit.R")
 
 controlDE <- list(reltol=1e-4, steptol=20, itermax = 400, trace = 10,
                   parallelType = 2)
-
 tmp_country <- "Thailand"
+fvt <- 0.3 # seq(0.05, 0.3, 0.02)
 
-fvt <- seq(0.05, 0.3, 0.02)
 for(i in 1:length(fvt)){
   model_to_fit <- renew_fit_func(country = tmp_country,
                                  dt_tmp = 0.3,
@@ -15,7 +14,7 @@ for(i in 1:length(fvt)){
                                  voc_features = voc_features_test %>% 
                                    mutate(change_u = 1))
   DEoptim(fn = model_to_fit,
-          lower = c(1, 1, 0.1, 1),
+          lower = c(1.5, 1, 0.05, 1),
           upper = c(4, 90, 1, 3),
           control = controlDE) -> out
   
@@ -31,7 +30,7 @@ for(i in 1:length(fvt)){
     labs(title = fvt[i])
   
   ggsave(plot = p_save,
-         filename = paste0("fit/fit_figures/", fvt[i], ".png"))
+         filename = paste0("fit/fit_figures/", fvt[i], "_2.png"))
 }
 
 fit_gen_country_basics(country_tmp = "Thailand",
