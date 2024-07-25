@@ -1,0 +1,56 @@
+/home/eideyliu/hitap_COVID
+c22
+Thu  4 Jul 17:51:05 BST 2024
+
+No rebuild required (use rebuild = TRUE to force a rebuild)
+
+Iteration: 10 bestvalit: 30864.951653 bestmemit:    1.518803   65.596319    0.053656    2.723625
+Iteration: 20 bestvalit: 28743.503725 bestmemit:    1.500311   30.535014    0.050321    2.519902
+Iteration: 30 bestvalit: 28110.736323 bestmemit:    1.502036   40.908680    0.050321    2.630969
+Iteration: 40 bestvalit: 27767.785539 bestmemit:    1.500175   49.383589    0.050130    2.143067
+Iteration: 50 bestvalit: 27713.631726 bestmemit:    1.500805   48.280937    0.050051    2.654175
+Iteration: 60 bestvalit: 27666.276803 bestmemit:    1.500214   48.099616    0.050013    2.723986
+Iteration: 70 bestvalit: 27641.512332 bestmemit:    1.500076   47.890025    0.050001    2.999417
+Iteration: 80 bestvalit: 27639.218060 bestmemit:    1.500019   47.890025    0.050001    2.999417
+Iteration: 90 bestvalit: 27637.117527 bestmemit:    1.500002   47.727180    0.050001    2.995721
+Iteration: 100 bestvalit: 27636.701522 bestmemit:    1.500000   47.584698    0.050000    2.999931
+Iteration: 110 bestvalit: 27636.626732 bestmemit:    1.500000   47.568941    0.050000    2.999931
+Iteration: 120 bestvalit: 27636.573680 bestmemit:    1.500000   47.580630    0.050000    2.999858
+Iteration: 130 bestvalit: 27636.563682 bestmemit:    1.500000   47.670401    0.050000    2.999949
+Iteration: 10 bestvalit: 36740.085697 bestmemit:    1.594554   49.225107    0.057667    2.511929
+Iteration: 20 bestvalit: 28882.720762 bestmemit:    1.513632   37.714807    0.050074    2.711922
+Iteration: 30 bestvalit: 28712.101231 bestmemit:    1.501772   34.987042    0.050102    1.610580
+Iteration: 40 bestvalit: 28247.449531 bestmemit:    1.501313   42.012455    0.050016    2.751956
+Iteration: 50 bestvalit: 28209.879635 bestmemit:    1.500267   41.165468    0.050040    2.839328
+Iteration: 60 bestvalit: 28181.603181 bestmemit:    1.500004   41.864798    0.050007    2.885398
+Iteration: 70 bestvalit: 28169.553553 bestmemit:    1.500018   41.275280    0.050001    2.975910
+Iteration: 80 bestvalit: 28167.585089 bestmemit:    1.500021   41.073458    0.050000    2.998659
+Iteration: 90 bestvalit: 28166.899639 bestmemit:    1.500005   41.087617    0.050000    2.997111
+Iteration: 100 bestvalit: 28166.550729 bestmemit:    1.500001   41.062820    0.050000    2.999695
+Iteration: 110 bestvalit: 28166.522723 bestmemit:    1.500000   41.178595    0.050000    2.999906
+Iteration: 120 bestvalit: 28166.502667 bestmemit:    1.500000   41.117691    0.050000    2.999962
+Iteration: 10 bestvalit: 38493.402395 bestmemit:    1.665954   72.737735    0.050754    2.290352
+Iteration: 20 bestvalit: 29820.713008 bestmemit:    1.503667   39.945118    0.052010    1.965313
+Iteration: 30 bestvalit: 28973.432087 bestmemit:    1.506241   40.388281    0.050512    2.229874
+Iteration: 40 bestvalit: 28494.555507 bestmemit:    1.500588   39.682081    0.050130    2.368991
+Iteration: 50 bestvalit: 28357.894499 bestmemit:    1.500026   40.654387    0.050024    2.960244
+Iteration: 60 bestvalit: 28345.334249 bestmemit:    1.500026   40.654387    0.050005    2.975193
+Iteration: 70 bestvalit: 28342.328581 bestmemit:    1.500045   40.671714    0.050001    2.993599
+Iteration: 80 bestvalit: 28341.627881 bestmemit:    1.500026   40.729283    0.050000    2.991717
+Iteration: 90 bestvalit: 28340.360827 bestmemit:    1.500001   40.630758    0.050001    2.998849
+Iteration: 100 bestvalit: 28339.982978 bestmemit:    1.500001   40.559612    0.050000    2.998849
+Iteration: 110 bestvalit: 28339.897291 bestmemit:    1.500000   40.582284    0.050000    2.999824
+Iteration: 120 bestvalit: 28339.876437 bestmemit:    1.500000   40.668886    0.050000    2.999824
+Iteration: 10 bestvalit: 35902.042638 bestmemit:    1.560594   46.939604    0.057332    2.076684
+Iteration: 20 bestvalit: 29030.103781 bestmemit:    1.505577   39.944585    0.050491    2.571151
+Iteration: 30 bestvalit: 28874.341893 bestmemit:    1.501198   37.830098    0.050529    2.453431
+Iteration: 40 bestvalit: 28588.316044 bestmemit:    1.502793   37.775281    0.050004    2.610516
+Iteration: 50 bestvalit: 28469.368222 bestmemit:    1.500421   36.693775    0.050004    2.892610
+Iteration: 60 bestvalit: 28455.080740 bestmemit:    1.500114   36.563755    0.050012    2.992646
+Iteration: 70 bestvalit: 28445.412424 bestmemit:    1.500005   36.782536    0.050001    2.967209
+Iteration: 80 bestvalit: 28442.648674 bestmemit:    1.500005   36.782536    0.050000    2.998667
+Iteration: 90 bestvalit: 28442.486479 bestmemit:    1.500002   36.793530    0.050000    2.999277
+Iteration: 100 bestvalit: 28442.268030 bestmemit:    1.500001   36.924168    0.050000    2.999963
+Iteration: 110 bestvalit: 28442.210328 bestmemit:    1.500000   36.950557    0.050000    2.999963
+[1] "complete successfully!"
+Thu  4 Jul 21:30:28 BST 2024

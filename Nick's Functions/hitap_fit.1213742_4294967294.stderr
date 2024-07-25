@@ -1,0 +1,425 @@
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+Loading required package: pacman
+Loading required package: tidyverse
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.3     ✔ readr     2.1.4
+✔ forcats   1.0.0     ✔ stringr   1.5.0
+✔ ggplot2   3.4.4     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.0
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+Loading required package: httr
+Loading required package: jsonlite
+
+Attaching package: ‘jsonlite’
+
+The following object is masked from ‘package:purrr’:
+
+    flatten
+
+Loading required package: countrycode
+Loading required package: data.table
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:lubridate’:
+
+    hour, isoweek, mday, minute, month, quarter, second, wday, week,
+    yday, year
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+Loading required package: socialmixr
+
+Attaching package: ‘socialmixr’
+
+The following object is masked from ‘package:utils’:
+
+    cite
+
+Loading required package: imputeTS
+Registered S3 method overwritten by 'quantmod':
+  method            from
+  as.zoo.data.frame zoo 
+Loading required package: mgcv
+Loading required package: nlme
+
+Attaching package: ‘nlme’
+
+The following object is masked from ‘package:dplyr’:
+
+    collapse
+
+This is mgcv 1.9-0. For overview type 'help("mgcv-package")'.
+Loading required package: DEoptim
+Loading required package: parallel
+
+DEoptim package
+Differential Evolution algorithm in R
+Authors: D. Ardia, K. Mullen, B. Peterson and J. Ulrich
+
+Loading required package: magrittr
+
+Attaching package: ‘magrittr’
+
+The following object is masked from ‘package:purrr’:
+
+    set_names
+
+The following object is masked from ‘package:tidyr’:
+
+    extract
+
+Loading required package: progress
+Loading required package: readxl
+Loading required package: Rcpp
+Loading required package: here
+here() starts at /home/eideyliu/hitap_COVID
+Loading required package: testthat
+
+Attaching package: ‘testthat’
+
+The following objects are masked from ‘package:magrittr’:
+
+    equals, is_less_than, not
+
+The following object is masked from ‘package:dplyr’:
+
+    matches
+
+The following object is masked from ‘package:purrr’:
+
+    is_null
+
+The following objects are masked from ‘package:readr’:
+
+    edition_get, local_edition
+
+The following object is masked from ‘package:tidyr’:
+
+    matches
+
+Loading covidm.
+Using default value for cm_build: TRUE
+Using default value for cm_build_dir: /home/eideyliu/hitap_COVID/code/covidm_for_fitting/build
+Using default value for cm_force_shared: FALSE
+Building backend code...
+Loading data...
+`summarise()` has grouped output by 'age_group'. You can override using the
+`.groups` argument.
+New names:
+• `` -> `...1`
+• `` -> `...2`
+• `2019` -> `2019...3`
+• `2019` -> `2019...4`
+• `2019` -> `2019...5`
+Rows: 20 Columns: 5
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (5): ...1, ...2, 2019...3, 2019...4, 2019...5
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+New names:
+• `` -> `...7`
+Rows: 70 Columns: 7
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (7): Date_Start, Date_End, B.1.1.7 (Alpha), B.1617.2 (Delta), B.1.351 (B...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+New names:
+• `` -> `...1`
+• `` -> `...2`
+New names:
+• `` -> `...27`
+• `` -> `...28`
+• `` -> `...29`
+• `` -> `...30`
+• `` -> `...39`
+• `` -> `...40`
+• `` -> `...41`
+• `` -> `...42`
+• `` -> `...43`
+New names:
+• `` -> `...1`
+• `` -> `...4`
+New names:
+• `` -> `...1`
+• `` -> `...6`
+Rows: 125 Columns: 6
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (5): dose1, dose2, dose3, possibility (y/n)?, ...6
+dbl (1): ...1
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+Warning messages:
+1: Returning more (or less) than 1 row per `summarise()` group was deprecated in
+dplyr 1.1.0.
+ℹ Please use `reframe()` instead.
+ℹ When switching from `summarise()` to `reframe()`, remember that `reframe()`
+  always returns an ungrouped data frame and adjust accordingly. 
+2: Expected 3 pieces. Missing pieces filled with `NA` in 1890 rows [3, 4, 7, 8,
+11, 12, 15, 16, 19, 20, 23, 24, 27, 28, 31, 32, 35, 36, 39, 40, ...]. 
+3: Using an external vector in selections was deprecated in tidyselect 1.1.0.
+ℹ Please use `all_of()` or `any_of()` instead.
+  # Was:
+  data %>% select(mobility_type_used)
+
+  # Now:
+  data %>% select(all_of(mobility_type_used))
+
+See <https://tidyselect.r-lib.org/reference/faq-external-vector.html>. 
+4: Expected 3 pieces. Missing pieces filled with `NA` in 1 rows [19]. 
+5: There was 1 warning in `mutate()`.
+ℹ In argument: `age_UL = if_else(age_UL == "years", 120, as.numeric(age_UL))`.
+Caused by warning in `if_else()`:
+! NAs introduced by coercion 
+6: There were 2 warnings in `mutate()`.
+The first warning was:
+ℹ In argument: `Date_Start = dmy(Date_Start)`.
+Caused by warning:
+!  50 failed to parse.
+ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning. 
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+Saving 7 x 7 in image
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+Saving 7 x 7 in image
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+Saving 7 x 7 in image
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+Saving 7 x 7 in image
+Warning messages:
+1: Removed 735 rows containing missing values (`geom_point()`). 
+2: Removed 720 rows containing missing values (`geom_point()`). 
+3: Removed 720 rows containing missing values (`geom_point()`). 
+4: Removed 720 rows containing missing values (`geom_point()`). 
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
+slurmstepd-c22: error: _get_joules_task: can't get info from slurmd
