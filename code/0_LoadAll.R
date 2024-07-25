@@ -1,13 +1,24 @@
 ## Load required packages
-if(!require(pacman)) install.packages("pacman")
-library(pacman)
-p_load(tidyverse, httr, jsonlite, countrycode, data.table, socialmixr, imputeTS,
-       lubridate, mgcv, DEoptim, magrittr, progress, readxl, Rcpp, here)
+require(pacman)
+require(tidyverse)
+require(httr) 
+require(jsonlite)
+require(countrycode) 
+require(data.table) 
+require(socialmixr) 
+require(imputeTS)
+require(lubridate)
+require(mgcv) 
+require(DEoptim) 
+require(magrittr)
+require(progress)
+require(readxl)
+require(Rcpp)
+require(here) 
+require(testthat)
 
 ##### load covidm #####
-data_path <- "/Users/yangliu/Dropbox/Github_Data/HITAP_CovidM/"
-# "C:/Users/eideyliu/Dropbox/Github_Data/HITAP_CovidM/"
-#"D:/GitHub/covidmodel-hitap/data/"
+data_path <- "data/"
 cm_path <- "code/covidm_for_fitting/"
 cm_force_rebuild <- F
 cm_build_verbose <- T
@@ -39,7 +50,9 @@ cm_populations |>
 source("code/0_4_Vaccinations.R")
 
 # B. load custom functions
-source("code/0_1_util_functions.R")
+source("code/0_0_util.R")
+
+
 
 ## Load required data
 # A. Covid-19 deaths
@@ -69,71 +82,54 @@ epi_round1to <- fread(paste0(data_path, "epi_round1to2.csv")) # snapshot from 20
 epi_update <- fread(paste0(data_path, "epi_update.csv")) # time-series from 2021-04-01 onward
 
 epi <- bind_rows(epi_round1to, epi_update) %>%
-  dplyr::select(txn_date, new_case_excludeabroad, new_death)
-
+  dplyr::select(txn_date, new_case_excludeabroad, new_death) %>% 
+  distinct()
+  
 rm(epi_round1to, epi_update)
 
-# C. PCR positivity rate
-# download the data file from COLAB-2 if it doesn't exist in your directory
-# if(!file.exists(paste0("data/thailand_covid-19_testing_data.csv"))){
-#   download.file("https://data.go.th/dataset/9f6d900f-f648-451f-8df4-89c676fce1c4/resource/0092046c-db85-4608-b519-ce8af099315e/download/",
-#                 paste0("data/thailand_covid-19_testing_data.csv"))
-# }
-# 
-# # update the data file from COLAB-2 if the time difference is greater than a week
-# if(as.numeric(abs(as.Date(file.info(paste0("data/thailand_covid-19_testing_data.csv"))$mtime) -
-#                   as.Date(Sys.time()))) > 7){
-#   download.file("https://data.go.th/dataset/9f6d900f-f648-451f-8df4-89c676fce1c4/resource/0092046c-db85-4608-b519-ce8af099315e/download/",
-#                 paste0("data/thailand_covid-19_testing_data.csv"))
-# }
-
-pcr_rate <- fread(paste0(data_path, "thailand_covid-19_testing_data.csv"))[,1:3] %>%
-  filter(!is.na(positive)) %>%
-  mutate_at(vars(Date), ~lubridate::dmy(.)) %>%
-  rename("total_test" = "Total Testing") %>%
-  mutate(pos_rate = positive/total_test)
-
-# D. Seroprevalence
-# snapshot over the past 2 years, surveillance at Nov 2021
-# sero <- fread("data/serosurveillance65.csv")
-
-# E. Genotype frequencies
-# download the data file from COLAB-2 if it doesn't exist in your directory
-# if(!file.exists(paste0("data/sars-cov-2-variants-dmsc.csv"))){
-#   download.file("https://data.go.th/dataset/5b1fb1cf-7ddf-4194-89be-c2658fdcd7a8/resource/152ed762-3c69-465e-a5ae-e592540559d8/download/",
-#                 paste0("data/sars-cov-2-variants-dmsc.csv"))
-# }
-# 
-# # update the data file from COLAB-2 if the time difference is greater than a week
-# if(as.numeric(abs(as.Date(file.info(paste0("data/sars-cov-2-variants-dmsc.csv"))$mtime) -
-#                   as.Date(Sys.time()))) > 7){
-#   download.file("https://data.go.th/dataset/5b1fb1cf-7ddf-4194-89be-c2658fdcd7a8/resource/152ed762-3c69-465e-a5ae-e592540559d8/download/",
-#                 paste0("data/sars-cov-2-variants-dmsc.csv"))
-# }
-
-# geno_freq <- fread(paste0(data_path, "sars-cov-2-variants-dmsc.csv"))[,1:6] %>%
-#   mutate_at(vars(Date_Start, Date_End), ~as.Date(., format = "%d/%m/%Y")) %>%
-#   rename("Alpha" = "B.1.1.7 (Alpha)",
-#          "Delta" = "B.1617.2 (Delta)",
-#          "Beta" = "B.1.351 (Beta)",
-#          "Omicron" = "B.1.1.529 (Omicron") %>%
-#   filter(!is.na(Alpha))
-
-# G. Contact matrices
-# load("data/contact_all.rdata")
-# contact_all <- contact_all["THA"]
-
 # I. Stringency index
-source("code/0_2_StringencyIndex.R")
+# source("code/0_2_StringencyIndex.R")
 # H. Google mobility data
-source("code/0_3_Mobility.R")
+# source("code/0_3_Mobility.R")
+contact_schedule <- read_rds(paste0(data_path,"c_schedule.rds"))
 
 #### K. Epi parameters ####
 source("code/0_5_EpiParams.R")
 
 #### L. Burden processes #### 
+country_list <- read_rds(paste0(data_path, "country_list_thailand.rds"))
+HSR_cleaned <- read_rds(paste0(data_path, "HSR_cleaned_thailand.rds"))
 source("code/0_6_HealthCareSystem.R")
 
 #### Vaccine Market ####
 source("code/0_7_vaccine_market.R")
 
+# birth rate
+cbr <- read_rds(paste0(data_path, "cbr.rds"))
+
+# death rate
+mu_weighted_16 <- read_rds(paste0(data_path, "mu_weighted_16.rds"))
+
+# fitted table (test)
+fitted_table_baseline <- read_rds(paste0(data_path, "fitted_table_baseline_THA.rds"))
+
+# states
+compartment_pop <- c("S", "Sv_l", "Sv_m", "Sv_h",
+                     "E", "Ev_l", "Ev_m", "Ev_h",
+                     "Ip", "Ip_l", "Ip_m", "Ip_h",
+                     "Ia", "Ia_l", "Ia_m", "Ia_h",
+                     "Is", "Is_l", "Is_m", "Is_h",
+                     "R", "Rv_l", "Rv_m", "Rv_h")
+
+compartment_process <- c("cases", "cases_reported",
+                         "subclinical",
+                         "foi", "foiv_l", "foiv_m", "foiv_h")
+
+compartment_process_voc <- c("severe", "critical", "death")
+
+# other index
+
+voc_phases <- read_rds(paste0(data_path, "voc_phases_thailand.rds"))
+voc_phases_imputation_index <-  read_rds(paste0(data_path, "voc_phases_imputation_index_thailand.rds"))
+voc_features_test <- read_rds(paste0(data_path, "voc_features_test_thailand.rds"))
+load(paste0(data_path, "severe_strain_thailand.rdata"))

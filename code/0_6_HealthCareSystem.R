@@ -101,7 +101,17 @@ bind_cols(delay_2hosp_old, delay_2hosp) %>%
 #   ggplot(aes(x = t, y = value, group = name, color = name)) +
 #   geom_line()
 
-gen_burden_processes <- function(VE){
+gen_burden_processes <- function(VE = NULL, 
+                                cc = "THA"){
+  
+  testthat::expect_equal(length(HSR_cleaned), 
+                         nrow(country_list))
+  
+  P.death <- HSR_cleaned[[cc]]$P.death
+  P.critical <- HSR_cleaned[[cc]]$P.critical
+  P.severe <- HSR_cleaned[[cc]]$P.severe
+  P.hosp <- HSR_cleaned[[cc]]$P.hosp
+  
   tmp <- list(
     # progressing to deaths
     # source names can be found in processes_spec.h
@@ -118,11 +128,10 @@ gen_burden_processes <- function(VE){
                         data.frame(death = P.death*(1-VE$v_mort_condition[3])), 
                         delays = data.frame(death = delay_2death), report = "o"),
     
-    
     # progressing to severe and critical outcomes 
     cm_multinom_process(src = "newE",
                         outcomes = data.frame(to_severe = P.severe,
-                                   to_critical = P.critical),
+                                              to_critical = P.critical),
                         delays = data.frame(to_severe = delay_2severe,
                                             to_critical = delay_2severe)),
     
@@ -164,8 +173,8 @@ gen_burden_processes <- function(VE){
 # report: i - incidence; p - prevalence; o - observed
 # probability: probability of progression
 # delay: delay functions
-
-burden_processes_all <- gen_burden_processes(VE = efficacy_all)
+burden_processes_all <- list()
+burden_processes_all[["THA"]] <- gen_burden_processes(VE = efficacy_all)
 
 # burden_processes_az <- gen_burden_processes(VE = ve_az)
 

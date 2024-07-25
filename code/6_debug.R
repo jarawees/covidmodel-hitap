@@ -1,14 +1,14 @@
-# process_parameters <- data.frame(source = unlist(lapply(para$processes, "[[", "source"))) 
-# process_parameters[["type"]] <- unlist(lapply(para$processes, "[[", "type"))
-# process_parameters[["names"]] <- unlist(lapply(para$processes, "[[", "names") %>% 
-#                                           map(paste, collapse = ", "))
-# process_parameters[["report"]] <- unlist(lapply(para$processes, "[[", "report") %>% 
-#                                           map(paste, collapse = ", "))
-# 
-# process_parameters
-# 
-# para$processes[[1]]$prob
-# para$processes[[5]]$prob
+process_parameters <- data.frame(source = unlist(lapply(para$processes, "[[", "source")))
+process_parameters[["type"]] <- unlist(lapply(para$processes, "[[", "type"))
+process_parameters[["names"]] <- unlist(lapply(para$processes, "[[", "names") %>%
+                                          map(paste, collapse = ", "))
+process_parameters[["report"]] <- unlist(lapply(para$processes, "[[", "report") %>%
+                                          map(paste, collapse = ", "))
+
+process_parameters
+
+para$processes[[30]]$prob
+para$processes[[42]]$prob
 
 para <- gen_country_basics(country = "Thailand",
                            R0_assumed = out$optim$bestmem[1],

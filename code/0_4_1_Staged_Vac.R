@@ -33,7 +33,8 @@ owid_vac %<>%
 # source("code/0_4_1_1_fit_rollout.R")
 # this set of phase introduction is based on the assumption that the vaccine 
 # coverage among adults and adolescents is 80% and that among children is 20%
-phased_introduction <- read_rds(paste0("data/phased_introduction2.rds"))
+phased_introduction <- read_rds(paste0(data_path, "phased_introduction2.rds"))
+  # read_rds(paste0("data/phased_introduction2.rds"))
 
 owid_vac |> 
   left_join(phased_introduction, by = "vaccination_phase") |> 
