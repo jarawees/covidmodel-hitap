@@ -1,6 +1,6 @@
-source("code/0_LoadAll_hitap.R")
+source("code/0_LoadAll.R")
 
-out <- read_rds("data/out_20230328.rds")
+out <- read_rds("data/out.rds")
 date_switch <- c("2021-01-15", "2021-07-05", "2021-12-31")
 
 # Create panels for baseline (no vaccination), WHO scenario, annual scenarios
@@ -84,7 +84,7 @@ for(i in 1:length(setting_list)){
            year = year(date)) %>% 
     pivot_wider(names_from = compartment, values_from = value) %>% 
     mutate(
-      severe_all = case_when(date <= date_switch[1] ~ severe_i,
+        severe_all = case_when(date <= date_switch[1] ~ severe_i,
                                   date > date_switch[1] & date <= date_switch[2] ~ severe_voc_alpha_i,
                                   date > date_switch[2] & date <= date_switch[3] ~ severe_voc_delta_i,
                                   date > date_switch[3] ~ severe_voc_omicron_i),
