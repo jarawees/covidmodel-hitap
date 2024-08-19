@@ -27,7 +27,7 @@ fit_gen_country_basics <- function(country_tmp = "Thailand",
   # prob_v_b_l2m = 0
   # seed = 10
   # deterministic = TRUE
-  # 
+
   if(!exists("contact_schedule")){stop("contact_schedule has not been loaded yet.")}
   
   contact_tmp <- 

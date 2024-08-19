@@ -4,6 +4,8 @@ source("code/0_0_2_update_u_y.R")
 source("code/0_0_3_emerge_voc_burden.R")
 source("code/0_0_4_vaccinate_primary.R")
 source("code/0_0_5_vaccinate_additional.R")
+source("code/0_0_6_aggregate_results.R")
+
 
 # helper code file for this function is 0_4_1 and 0_4_2
 # these code files help you prepare for these input objects: owid_vac, 

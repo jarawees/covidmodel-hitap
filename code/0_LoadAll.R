@@ -34,6 +34,10 @@ cm_populations |>
   summarise(tot_age = (f + m) * 1000) |> 
   ungroup() |> mutate(tot = sum(tot_age)) -> popTH_cm
 
+pop_proj <- read_rds(paste0(data_path, "pop_101.rds")) %>% dplyr::filter(country_code == "THA")
+# pop_proj %>% dplyr::filter(year == 2030, age_from >= 75) %>% pull(value) %>% sum
+
+
 # B. Vaccine uptake
 source("code/0_4_Vaccinations.R")
 

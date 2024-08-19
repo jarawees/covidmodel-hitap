@@ -92,14 +92,12 @@ draw_fit <- function(input,
         para = ., 
         country_tmp = params_tmp[["country"]],
         country_code_tmp = country_list %>% dplyr::filter(country == params_tmp[["country"]]) %>% pull(country_code),
-        detection_threshold = 0.3,
         efficacy_baseline = efficacy_all
       ) %>%
       emerge_voc_burden(
         para = ., 
         country_tmp = params_tmp[["country"]],
         country_code_tmp = country_list %>% dplyr::filter(country == params_tmp[["country"]]) %>% pull(country_code),
-        detection_threshold = 0.3,
         efficacy_baseline = efficacy_all
       )  -> tmp
   )
@@ -150,8 +148,6 @@ draw_fit <- function(input,
                linetype = 2) +
     geom_point(aes(y = predicted), color = "green") +
     geom_point(aes(y = observed), color = "purple") -> p
-  
-  p
   
   return(p)
 }

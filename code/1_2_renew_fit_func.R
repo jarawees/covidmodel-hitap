@@ -1,14 +1,15 @@
 renew_fit_func <- function(country = "Thailand",
                            dt_tmp = 0.3,
                            fit_vac_threshold = 0.1,
-                           voc_features = voc_features_test){
+                           voc_features = voc_features_test %>% 
+                             mutate(change_u = 1)){
   
   # debug
   # country = "Thailand"
   # dt_tmp = 0.3
   # fit_vac_threshold = 0.1
-  # voc_features = voc_features_test
-  
+  # voc_features = voc_features_test %>% mutate(change_u = 1)
+  # 
   iso3c_tmp <- countrycode::countrycode(country, "country.name", "iso3c")
   if(country == "Kosovo") iso3c_tmp <- "XKX"
   params_tmp <- list()
@@ -77,7 +78,7 @@ renew_fit_func <- function(country = "Thailand",
       fit_gen_country_basics(
         country_tmp = "Thailand",
         country_code_tmp = "THA",
-        date_start =  as.character(ymd(params_tmp[["fit_start"]])),
+        date_start =  as.character(ymd(params_tmp[["fit_start"]]) - 30),
         date_end = params_tmp[["fit_end"]],
         R0_assumed = input[1],
         period_wn = input[4]*365,
@@ -113,27 +114,28 @@ renew_fit_func <- function(country = "Thailand",
       filter(grepl("death", compartment)) %>%
       group_by(t, compartment) %>%
       summarise(value = sum(value), .groups = "drop") %>%
-      mutate(date = ymd(as.character(ymd(params_tmp[["fit_start"]]))) + t) %>%
+      mutate(date = ymd(as.character(ymd(params_tmp[["fit_start"]]))) -30 + t) %>%
       pivot_wider(names_from = compartment,
                   values_from = value) -> sim_deaths
     
     sim_deaths %>% 
+      arrange(date) %>% 
       left_join(data.frame(date = ymd(params_tmp[["date_switch"]]),
-                           phase = params_tmp$voc_names),
+                           phase = c(1:length(params_tmp[["date_switch"]]))),
                 by = "date") %>% 
       mutate(date_min = min(date),
-             phase = if_else(date == date_min, "wildtype", phase),
-             phase = zoo::na.locf(phase)) %>% 
+             phase = if_else(date == date_min, 0, phase),
+             phase = na_locf(phase)) %>% 
       dplyr::select(-date_min) %>% 
+      left_join(data.frame(phase_name = c("wildtype", params_tmp[["voc_names"]]),
+                           phase = c(0:length(params_tmp[["date_switch"]]))),
+                by = "phase") %>% 
       pivot_longer(cols = starts_with("death_")) %>% 
-      mutate(endpoint = name,
-             endpoint = gsub("death_voc_", "", endpoint),
-             endpoint = gsub("death_", "", endpoint),
-             endpoint = gsub("_o", "", endpoint),
-             endpoint = if_else(endpoint == "o", "wildtype",endpoint)) %>% 
-      dplyr::filter(phase == endpoint) %>% 
-      mutate(scaled = value*as.numeric(input[3])) %>% 
-      arrange(date)-> predicted
+      separate(name, into = c("seg1", "seg2", "endpoint", "seg4"), sep = "_", fill = "right") %>% 
+      dplyr::select(-seg1, -seg2, -seg4) %>% 
+      mutate(endpoint = if_else(is.na(endpoint), "wildtype", endpoint)) %>% 
+      dplyr::filter(phase_name == endpoint) %>% 
+      mutate(scaled = value*as.numeric(input[3])) -> predicted
       
     predicted %>%
       right_join(epi %>% 

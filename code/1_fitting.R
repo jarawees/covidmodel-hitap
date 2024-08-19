@@ -6,7 +6,7 @@ source("code/1_3_draw_fit.R")
 controlDE <- list(reltol=1e-4, steptol=20, itermax = 400, trace = 10,
                   parallelType = 2)
 tmp_country <- "Thailand"
-fvt <- 0.3 # seq(0.05, 0.3, 0.02)
+fvt <- seq(0.05, 0.3, 0.02)
 
 for(i in 1:length(fvt)){
   model_to_fit <- renew_fit_func(country = tmp_country,

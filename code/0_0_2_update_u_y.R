@@ -2,7 +2,7 @@ update_u_y <- function(para = NULL,
                        country_tmp = "Thailand",
                        country_code_tmp = "THA",
                        detection_threshold = 0.3,
-                       voc_features_inuse = voc_features_test,
+                       voc_features_inuse = voc_features_test %>% mutate(change_u = 1),
                        future_severe = F,
                        future_severe_lvl = "mean", # sensitivity analysis 4
                        efficacy_baseline = NULL# vaccine efficacy
