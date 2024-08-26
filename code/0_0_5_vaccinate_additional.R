@@ -82,7 +82,7 @@ vaccinate_additional <- function(para = NULL,
     pull(t) 
   
   # Phase 2 list of daily vaccine doses (assumes no vaccination)
-  tmp_values_phase2 <- c(rep(list(rep(NA,16)),length(tmp_times_phase2)))
+  tmp_values_phase2 <- c(rep(list(rep(0,16)),length(tmp_times_phase2)))
   testthat::expect_equal(length(tmp_times_phase2), length(tmp_values_phase2))
   
   
