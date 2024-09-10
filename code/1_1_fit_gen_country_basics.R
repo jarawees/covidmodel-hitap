@@ -1,35 +1,40 @@
 fit_gen_country_basics <- function(country_tmp = "Thailand",
-                                   country_code_tmp = "THA",
-                                   date_start = "2020-01-01",
-                                   date_end = "2023-12-31",
-                                   R0_assumed = NULL,
-                                   period_wn = 3*365,
-                                   period_wv_m2l = 1*365, 
-                                   processes_set = burden_processes_all,
-                                   period_wv_h2m = 1*365, 
-                                   prob_v_p_2l = 0.33,
-                                   prob_v_p_2m = 0.33,
-                                   prob_v_b_l2m = 0,
-                                   seed = NULL,
-                                   deterministic = TRUE){
+                               country_code_tmp = "THA",
+                               date_start = "2020-01-01",
+                               date_end = "2023-12-31",
+                               R0_assumed = NULL,
+                               period_wn = 3*365,
+                               period_wv_m2l = 1*365, 
+                               # this needs to be pre-calculated, generated from 
+                               # `gen_burden_processes` with special sets of 
+                               # vaccine efficacies
+                               processes_set = burden_processes_all,
+                               # duration, waning from medium to low levels vaccine induced 
+                               period_wv_h2m = 1*365, 
+                               prob_v_p_2l = 0.33,
+                               prob_v_p_2m = 0.33,
+                               prob_v_b_l2m = 0,
+                               seed = NULL,
+                               # reduction in susceptibility among previously 
+                               # infected individuals
+                               deterministic = TRUE){
   
   # country_tmp = "Thailand"
   # country_code_tmp = "THA"
-  # date_start = params_tmp$fit_start
-  # date_end = params_tmp$fit_end
   # R0_assumed = 2
-  # period_wn = 3*365
-  # period_wv_m2l = 1*365 
+  # date_start = "2020-01-01"
+  # date_end = "2025-12-31"
+  # period_wn  = 3*365 # duration, waning of natural immunity
+  # period_wv_m2l = 1*365 # duration, waning from medium to low levels vaccine induced
+  # period_wv_h2m = 1*365 # duration, waning from medium to low levels vaccine induced
   # processes_set = burden_processes_all
-  # period_wv_h2m = 1*365 
-  # prob_v_p_2l = 0.33
-  # prob_v_p_2m = 0.33
-  # prob_v_b_l2m = 0
-  # seed = 10
+  # prob_v_p_2l = 1
+  # prob_v_p_2m = 0
+  # prob_v_b_l2m = 0.5
   # deterministic = TRUE
+  # seed = 60
 
   if(!exists("contact_schedule")){stop("contact_schedule has not been loaded yet.")}
-  
   contact_tmp <- 
     contact_schedule %>% 
     filter(country_code == country_code_tmp) %>% 
@@ -52,7 +57,7 @@ fit_gen_country_basics <- function(country_tmp = "Thailand",
   seq(as.numeric(substr(date_start, 1, 4)),
       as.numeric(substr(date_end, 1, 4))) %>% 
     paste0(., "-01-01") %>% 
-    c(., as.character(date_start)) %>% 
+    c(., date_start) %>% 
     lubridate::ymd() %>% 
     sort %>% 
     enframe(value = "date") %>% 
@@ -110,7 +115,7 @@ fit_gen_country_basics <- function(country_tmp = "Thailand",
                              deterministic = deterministic)
   
   n_age_groups <- length(para$pop[[1]]$size)
-  # seed <- fitted_results_all %>% dplyr::filter(country_code == country_code_tmp) %>% pull(seed_20200101)
+  # ßseed <- fitted_results_all %>% dplyr::filter(country_code == country_code_tmp) %>% pull(seed_20200101)
   seeds <- seed:(seed+14)
   
   for(i in 1:length(para$pop)){

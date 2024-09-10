@@ -108,8 +108,8 @@ delay_2hosp_critical <- cm_delay_gamma((27.445666/2.826859)*15.6/14.6, 27.445666
 gen_burden_processes <- function(VE = NULL, 
                                 cc = "THA"){
   
-  testthat::expect_equal(length(HSR_cleaned), 
-                         nrow(country_list))
+  # testthat::expect_equal(length(HSR_cleaned), 
+  #                        nrow(country_list))
   
   P.death <- HSR_cleaned[[cc]]$P.death
   P.critical <- HSR_cleaned[[cc]]$P.critical
@@ -168,6 +168,78 @@ gen_burden_processes <- function(VE = NULL,
   return(tmp)
 }
 
+gen_burden_processes_split <- function(VE = NULL, 
+                                       cc = "THA"){
+  
+  # testthat::expect_equal(length(HSR_cleaned), 
+  #                        nrow(country_list))
+  
+  P.death <- HSR_cleaned[[cc]]$P.death
+  P.critical <- HSR_cleaned[[cc]]$P.critical
+  P.severe <- HSR_cleaned[[cc]]$P.severe
+  P.hosp <- HSR_cleaned[[cc]]$P.hosp
+  
+  tmp <- list(
+    # progressing to deaths
+    # source names can be found in processes_spec.h
+    cm_multinom_process(src = "newS_E",       
+                        outcomes = data.frame(death = P.death),                   
+                        delays = data.frame(death = delay_2death), report = "o"),
+    cm_multinom_process(src = "newR_E",       
+                        outcomes = data.frame(death = P.death*(1-VE$r_mort_condition[2])),                   
+                        delays = data.frame(death = delay_2death), report = "o"),
+    
+    cm_multinom_process("newEv_l",      
+                        data.frame(death = P.death*(1-VE$v_mort_condition[1])), 
+                        delays = data.frame(death = delay_2death), report = "o"),
+    cm_multinom_process("newEv_m",     
+                        data.frame(death = P.death*(1-VE$v_mort_condition[2])), 
+                        delays = data.frame(death = delay_2death), report = "o"),
+    cm_multinom_process("newEv_h",     
+                        data.frame(death = P.death*(1-VE$v_mort_condition[3])), 
+                        delays = data.frame(death = delay_2death), report = "o"),
+    
+    # progressing to severe and critical outcomes 
+    cm_multinom_process(src = "newS_E",
+                        outcomes = data.frame(to_severe = P.severe,
+                                              to_critical = P.critical),
+                        delays = data.frame(to_severe = delay_2severe,
+                                            to_critical = delay_2severe)),
+    cm_multinom_process(src = "newR_E",
+                        outcomes = data.frame(to_severe = P.severe*(1-VE$r_severe_condition[2]),
+                                              to_critical = P.critical*(1-VE$r_critical_condition[2])),
+                        delays = data.frame(to_severe = delay_2severe,
+                                            to_critical = delay_2severe)),
+    
+    cm_multinom_process("newEv_l",
+                        data.frame(to_severe = P.severe*(1-VE$v_severe_condition[1]),
+                                   to_critical = P.critical*(1-VE$v_critical_condition[1])),
+                        delays = data.frame(to_severe = delay_2severe,
+                                            to_critical = delay_2severe)),
+    
+    cm_multinom_process("newEv_m",
+                        data.frame(to_severe = P.severe*(1-VE$v_severe_condition[2]),
+                                   to_critical = P.critical*(1-VE$v_critical_condition[2])),
+                        delays = data.frame(to_severe = delay_2severe,
+                                            to_critical = delay_2severe)),
+    cm_multinom_process("newEv_h",
+                        data.frame(to_severe = P.severe*(1-VE$v_severe_condition[3]),
+                                   to_critical = P.critical*(1-VE$v_critical_condition[3])),
+                        delays = data.frame(to_severe = delay_2severe,
+                                            to_critical = delay_2severe)),
+    
+    # channelling different together
+    cm_multinom_process("to_severe", 
+                        data.frame(severe = rep(1,16)),                  
+                        delays = data.frame(severe = delay_2hosp),   report = "ip"),
+    
+    cm_multinom_process("to_critical", 
+                        data.frame(critical = rep(1,16)),                  
+                        delays = data.frame(critical = delay_2hosp_critical),   report = "ip")
+  )
+  return(tmp)
+}
+
 # the output is a 10 variable list object that define your health care system 
 # output
 # each list element include: 
@@ -178,7 +250,7 @@ gen_burden_processes <- function(VE = NULL,
 # probability: probability of progression
 # delay: delay functions
 burden_processes_all <- list()
-burden_processes_all[["THA"]] <- gen_burden_processes(VE = efficacy_all)
+burden_processes_all[["THA"]] <- gen_burden_processes_split(VE = efficacy_all)
 
 # burden_processes_az <- gen_burden_processes(VE = ve_az)
 

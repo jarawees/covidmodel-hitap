@@ -1,21 +1,19 @@
 renew_fit_func <- function(country = "Thailand",
-                           dt_tmp = 0.3,
-                           fit_vac_threshold = 0.1,
-                           voc_features = voc_features_test %>% 
-                             mutate(change_u = 1)){
-  
-  # debug
+                           fit_vac_threshold = 0.1, # definining the end of the fitting window
+                           voc_features = voc_features_test %>% mutate(change_u = 1),
+                           dt_tmp = 0.3){
+  #debug
   # country = "Thailand"
-  # dt_tmp = 0.3
   # fit_vac_threshold = 0.1
   # voc_features = voc_features_test %>% mutate(change_u = 1)
-  # 
+  # dt_tmp = 0.3
+
   iso3c_tmp <- countrycode::countrycode(country, "country.name", "iso3c")
   if(country == "Kosovo") iso3c_tmp <- "XKX"
   params_tmp <- list()
   
   tmp <- owid_vac %>% 
-    dplyr::filter(iso_code == iso3c_tmp,
+    dplyr::filter(country_code == iso3c_tmp,
                   people_fully_vaccinated_per_hundred > fit_vac_threshold*100) 
   
   if(nrow(tmp) > 0){
@@ -30,14 +28,7 @@ renew_fit_func <- function(country = "Thailand",
   
   rm(tmp)
   
-  # params_tmp[["fit_start"]] <- epi %>% 
-  #   arrange(txn_date) %>% 
-  #   mutate(cs = cumsum(new_death)) %>%  
-  #   dplyr::filter(cs >= 1) %>% 
-  #   pull(txn_date) %>% 
-  #   min()
-  
-  params_tmp[["fit_start"]] <- "2021-02-15" 
+  params_tmp[["fit_start"]] <- lubridate::ymd("2021-02-15") 
   
   params_tmp[["country"]] <- country
   
@@ -45,6 +36,14 @@ renew_fit_func <- function(country = "Thailand",
     dplyr::filter(threshold == dt_tmp,
                   country_code == iso3c_tmp) %>% 
     pull(week_min)
+  
+  if(length(params_tmp[["date_switch"]]) == 0){
+    params_tmp[["date_switch"]] <- impute_phase(country,
+                                                dt_tmp,
+                                                1) %>% 
+      arrange(week) %>% 
+      pull(week)
+  }
   
   params_tmp[["voc_names"]] <- voc_phases %>% 
     dplyr::filter(threshold == dt_tmp,
@@ -76,18 +75,26 @@ renew_fit_func <- function(country = "Thailand",
     
     suppressWarnings(
       fit_gen_country_basics(
-        country_tmp = "Thailand",
-        country_code_tmp = "THA",
+        country_tmp = params_tmp[["country"]],
+        country_code_tmp = country_list %>% dplyr::filter(country == params_tmp[["country"]]) %>% pull(country_code),
         date_start =  as.character(ymd(params_tmp[["fit_start"]]) - 30),
         date_end = params_tmp[["fit_end"]],
         R0_assumed = input[1],
-        period_wn = input[4]*365,
+        period_wn = 3*365,
+        # duration, waning of natural immunity
+        # duration, waning from medium to low levels vaccine induced 
         period_wv_m2l = 1*365, 
+        # this needs to be pre-calculated, generated from 
+        # `gen_burden_processes` with special sets of 
+        # vaccine efficacies
         processes_set = burden_processes_all,
+        # duration, waning from medium to low levels vaccine induced 
         period_wv_h2m = 1*365, 
         prob_v_p_2l = 0.33,
         prob_v_p_2m = 0.33,
         prob_v_b_l2m = 0,
+        # reduction in susceptibility among previously 
+        # infected individuals
         deterministic = TRUE,
         seed = input[2]
       ) %>%
@@ -96,14 +103,17 @@ renew_fit_func <- function(country = "Thailand",
           country_tmp = params_tmp[["country"]],
           country_code_tmp = country_list %>% dplyr::filter(country == params_tmp[["country"]]) %>% pull(country_code),
           detection_threshold = dt_tmp,
-          efficacy_baseline = efficacy_all
+          efficacy_baseline = efficacy_all,
+          voc_features_inuse = voc_features
         ) %>%
         emerge_voc_burden(
           para = ., 
           country_tmp = params_tmp[["country"]],
           country_code_tmp = country_list %>% dplyr::filter(country == params_tmp[["country"]]) %>% pull(country_code),
           detection_threshold = dt_tmp,
-          efficacy_baseline = efficacy_all
+          efficacy_baseline = efficacy_all,
+          split_E = T,
+          voc_features_inuse = voc_features
         )  -> tmp
     )
     
@@ -114,7 +124,7 @@ renew_fit_func <- function(country = "Thailand",
       filter(grepl("death", compartment)) %>%
       group_by(t, compartment) %>%
       summarise(value = sum(value), .groups = "drop") %>%
-      mutate(date = ymd(as.character(ymd(params_tmp[["fit_start"]]))) -30 + t) %>%
+      mutate(date = ymd(as.character(params_tmp[["fit_start"]] - 30)) + t) %>%
       pivot_wider(names_from = compartment,
                   values_from = value) -> sim_deaths
     
@@ -136,7 +146,7 @@ renew_fit_func <- function(country = "Thailand",
       mutate(endpoint = if_else(is.na(endpoint), "wildtype", endpoint)) %>% 
       dplyr::filter(phase_name == endpoint) %>% 
       mutate(scaled = value*as.numeric(input[3])) -> predicted
-      
+    
     predicted %>%
       right_join(epi %>% 
                    dplyr::select(txn_date, new_death) %>% 
@@ -144,6 +154,7 @@ renew_fit_func <- function(country = "Thailand",
                           date = txn_date) %>% 
                    mutate(date = ymd(date)),
                  by = "date") %>% 
+      # ggplot(., aes(x = date, y = scaled, color = phase_name)) + geom_point()
       mutate(scaled = if_else(is.na(scaled), 0.001, scaled),
              scaled = if_else((scaled) == 0, 0.001, scaled)) %>% 
       arrange(date) %>% 
@@ -157,5 +168,6 @@ renew_fit_func <- function(country = "Thailand",
     
     return(-a)
   }
+  
   return(fit_func)
 }

@@ -2,23 +2,23 @@ update_u_y <- function(para = NULL,
                        country_tmp = "Thailand",
                        country_code_tmp = "THA",
                        detection_threshold = 0.3,
-                       voc_features_inuse = voc_features_test %>% mutate(change_u = 1),
+                       voc_features_inuse = NULL, 
                        future_severe = F,
                        future_severe_lvl = "mean", # sensitivity analysis 4
                        efficacy_baseline = NULL# vaccine efficacy
 ){
   # debug
-  # country_tmp = country_list$country[country_index]
-  # country_code_tmp = country_list$country_code[country_index]
+  # country_tmp = "Ethiopia" #country_list$country[country_index]
+  # country_code_tmp = "ETH"# country_list$country_code[country_index]
   # detection_threshold = 0.3
   # efficacy_baseline = efficacy_all
   # future_severe = F
-  # voc_features_inuse = voc_features_test
+  # voc_features_inuse = voc_features_test %>% mutate(change_u = 1)
 
   if(!exists("country_list")) stop("country_list is not loaded!")
   if(!exists("voc_phases")) stop("voc_phases is not loaded!")
   if(!exists("voc_phases_imputation_index")) stop("voc_phases_imputation_index is not loaded!")
-  
+
   # extract information for observed VoCs
   voc_phases_imputation_index  %>% 
     dplyr::filter(country_code == country_code_tmp) %>% 
@@ -56,7 +56,7 @@ update_u_y <- function(para = NULL,
       voc_features_tmp  %<>% 
         bind_rows(severe_strain_definition_high)
     }
-    
+
     date_switch <- c(date_switch, "2024-01-01")
     voc_phases_names <- c(voc_phases_names, severe_strain_definition$voc_name)
   }
@@ -64,7 +64,7 @@ update_u_y <- function(para = NULL,
   change_u <- voc_features_tmp %>% pull(change_u)
   change_y <- voc_features_tmp %>% pull(change_y)  
   change_ve <- voc_features_tmp %>% pull(change_ve)
-  
+
   date_marker <- c(as.character(date_switch), as.character(lubridate::ymd(para$date0) + para$time1))
   expect_equal(length(date_switch), length(change_u))
   if(para$date0 < date_marker[1]) date_marker <- c(para$date0, date_marker)
@@ -153,7 +153,8 @@ update_u_y <- function(para = NULL,
            uv_l_scaler  = diff_u*(1 - efficacy_baseline$v_i_o[1]*diff_ve)/(1 - efficacy_baseline$v_i_o[1]),
            uv_m_scaler  = diff_u*(1 - efficacy_baseline$v_i_o[2]*diff_ve)/(1 - efficacy_baseline$v_i_o[2]),
            uv_h_scaler  = diff_u*(1 - efficacy_baseline$v_i_o[3]*diff_ve)/(1 - efficacy_baseline$v_i_o[3]),
-           ur_scaler    = diff_u,
+           # ur_scaler    = diff_u,
+           ur_scaler    = diff_u*(1 - efficacy_baseline$r_i_o[2]*diff_ve)/(1 - efficacy_baseline$r_i_o[2]),
            uvr_l_scaler = diff_u*(1 - efficacy_baseline$vr_i_o[1]*diff_ve)/(1 - efficacy_baseline$vr_i_o[1]),
            uvr_m_scaler = diff_u*(1 - efficacy_baseline$vr_i_o[2]*diff_ve)/(1 - efficacy_baseline$vr_i_o[2]),
            uvr_h_scaler = diff_u*(1 - efficacy_baseline$vr_i_o[3]*diff_ve)/(1 - efficacy_baseline$vr_i_o[3]),

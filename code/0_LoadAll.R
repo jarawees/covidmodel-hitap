@@ -41,6 +41,27 @@ pop_proj <- read_rds(paste0(data_path, "pop_101.rds")) %>% dplyr::filter(country
 # B. Vaccine uptake
 source("code/0_4_Vaccinations.R")
 
+# load HSR Cleaned
+HSR <- read_rds(paste0(data_path, "HealthSystemRates_by_country.rds")) %>%
+  group_by(country_code) %>% group_split()
+HSR_labels <- (HSR %>% map(pull, country_code) %>% map(unique) %>% unlist)
+HSR %>%
+  map(dplyr::select,
+      age_group,
+      ihr_by_age_group,
+      ifr,
+      picu_by_age_group) %>%
+  map(rename,
+      ihr = ihr_by_age_group,
+      picu = picu_by_age_group) %>%
+  setNames(HSR_labels) %>%
+  map(mutate,
+      P.critical = ihr*picu,
+      P.severe = ihr*(1-picu),
+      P.death = ifr,
+      P.hosp = ihr) %>%
+  setNames(HSR_labels) -> HSR_cleaned
+
 # B. load custom functions
 source("code/0_0_util.R")
 
@@ -138,7 +159,6 @@ source("code/0_5_EpiParams.R")
 
 #### L. Burden processes #### 
 country_list <- read_rds(paste0(data_path, "country_list_thailand.rds"))
-HSR_cleaned <- read_rds(paste0(data_path, "HSR_cleaned_thailand.rds"))
 source("code/0_6_HealthCareSystem.R")
 
 #### Vaccine Market ####

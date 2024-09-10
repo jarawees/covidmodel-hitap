@@ -43,18 +43,18 @@ panel_final <- bind_rows(panel_baseline,panel_WHO,panel_additional) %>%
 setting_list <- list()
 
 for(i in 1:nrow(panel_final)){
-  setting_list[[i]] <- gen_country_basics( date_start = "2020-01-01",
-                                           date_end = "2030-12-31",
-                                           processes_set = burden_processes_all,
-                                           prob_v_p_2l = 0.33,
-                                           prob_v_p_2m = 0.33,
-                                           prob_v_b_l2m = 0,
-                                           fitted_table_tmp = out_all[1,], # this needs to vary over the possible fitted results
-                                           period_wv_h2m = 1*365, 
-                                           period_wv_m2l = 1*365, 
-                                           deterministic = TRUE) %>% 
+  setting_list[[i]] <- gen_country_basics(date_start = "2020-01-01",
+                                          date_end = "2030-12-31",
+                                          processes_set = burden_processes_all,
+                                          prob_v_p_2l = 0.33,
+                                          prob_v_p_2m = 0.33,
+                                          prob_v_b_l2m = 0,
+                                          fitted_table_tmp = out_all[1,], # this needs to vary over the possible fitted results
+                                          period_wv_h2m = 1*365, 
+                                          period_wv_m2l = 1*365, 
+                                          deterministic = TRUE) %>% 
     update_u_y(para = .,
-               voc_features_inuse = voc_features_test %>% mutate(change_u = 1),
+               voc_features_inuse = voc_features_test %>% mutate(change_u = 1), # we have been told that the original version of voc_features_test overestimate changes in transmissibility 
                future_severe = F,
                future_severe_lvl = "mean",
                efficacy_baseline = efficacy_all 
@@ -83,13 +83,9 @@ for(i in 1:length(setting_list)){
     aggregate_results(dynamics_tmp = .) -> res_all[[i]]
 }
 
-
-
 res_all[[i]] %>% 
-  dplyr::select(-prop, -cohort_all) %>% 
-  pivot_wider(names_from = compartment,
-              values_from = incidence) %>% 
-  dplyr::filter(critical < death, group_index < 12)
+  group_by(year, compartment) %>% 
+  summarise(incidence = sum(incidence)) %>% View()
 
 res_all %>% 
   bind_rows(.id = "scenario_id") %>% 
@@ -97,6 +93,78 @@ res_all %>%
               rownames_to_column(var = "scenario_id"),
             by = "scenario_id") -> output
 
+i = 1
+tmp <- cm_simulate(setting_list[[i]])$dynamics
+tmp %>% 
+  dplyr::filter(compartment %in% compartment_pop) %>% 
+  mutate(date = ymd("2020-01-01") + t,
+         year = year(date),
+         compartment_broad = substr(compartment, 1, 1)) %>% 
+  dplyr::filter(date <= ymd("2022-10-10"),
+                date >= ymd("2022-10-01")) %>%
+  ggplot(., aes(x = date, y = value, colour = group, fill = group, group = group)) +
+  geom_line() + geom_point() +
+  # geom_bar(position = "stack", stat = "identity") +
+  facet_wrap(~compartment, scales = "free") +
+  geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
+  geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
+
+tmp %>% 
+  dplyr::filter(compartment %in% compartment_pop) %>% 
+  mutate(date = ymd("2020-01-01") + t,
+         year = year(date),
+         compartment_broad = substr(compartment, 1, 1)) %>% 
+  dplyr::filter(date <= ymd("2022-10-04"),
+                date >= ymd("2022-10-01")) %>% 
+  dplyr::select(-t, -year, -compartment_broad) %>% 
+  group_by(compartment, date) %>% summarise(value = sum(value)) %>% 
+  pivot_wider(names_from = date, values_from = value) %>% 
+  dplyr::filter(compartment %in% c("Sv_l", "Sv_m", "Sv_h", "Rv_l", "Rv_m", "Rv_h")) 
+
+setting_list[[i]]$schedule$primary_course$values %>% 
+  map(t) %>%   
+  map(data.table) %>% 
+  rbindlist() %>% 
+  mutate(t = setting_list[[i]]$schedule$primary_course$times) %>% 
+  # rownames_to_column(var = "t") %>% 
+  melt(., id.vars = "t") %>% 
+  mutate(group = parse_number(as.character(variable)),
+         date = ymd("2020-01-01") + as.numeric(t)) %>% 
+  dplyr::filter(date <= ymd("2022-12-04"),
+                date >= ymd("2022-05-30")) %>% 
+  ggplot(., aes(x = date, y = value, group = group, color = group)) +
+  geom_point() +
+  facet_wrap(~group) +
+  geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
+  geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
+  
+setting_list[[i]]$schedule$booster$values %>% 
+  map(t) %>%   
+  map(data.table) %>% 
+  rbindlist() %>% 
+  mutate(t = setting_list[[i]]$schedule$booster$times) %>% 
+  # rownames_to_column(var = "t") %>% 
+  melt(., id.vars = "t") %>% 
+  mutate(group = parse_number(as.character(variable)),
+         date = ymd("2020-01-01") + as.numeric(t)) %>% 
+  dplyr::filter(date <= ymd("2022-10-05"),
+                date >= ymd("2022-09-28")) %>% 
+  dplyr::select(-t) %>% 
+  pivot_wider(names_from = date, values_from = value) %>% View()
+  
+ggplot(., aes(x = t, y = value, group = group, color = group)) +
+  geom_line() +
+  facet_wrap(~group) +
+  geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
+  geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
+
+setting_list[[i]]$schedule$booster
+
+res_all[[i]] %>% 
+  dplyr::select(-prop, -cohort_all) %>% 
+  pivot_wider(names_from = compartment,
+              values_from = incidence) %>% 
+  dplyr::filter(critical < death, group_index < 12)
 output %>% 
   group_by(scenario_id, cov_2024, start_age_annual, start_age_6m, scenario, year, compartment) %>% 
   summarise(incidence = sum(incidence),

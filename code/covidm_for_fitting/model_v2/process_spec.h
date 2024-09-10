@@ -14,6 +14,8 @@ enum SourceID
 {
     src_newE_all = 1000000,
     src_newE,
+    src_newS_E,
+    src_newR_E,
     src_newEv_l,
     src_newEv_m,
     src_newEv_h,
@@ -24,6 +26,8 @@ enum SourceID
 const map<string,SourceID> processSourceMap = {
     {"newE_all", src_newE_all},
     {"newE",     src_newE},
+    {"newS_E", src_newS_E},
+    {"newR_E", src_newR_E},
     {"newEv_l",  src_newEv_l},
     {"newEv_m",  src_newEv_m},
     {"newEv_h",  src_newEv_h},

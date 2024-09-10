@@ -339,9 +339,25 @@ def_matrix <- function(n_groups) {
 cm_base_pop_SEI3R = function(
     n_groups = 16,
     dE  = cm_delay_gamma(4.0, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    dEv_l  = cm_delay_gamma(4.0, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    dEv_m  = cm_delay_gamma(4.0, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    dEv_h  = cm_delay_gamma(4.0, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    
     dIp = cm_delay_gamma(2.4, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    dIp_l = cm_delay_gamma(2.4, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    dIp_m = cm_delay_gamma(2.4, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    dIp_h = cm_delay_gamma(2.4, 4.0, t_max = 60, t_step = 0.25)$p, # Derived from Backer et al Eurosurveillance
+    
     dIa = cm_delay_gamma(7.0, 4.0, t_max = 60, t_step = 0.25)$p, # Assumed 7 days subclinical shedding
+    dIa_l = cm_delay_gamma(7.0, 4.0, t_max = 60, t_step = 0.25)$p, # Assumed 7 days subclinical shedding
+    dIa_m = cm_delay_gamma(7.0, 4.0, t_max = 60, t_step = 0.25)$p, # Assumed 7 days subclinical shedding
+    dIa_h = cm_delay_gamma(7.0, 4.0, t_max = 60, t_step = 0.25)$p, # Assumed 7 days subclinical shedding
+    
     dIs = cm_delay_gamma(3.2, 3.7, t_max = 60, t_step = 0.25)$p, # Zhang et al 2020
+    dIs_l = cm_delay_gamma(3.2, 3.7, t_max = 60, t_step = 0.25)$p, # Zhang et al 2020
+    dIs_m = cm_delay_gamma(3.2, 3.7, t_max = 60, t_step = 0.25)$p, # Zhang et al 2020
+    dIs_h = cm_delay_gamma(3.2, 3.7, t_max = 60, t_step = 0.25)$p, # Zhang et al 2020
+    
     dC = 1, # no case reporting delay
     size = rep(1000, n_groups),
     imm0 = rep(0, n_groups),
@@ -352,6 +368,13 @@ cm_base_pop_SEI3R = function(
     
     # susceptibility
     u = rep(0.08, n_groups),
+    uv_l = rep(0.08, n_groups),
+    uv_m = rep(0.08, n_groups),
+    uv_h = rep(0.08, n_groups),
+    ur = rep(0.08, n_groups),
+    uvr_l = rep(0.08, n_groups),
+    uvr_m = rep(0.08, n_groups),
+    uvr_h = rep(0.08, n_groups),
     # relative infectiousness of pre-clinical individuals
     fIp = rep(1, n_groups),
     # relative infectiousness of clinical individuals
@@ -360,6 +383,9 @@ cm_base_pop_SEI3R = function(
     fIa = rep(0.5, n_groups),
     # clinical fraction
     y = rep(0.5, n_groups),
+    yv_l = rep(0.5, n_groups),
+    yv_m = rep(0.5, n_groups),
+    yv_h = rep(0.5, n_groups),
     
     omega = rep(0, n_groups),
     # probability of reporting

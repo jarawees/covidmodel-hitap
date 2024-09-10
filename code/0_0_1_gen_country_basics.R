@@ -2,34 +2,37 @@ gen_country_basics <- function(country_tmp = "Thailand",
                                country_code_tmp = "THA",
                                date_start = "2020-01-01",
                                date_end = "2023-12-31",
-                               # things to fit
-                               # seed = NULL,
-                               # R0_assumed = NULL,
-                               # period_wn = NULL,
+                               # duration, waning of natural immunity
+                               # duration, waning from medium to low levels vaccine induced 
+                               # this needs to be pre-calculated, generated from 
+                               # `gen_burden_processes` with special sets of 
+                               # vaccine efficacies
                                processes_set = burden_processes_all,
-                               prob_v_p_2l = 0.5,
+                               # duration, waning from medium to low levels vaccine induced 
+                               prob_v_p_2l = 0.33,
                                prob_v_p_2m = 0.33,
                                prob_v_b_l2m = 0,
-                               fitted_table_tmp = fitted_table_baseline, 
-                               period_wv_h2m = 1*365, 
-                               period_wv_m2l = 1*365, 
+                               fitted_table_tmp = NULL, # sensitivity analysis 1
+                               wn_lt = 3*365, # sensitivity analysis 2
+                               period_wv_h2m = 1*365, # sensitivity analysis 3
+                               period_wv_m2l = 1*365, # sensitivity analysis 3
+                               # reduction in susceptibility among previously 
+                               # infected individuals
                                deterministic = TRUE){
-  
+
   # country_tmp = "Thailand"
   # country_code_tmp = "THA"
-  # R0_assumed = 2
   # date_start = "2020-01-01"
-  # date_end = "2030-12-31"
-  # wn_lt  = 3*365 # duration, waning of natural immunity
+  # date_end = "2025-12-31"
+  # processes_set = burden_processes_all
+  # prob_v_p_2l = 0.33
+  # prob_v_p_2m = 0.33
+  # prob_v_b_l2m = 0
+  # fitted_table_tmp = out_all[1,]
+  # period_wn  = 3*365 # duration, waning of natural immunity
   # period_wv_m2l = 1*365 # duration, waning from medium to low levels vaccine induced
   # period_wv_h2m = 1*365 # duration, waning from medium to low levels vaccine induced
-  # processes_set = burden_processes_all
-  # prob_v_p_2l = 1
-  # prob_v_p_2m = 0
-  # prob_v_b_l2m = 0.5
   # deterministic = TRUE
-  # seed = 60
-  # fitted_table_tmp = fitted_table_baseline
 
   if(!exists("contact_schedule")){stop("contact_schedule has not been loaded yet.")}
   contact_tmp <- 
@@ -42,7 +45,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
   processes_tmp <- 
     processes_set[[country_code_tmp]]
   
-  #### birth rate modifications ####ß
+  #### birth rate modifications ####
   if(!exists("cbr")){stop("cbr has not been loaded yet.")}
   rate_birth <- 
     cbr %>% 
@@ -50,7 +53,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
                   year == 2020) %>% 
     pull(cbr_daily)
   testthat::expect_length(rate_birth, 1)
-  
+
   seq(as.numeric(substr(date_start, 1, 4)),
       as.numeric(substr(date_end, 1, 4))) %>% 
     paste0(., "-01-01") %>% 
@@ -61,7 +64,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
     dplyr::filter(date >= lubridate::ymd(date_start)) %>% 
     mutate(year = as.numeric(substr(as.character(date), 1, 4)),
            country_code = country_code_tmp) -> modification_dates
-  
+    
   modification_dates %>% 
     left_join(cbr,
               by = c("country_code", "year")) %>% 
@@ -96,20 +99,38 @@ gen_country_basics <- function(country_tmp = "Thailand",
               by = "date") %>% 
     dplyr::select(-name) %>% 
     distinct() -> mu_changes
-  
+
   #### generate the actual parameter set ####
-  para = cm_parameters_SEI3R(dem_locations = as.character(country_tmp), 
-                             date_start = date_start, 
-                             date_end = date_end,
-                             A = rep(1/(365*5),16),
-                             B = c(rate_birth, rep(0, 15)),
-                             D = rate_death,
-                             dE  = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
-                             dEa = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
-                             dIp = cm_delay_gamma(1.5, 4.0, t_max = 15, t_step = 0.25)$p,
-                             dIs = cm_delay_gamma(3.5, 4.0, t_max = 15, t_step = 0.25)$p,
-                             dIa = cm_delay_gamma(5.0, 4.0, t_max = 15, t_step = 0.25)$p,
-                             deterministic = deterministic)
+  if(country_tmp != "United Kingdom"){
+    para = cm_parameters_SEI3R(dem_locations = country_tmp, 
+                               date_start = date_start, 
+                               date_end = date_end,
+                               A = rep(1/(365*5),16),
+                               B = c(rate_birth, rep(0, 15)),
+                               D = rate_death,
+                               dE  = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
+                               dEa = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
+                               dIp = cm_delay_gamma(1.5, 4.0, t_max = 15, t_step = 0.25)$p,
+                               dIs = cm_delay_gamma(3.5, 4.0, t_max = 15, t_step = 0.25)$p,
+                               dIa = cm_delay_gamma(5.0, 4.0, t_max = 15, t_step = 0.25)$p,
+                               deterministic = deterministic)
+  }
+  
+  if(country_tmp == "United Kingdom"){
+    para = cm_parameters_SEI3R(dem_locations = "United Kingdom", 
+                               mat_locations = "GBR",
+                               date_start = date_start, 
+                               date_end = date_end,
+                               A = rep(1/(365*5),16),
+                               B = c(rate_birth, rep(0, 15)),
+                               D = rate_death,
+                               dE  = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
+                               dEa = cm_delay_gamma(2.5, 2.5, t_max = 15, t_step = 0.25)$p,
+                               dIp = cm_delay_gamma(1.5, 4.0, t_max = 15, t_step = 0.25)$p,
+                               dIs = cm_delay_gamma(3.5, 4.0, t_max = 15, t_step = 0.25)$p,
+                               dIa = cm_delay_gamma(5.0, 4.0, t_max = 15, t_step = 0.25)$p,
+                               deterministic = deterministic)
+  }
   
   n_age_groups <- length(para$pop[[1]]$size)
   seed <- fitted_table_tmp %>% dplyr::filter(country_code == country_code_tmp) %>% pull(seed_20200101)
@@ -212,7 +233,7 @@ gen_country_basics <- function(country_tmp = "Thailand",
   #   mode = "assign",
   #   values = list(rep(1/(wn_lt), n_age_groups)),
   #   times = 911)
-  # lubridate::ymd("2023-12-31") - lubridate::ymd("2020-01-01") # 1460 days
+ # lubridate::ymd("2023-12-31") - lubridate::ymd("2020-01-01") # 1460 days
   
   return(para)
 }
