@@ -1,4 +1,5 @@
 aggregate_results <- function(dynamics_tmp = NULL,
+                              by = NULL,
                               country_tmp = "Thailand",
                               country_code_tmp = "THA",
                               detection_threshold = 0.3){
@@ -57,7 +58,15 @@ aggregate_results <- function(dynamics_tmp = NULL,
   dynamics_tmp <- dynamics_tmp[compartment %in% c("cases", "death", "severe", "critical")]
   dynamics_tmp[, year := lubridate::year(date)]
   
-  dynamics_tmp <- dynamics_tmp[, keyby = .(year, compartment, group), .(incidence = sum(value), cohort_all = mean(cohort_all))]
+  if(by = "year"){
+    dynamics_tmp <- dynamics_tmp[, keyby = .(year, compartment, group), .(incidence = sum(value), cohort_all = mean(cohort_all))]
+  }
+  
+  if(by = "day"){
+    dynamics_tmp <- dynamics_tmp[, keyby = .(date, compartment, group), .(incidence = sum(value), cohort_all = mean(cohort_all))]
+  }
+  
+
   dynamics_tmp[, prop := incidence/cohort_all]
   data.table(group=unique(dynamics_tmp[,group]),
              group_index = 0:15) -> group_index

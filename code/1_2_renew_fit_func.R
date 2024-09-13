@@ -12,9 +12,12 @@ renew_fit_func <- function(country = "Thailand",
   if(country == "Kosovo") iso3c_tmp <- "XKX"
   params_tmp <- list()
   
+  fit_vac_thresold = 0.27
   tmp <- owid_vac %>% 
     dplyr::filter(country_code == iso3c_tmp,
                   people_fully_vaccinated_per_hundred > fit_vac_threshold*100) 
+  #
+  # range(tmp$date)
   
   if(nrow(tmp) > 0){
     params_tmp[["fit_end"]] <- tmp %>% 

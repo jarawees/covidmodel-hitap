@@ -3,12 +3,12 @@ source("code/0_LoadAll.R")
 date_start = "2021-02-15"
 fit_results_dir <- paste0("fit/")
 
-out_all <- paste0(fit_results_dir, list.files(fit_results_dir, pattern = "fit_0")) %>% 
+out_all <- paste0(fit_results_dir, list.files(fit_results_dir, pattern = "_3.rds")) %>% 
   map(read_rds) %>% 
   map(., "optim") %>% 
   map(., "bestmem") %>% 
   bind_rows() %>% 
-  mutate(fit_end_threshold = list.files(fit_results_dir, pattern = "fit_0") %>% 
+  mutate(fit_end_threshold = list.files(fit_results_dir, pattern = "_3.rds") %>% 
            gsub("fit_", "", .) %>% 
            gsub(".rds", "", .) %>% 
            as.numeric(),
@@ -17,8 +17,7 @@ out_all <- paste0(fit_results_dir, list.files(fit_results_dir, pattern = "fit_0"
          country = "Thailand",
          continent = "Asia",
          country_code = "THA") %>% 
-  rename(R0_assumed_2 = par1,
-         wn = par4)
+  rename(R0_assumed_2 = par1)
 
 # Create panels for baseline (no vaccination), WHO scenario, annual scenarios
 panel_WHO <- expand.grid(cov_2024 = c(seq(0.1, 0.8, 0.1)), 
@@ -61,6 +60,8 @@ for(i in 1:nrow(panel_final)){
     ) %>% 
     emerge_voc_burden(para = .,
                       detection_threshold = 0.3,
+                      split_E = T,
+                      voc_features_inuse = voc_features_test %>% mutate(change_u = 1), #
                       efficacy_baseline = efficacy_all) %>% 
     vaccinate_primary(para = .,
                       vac_data = owid_vac,
@@ -73,19 +74,46 @@ for(i in 1:nrow(panel_final)){
                          cov_2024 = panel_final$cov_2024[i],
                          month_annual = c(5:6),
                          month_6m = c(11:12))
+  
+  # check your roll-out strategy
+  setting_list[[i]]$schedule$primary_course$values %>% 
+    unlist %>% 
+    matrix(., ncol = 16, byrow = T) %>% 
+    data.table %>% 
+    mutate(t =  setting_list[[i]]$schedule$primary_course$times,
+           date = lubridate::ymd("2020-01-01") + t) %>% 
+    pivot_longer(cols = starts_with("V"),
+                 names_to = "age_group",
+                 values_to = "vaccinated") %>% 
+    mutate(age_group = factor(age_group, levels = paste0("V",1:16))) %>% 
+    ggplot(., aes(x = date, y = vaccinated, group = age_group, color = age_group)) +
+    geom_point() +
+    facet_wrap(~age_group, scales = "free") -> p_primary
+  
+  setting_list[[i]]$schedule$booster$values %>% 
+    unlist %>% 
+    matrix(., ncol = 16, byrow = T) %>% 
+    data.table %>% 
+    mutate(t =  setting_list[[i]]$schedule$booster$times,
+           date = lubridate::ymd("2020-01-01") + t) %>% 
+    pivot_longer(cols = starts_with("V"),
+                 names_to = "age_group",
+                 values_to = "vaccinated") %>% 
+    mutate(age_group = factor(age_group, levels = paste0("V",1:16))) %>% 
+    ggplot(., aes(x = date, y = vaccinated, group = age_group, color = age_group)) +
+    geom_point() +
+    facet_wrap(~age_group, scales = "free") -> p_booster
+  
+  
 }
 
 # Populate the model with the parameters in setting_list and store # of daily severe, critical, death, healthy, population
 res_all <- list()
 
 for(i in 1:length(setting_list)){
-  cm_simulate(setting_list[[i]])$dynamics %>% 
-    aggregate_results(dynamics_tmp = .) -> res_all[[i]]
+  cm_simulate(setting_list[[i]])$dynamics -> tmp
+  aggregate_results(dynamics_tmp = tmp, by = "year") -> res_all[[i]]
 }
-
-res_all[[i]] %>% 
-  group_by(year, compartment) %>% 
-  summarise(incidence = sum(incidence)) %>% View()
 
 res_all %>% 
   bind_rows(.id = "scenario_id") %>% 
@@ -93,83 +121,118 @@ res_all %>%
               rownames_to_column(var = "scenario_id"),
             by = "scenario_id") -> output
 
-i = 1
-tmp <- cm_simulate(setting_list[[i]])$dynamics
-tmp %>% 
-  dplyr::filter(compartment %in% compartment_pop) %>% 
-  mutate(date = ymd("2020-01-01") + t,
-         year = year(date),
-         compartment_broad = substr(compartment, 1, 1)) %>% 
-  dplyr::filter(date <= ymd("2022-10-10"),
-                date >= ymd("2022-10-01")) %>%
-  ggplot(., aes(x = date, y = value, colour = group, fill = group, group = group)) +
-  geom_line() + geom_point() +
-  # geom_bar(position = "stack", stat = "identity") +
-  facet_wrap(~compartment, scales = "free") +
-  geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
-  geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
-
-tmp %>% 
-  dplyr::filter(compartment %in% compartment_pop) %>% 
-  mutate(date = ymd("2020-01-01") + t,
-         year = year(date),
-         compartment_broad = substr(compartment, 1, 1)) %>% 
-  dplyr::filter(date <= ymd("2022-10-04"),
-                date >= ymd("2022-10-01")) %>% 
-  dplyr::select(-t, -year, -compartment_broad) %>% 
-  group_by(compartment, date) %>% summarise(value = sum(value)) %>% 
-  pivot_wider(names_from = date, values_from = value) %>% 
-  dplyr::filter(compartment %in% c("Sv_l", "Sv_m", "Sv_h", "Rv_l", "Rv_m", "Rv_h")) 
-
-setting_list[[i]]$schedule$primary_course$values %>% 
-  map(t) %>%   
-  map(data.table) %>% 
-  rbindlist() %>% 
-  mutate(t = setting_list[[i]]$schedule$primary_course$times) %>% 
-  # rownames_to_column(var = "t") %>% 
-  melt(., id.vars = "t") %>% 
-  mutate(group = parse_number(as.character(variable)),
-         date = ymd("2020-01-01") + as.numeric(t)) %>% 
-  dplyr::filter(date <= ymd("2022-12-04"),
-                date >= ymd("2022-05-30")) %>% 
-  ggplot(., aes(x = date, y = value, group = group, color = group)) +
-  geom_point() +
-  facet_wrap(~group) +
-  geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
-  geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
-  
-setting_list[[i]]$schedule$booster$values %>% 
-  map(t) %>%   
-  map(data.table) %>% 
-  rbindlist() %>% 
-  mutate(t = setting_list[[i]]$schedule$booster$times) %>% 
-  # rownames_to_column(var = "t") %>% 
-  melt(., id.vars = "t") %>% 
-  mutate(group = parse_number(as.character(variable)),
-         date = ymd("2020-01-01") + as.numeric(t)) %>% 
-  dplyr::filter(date <= ymd("2022-10-05"),
-                date >= ymd("2022-09-28")) %>% 
-  dplyr::select(-t) %>% 
-  pivot_wider(names_from = date, values_from = value) %>% View()
-  
-ggplot(., aes(x = t, y = value, group = group, color = group)) +
-  geom_line() +
-  facet_wrap(~group) +
-  geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
-  geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
-
-setting_list[[i]]$schedule$booster
-
-res_all[[i]] %>% 
-  dplyr::select(-prop, -cohort_all) %>% 
-  pivot_wider(names_from = compartment,
-              values_from = incidence) %>% 
-  dplyr::filter(critical < death, group_index < 12)
 output %>% 
-  group_by(scenario_id, cov_2024, start_age_annual, start_age_6m, scenario, year, compartment) %>% 
+  dplyr::filter(compartment == "cases")  %>% 
+  group_by(scenario_id, year, compartment, scenario) %>% 
   summarise(incidence = sum(incidence),
-            cohort_all = sum(cohort_all)) %>% 
-  dplyr::filter(compartment == "death") %>% 
-  ggplot(., aes(x = year, y = incidence/cohort_all, colour = cov_2024, group = cov_2024)) +
+            cov_2024 = unique(cov_2024)) %>% 
+  ggplot(., aes(x = year, 
+                y = incidence, 
+                color = cov_2024,
+                group = interaction(compartment, scenario, scenario_id))) +
   geom_line() +
-  facet_wrap(~scenario, scales = "free")
+  facet_wrap(compartment~scenario, scales = "free")
+
+
+
+# res_all[[4]] %>% 
+#   group_by(year, compartment) %>% 
+#   summarise(incidence = sum(incidence)) %>% 
+#   pivot_wider(names_from = compartment,
+#               values_from = incidence)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# i = 1
+# tmp <- cm_simulate(setting_list[[i]])$dynamics
+# tmp %>% 
+#   dplyr::filter(compartment %in% compartment_pop) %>% 
+#   mutate(date = ymd("2020-01-01") + t,
+#          year = year(date),
+#          compartment_broad = substr(compartment, 1, 1)) %>% 
+#   dplyr::filter(date <= ymd("2022-10-10"),
+#                 date >= ymd("2022-10-01")) %>%
+#   ggplot(., aes(x = date, y = value, colour = group, fill = group, group = group)) +
+#   geom_line() + geom_point() +
+#   # geom_bar(position = "stack", stat = "identity") +
+#   facet_wrap(~compartment, scales = "free") +
+#   geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
+#   geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
+# 
+# tmp %>% 
+#   dplyr::filter(compartment %in% compartment_pop) %>% 
+#   mutate(date = ymd("2020-01-01") + t,
+#          year = year(date),
+#          compartment_broad = substr(compartment, 1, 1)) %>% 
+#   dplyr::filter(date <= ymd("2022-10-04"),
+#                 date >= ymd("2022-10-01")) %>% 
+#   dplyr::select(-t, -year, -compartment_broad) %>% 
+#   group_by(compartment, date) %>% summarise(value = sum(value)) %>% 
+#   pivot_wider(names_from = date, values_from = value) %>% 
+#   dplyr::filter(compartment %in% c("Sv_l", "Sv_m", "Sv_h", "Rv_l", "Rv_m", "Rv_h")) 
+# 
+# setting_list[[i]]$schedule$primary_course$values %>% 
+#   map(t) %>%   
+#   map(data.table) %>% 
+#   rbindlist() %>% 
+#   mutate(t = setting_list[[i]]$schedule$primary_course$times) %>% 
+#   # rownames_to_column(var = "t") %>% 
+#   melt(., id.vars = "t") %>% 
+#   mutate(group = parse_number(as.character(variable)),
+#          date = ymd("2020-01-01") + as.numeric(t)) %>% 
+#   dplyr::filter(date <= ymd("2022-12-04"),
+#                 date >= ymd("2022-05-30")) %>% 
+#   ggplot(., aes(x = date, y = value, group = group, color = group)) +
+#   geom_point() +
+#   facet_wrap(~group) +
+#   geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
+#   geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
+#   
+# setting_list[[i]]$schedule$booster$values %>% 
+#   map(t) %>%   
+#   map(data.table) %>% 
+#   rbindlist() %>% 
+#   mutate(t = setting_list[[i]]$schedule$booster$times) %>% 
+#   # rownames_to_column(var = "t") %>% 
+#   melt(., id.vars = "t") %>% 
+#   mutate(group = parse_number(as.character(variable)),
+#          date = ymd("2020-01-01") + as.numeric(t)) %>% 
+#   dplyr::filter(date <= ymd("2022-10-05"),
+#                 date >= ymd("2022-09-28")) %>% 
+#   dplyr::select(-t) %>% 
+#   pivot_wider(names_from = date, values_from = value) %>% View()
+#   
+# ggplot(., aes(x = t, y = value, group = group, color = group)) +
+#   geom_line() +
+#   facet_wrap(~group) +
+#   geom_vline(xintercept = ymd("2023-01-01"), linetype = 2)+
+#   geom_vline(xintercept = ymd("2024-12-31"), linetype = 2)
+# 
+# setting_list[[i]]$schedule$booster
+# 
+# res_all[[i]] %>% 
+#   dplyr::select(-prop, -cohort_all) %>% 
+#   pivot_wider(names_from = compartment,
+#               values_from = incidence) %>% 
+#   dplyr::filter(critical < death, group_index < 12)
+# output %>% 
+#   group_by(scenario_id, cov_2024, start_age_annual, start_age_6m, scenario, year, compartment) %>% 
+#   summarise(incidence = sum(incidence),
+#             cohort_all = sum(cohort_all)) %>% 
+#   dplyr::filter(compartment == "death") %>% 
+#   ggplot(., aes(x = year, y = incidence/cohort_all, colour = cov_2024, group = cov_2024)) +
+#   geom_line() +
+#   facet_wrap(~scenario, scales = "free")

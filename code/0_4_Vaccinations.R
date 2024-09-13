@@ -59,6 +59,14 @@ owid_vac_raw %>%
                                            people_fully_vaccinated),
          people_fully_vaccinated = imputeTS::na_interpolation(people_fully_vaccinated),
          
+         people_fully_vaccinated_per_hundred = as.numeric(people_fully_vaccinated_per_hundred),
+         people_fully_vaccinated_per_hundred = if_else(date <= (owid_vac_raw %>%
+                                                                  filter(!is.na(people_fully_vaccinated_per_hundred)) |> 
+                                                                  arrange(date) |> pull(date) |> min()),
+                                                       0,
+                                                       people_fully_vaccinated_per_hundred),
+         people_fully_vaccinated_per_hundred = imputeTS::na_interpolation(people_fully_vaccinated_per_hundred),
+         
          people_vaccinated = as.numeric(people_vaccinated),
          people_vaccinated = if_else(date <= (owid_vac_raw %>%
                                                 filter(!is.na(people_vaccinated)) |> 
@@ -79,12 +87,19 @@ owid_vac_raw %>%
                                   total_boosters),
          total_boosters = imputeTS::na_interpolation(total_boosters),
          total_boosters_daily = c(0, diff(total_boosters)),
+         
          daily_vaccinations = as.numeric(daily_vaccinations),
          # daily_vaccinations = imputeTS::na_interpolation(daily_vaccinations),
          daily_vaccinations_per_million = as.numeric(daily_vaccinations_per_million),
          # daily_vaccinations_per_million = imputeTS::na_interpolation(daily_vaccinations_per_million),
          date_numeric = as.numeric(date)) %>% 
   rename(country_code = iso_code)-> owid_vac
+
+owid_vac %>% 
+  ggplot(., aes(x = date, y = people_fully_vaccinated_per_hundred)) +
+  geom_point() +
+  geom_hline(yintercept = seq(20,30,2))
+
 
 source("code/0_4_1_Staged_Vac.R")
 source("code/0_4_2_Primary.R")

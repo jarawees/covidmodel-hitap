@@ -18,7 +18,7 @@ controlDE <- list(reltol=1e-4,
 
 fvt <- seq(0.05, 0.3, 0.02)
 
-for(i in 2:length(fvt)){
+for(i in 9:length(fvt)){
   model_to_fit <- renew_fit_func(fit_vac_threshold = fvt[i])
   DEoptim(fn = model_to_fit,
           lower = c(1.5, 1, 0.1),

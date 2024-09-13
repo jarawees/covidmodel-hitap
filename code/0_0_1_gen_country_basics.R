@@ -221,8 +221,8 @@ gen_country_basics <- function(country_tmp = "Thailand",
     times = sort(unique(mu_changes$t)))
   
   # waning vaccine-induced immunity
-  period_wn  <- (fitted_table_tmp %>% dplyr::filter(country_code == country_code_tmp) %>% pull(wn))*365
-  # period_wn <- 3*365
+  # period_wn  <- (fitted_table_tmp %>% dplyr::filter(country_code == country_code_tmp) %>% pull(wn))*365
+  period_wn <- 3*365
   para$pop[[1]]$wn     <- rep(1/period_wn, n_age_groups)
   para$pop[[1]]$wv_m2l <-  rep(1/period_wv_m2l, n_age_groups)
   para$pop[[1]]$wv_h2m <-  rep(1/period_wv_h2m, n_age_groups)
