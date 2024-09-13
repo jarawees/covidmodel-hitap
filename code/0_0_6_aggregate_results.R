@@ -58,11 +58,11 @@ aggregate_results <- function(dynamics_tmp = NULL,
   dynamics_tmp <- dynamics_tmp[compartment %in% c("cases", "death", "severe", "critical")]
   dynamics_tmp[, year := lubridate::year(date)]
   
-  if(by = "year"){
+  if(by == "year"){
     dynamics_tmp <- dynamics_tmp[, keyby = .(year, compartment, group), .(incidence = sum(value), cohort_all = mean(cohort_all))]
   }
   
-  if(by = "day"){
+  if(by == "day"){
     dynamics_tmp <- dynamics_tmp[, keyby = .(date, compartment, group), .(incidence = sum(value), cohort_all = mean(cohort_all))]
   }
   
