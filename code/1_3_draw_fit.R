@@ -24,7 +24,7 @@ draw_fit <- function(input,
   }
   rm(tmp)
   
-  params_tmp[["fit_start"]] <- lubridate::ymd("2021-02-15") 
+  params_tmp[["fit_start"]] <- lubridate::ymd("2020-03-01")
   
   params_tmp[["country"]] <- country
   

@@ -152,7 +152,8 @@ pcr_rate <- fread(paste0(data_path, "thailand_covid-19_testing_data.csv"))[,1:3]
 # I. Stringency index
 source("code/0_2_StringencyIndex.R")
 # H. Google mobility data
-source("code/0_3_Mobility.R")
+# source("code/0_3_Mobility.R")
+contact_schedule <- read_rds(paste0(data_path, "c_schedule.rds")) 
 
 #### K. Epi parameters ####
 source("code/0_5_EpiParams.R")
@@ -193,3 +194,46 @@ voc_phases <- read_rds(paste0(data_path, "voc_phases_thailand.rds"))
 voc_phases_imputation_index <-  read_rds(paste0(data_path, "voc_phases_imputation_index_thailand.rds"))
 voc_features_test <- read_rds(paste0(data_path, "voc_features_test_thailand.rds"))
 load(paste0(data_path, "severe_strain_thailand.rdata"))
+
+#### move these things here to facilitate parallel ####
+date_start = "2020-03-01"
+fit_results_dir <- paste0("fit/")
+
+out_all <- paste0(fit_results_dir, list.files(fit_results_dir, pattern = ".rds")) %>% 
+  map(read_rds) %>% 
+  map(., "optim") %>% 
+  map(., "bestmem") %>% 
+  bind_rows() %>% 
+  mutate(fit_end_threshold = list.files(fit_results_dir, pattern = ".rds") %>% 
+           gsub("fit_", "", .) %>% 
+           gsub(".rds", "", .) %>% 
+           as.numeric(),
+         seed_raw = ymd(date_start) - 30 + par2 - ymd("2020-01-01"),
+         seed_20200101 = as.numeric(seed_raw),
+         country = "Thailand",
+         continent = "Asia",
+         country_code = "THA") %>% 
+  rename(R0_assumed_2 = par1)
+
+# Create panels for baseline (no vaccination), WHO scenario, annual scenarios
+panel_WHO <- expand.grid(cov_2024 = c(seq(0.1, 0.8, 0.1)), 
+                         start_age_annual = 60,
+                         start_age_6m = 75) %>%
+  mutate(scenario = "WHO")
+
+panel_additional <- expand.grid(cov_2024 = c(seq(0.2, 0.8, 0.1)), 
+                                start_age_annual = seq(0,75,by=5),
+                                start_age_6m = 80) %>% # i.e. only annual vaccination
+  mutate(scenario = paste(as.character(start_age_annual),"y+"))
+
+panel_baseline <- data.frame(cov_2024 = 0,
+                             start_age_annual = 80,
+                             start_age_6m = 80,
+                             scenario = "base_case")
+
+panel_final <- bind_rows(panel_baseline,panel_WHO,panel_additional) %>%
+  arrange(scenario, cov_2024)
+
+grid_table <- CJ(fit_table_index = 1:nrow(out_all),
+                 panel_final_index = 1:nrow(panel_final)) %>% 
+  rownames_to_column(var = "grid_table_index")
