@@ -1,0 +1,426 @@
+## Load required packages
+if(!require(pacman)) install.packages("pacman")
+library(pacman)
+p_load(plyr, dplyr, stats, tidyverse, meta, purrr, ggridges, cowplot, readxl, janitor, data.table, mvtnorm, ggsci, progress, Matrix, FSA, magrittr, ggpubr, ggthemes)
+
+options(scipen = 999)
+
+
+## 1. Load NAb data ####
+## Load and combine multiple excel files into data frame
+combine = F
+if(combine){
+files.list <- list.files(path = "data/", recursive = T, pattern = '*\\.xlsx$')
+files.list <- paste0("data/",files.list)
+
+doc <- list()
+for (i in seq_along(files.list)){
+  sheet_nm <- excel_sheets(files.list[i])
+  temp <- list()
+  for (j in seq_along(sheet_nm)){
+    temp[[j]] <- read_excel(files.list[i], sheet = sheet_nm[j])
+    #assign(x = sheet_nm[j], value = read_excel(path = files.list[i], sheet = sheet_nm[j]), envir = .GlobalEnv)
+  }
+  doc[[i]] <- temp
+}
+
+doc_agg <- sapply(1:length(doc), function(j) doc[[j]][3]) %>%
+  rbindlist(fill = T)
+
+doc_ind <- sapply(1:length(doc), function(j) doc[[j]][4]) %>%
+  rbindlist(fill = T)
+}
+
+## Load combined excel files
+doc_ind <- read_excel("data/20231114_NAb_DataExtraction_combine.xlsx", sheet = "Individual data")
+doc_agg <- read_excel("data/20231114_NAb_DataExtraction_combine.xlsx", sheet = "Result")
+doc_author <- read_excel("data/20231114_NAb_DataExtraction_combine.xlsx", sheet = "Study information")
+
+## Author name
+author_name <- doc_author %>% 
+  select(1:2, 9) %>% 
+  clean_names() %>% 
+  rename(study_id = number_study_id,
+         author = citation_details,
+         country = x9) %>% 
+  filter(!is.na(study_id)) %>% 
+  mutate(author = str_replace(author, "et al", ""),
+         author = str_replace(author, ".,", ""),
+         author = str_replace(author, "  ", " "))
+rm(doc_author)
+
+## 2. Prepare individual data ####
+## Clean variable names
+df_ind <- doc_ind %>%
+  select(1:6) %>% 
+  clean_names() %>% 
+  rename(study_id = number_study_id,
+         regimen = immunizing_agent_regimen,
+         variant = variant_neutraliation_assay,
+         log_nab_titre = nab_titre_log)
+
+## Clean NAb titre, day measure, and regimen
+df_ind <- df_ind %>%
+  separate(day_measure, into = c("day_measure", "day_measure_unit"), sep = " ") %>% 
+  mutate(
+    # nab_titre = if_else(is.na(nab_titre), as.numeric(log_nab_titre), 
+    #                          if_else(startsWith(nab_titre, "<"), as.numeric(gsub("<", "", nab_titre))/2, as.numeric(nab_titre))),
+         log_nab_titre = log10(nab_titre),
+         day_measure = as.numeric(day_measure),
+         day_measure = case_when(day_measure_unit == "month" ~ day_measure*30,
+                                 day_measure_unit == "weeks" ~ day_measure*7,
+                                 TRUE ~ day_measure),
+         regimen = str_replace_all(regimen, c("-" = "_", "Infected" = "ConvWT", "ConWT" = "ConvWT", "ConWt" = "ConvWT", "Dose1_" = "", "Dose2_" = "", "Dose 2" = "", "Dose3_" = "", "Dose3" = "", "ConvBA1" = "ConvBA.1", "ConvB16172" = "ConvB.1.617.2", "ConvOmicron" = "ConvOmi")),
+         regimen = if_else(regimen == "Conv", "ConvWT", regimen),
+         variant = str_replace_all(variant, c("B.1.671.2" = "B.1.617.2", "Omicron sub-lineage" = "Omicron not identify lineage", "P.1/28" = "P.1", "B1.1.7" = "B.1.1.7", "BA.1.351" = "B.1.351", "Alpha-E484K" = "E484K", "WA1" = "WT")),
+         variant = case_when(variant == "Omicron" ~ "Omicron not identify lineage", 
+                             variant == "B.1" ~ "WT", 
+                             TRUE ~ variant)
+  ) %>% 
+  filter(!is.na(study_id) & !is.na(nab_titre) & nab_titre > 0 & regimen != "") %>%
+  select(-day_measure_unit) %>% 
+  separate(regimen, into = c("dose1", "dose2", "dose3", "dose4"), sep = "_", remove = F)
+
+# table(df_ind$regimen)
+# table(df_ind$variant)
+
+group_regimen <- function(df) {
+  df <- df %>% 
+    mutate(vacc = if_else(grepl("Pf", regimen, ignore.case = T) | grepl("MD", regimen, ignore.case = T) | grepl("SV", regimen, ignore.case = T) | grepl("SP", regimen, ignore.case = T) | grepl("JS", regimen, ignore.case = T) | grepl("AZ", regimen, ignore.case = T), "Yes", "No"),
+           naive = if_else(!grepl("Conv", regimen, ignore.case = T), "Yes", "No"),
+           hybrid = if_else(vacc == "Yes" & naive == "No", 
+                            if_else(grepl("Conv", dose1, ignore.case = T), "Hybrid", "Breakthrough"),
+                            "No"),
+           group = case_when(dose1 == "ConvWT" & is.na(dose2) ~ "Convalescent",
+                             grepl("Pf", dose1, ignore.case = T) & grepl("Pf", dose2, ignore.case = T) & grepl("MD", dose3, ignore.case = T) ~ "Pf_Pf_MD",
+                             grepl("SV", dose1, ignore.case = T) & grepl("SV", dose2, ignore.case = T) & grepl("Pf", dose3, ignore.case = T) ~ "SV_SV_Pf",
+                             grepl("Pf", dose1, ignore.case = T) + grepl("Pf", dose2, ignore.case = T) + grepl("Pf", dose3, ignore.case = T) + grepl("Pf", dose4, ignore.case = T) == 1 ~ "Pfizer1",
+                             grepl("Pf", dose1, ignore.case = T) + grepl("Pf", dose2, ignore.case = T) + grepl("Pf", dose3, ignore.case = T) + grepl("Pf", dose4, ignore.case = T) == 2 ~ "Pfizer2",
+                             grepl("Pf", dose1, ignore.case = T) + grepl("Pf", dose2, ignore.case = T) + grepl("Pf", dose3, ignore.case = T) + grepl("Pf", dose4, ignore.case = T) == 3 ~ "Pfizer3",
+                             grepl("MD", dose1, ignore.case = T) + grepl("MD", dose2, ignore.case = T) + grepl("MD", dose3, ignore.case = T) + grepl("MD", dose4, ignore.case = T) == 1 ~ "Moderna1",
+                             grepl("MD", dose1, ignore.case = T) + grepl("MD", dose2, ignore.case = T) + grepl("MD", dose3, ignore.case = T) + grepl("MD", dose4, ignore.case = T) == 2 ~ "Moderna2",
+                             grepl("MD", dose1, ignore.case = T) + grepl("MD", dose2, ignore.case = T) + grepl("MD", dose3, ignore.case = T) + grepl("MD", dose4, ignore.case = T) == 3 ~ "Moderna3",
+                             grepl("mRNA", dose1, ignore.case = T) + grepl("mRNA", dose2, ignore.case = T) + grepl("mRNA", dose3, ignore.case = T) + grepl("mRNA", dose4, ignore.case = T) == 1 ~ "mRNA1",
+                             grepl("mRNA", dose1, ignore.case = T) + grepl("mRNA", dose2, ignore.case = T) + grepl("mRNA", dose3, ignore.case = T) + grepl("mRNA", dose4, ignore.case = T) == 2 ~ "mRNA2",
+                             grepl("mRNA", dose1, ignore.case = T) + grepl("mRNA", dose2, ignore.case = T) + grepl("mRNA", dose3, ignore.case = T) + grepl("mRNA", dose4, ignore.case = T) == 3 ~ "mRNA3",
+                             grepl("SV", dose1, ignore.case = T) + grepl("SV", dose2, ignore.case = T) + grepl("SV", dose3, ignore.case = T) + grepl("SV", dose4, ignore.case = T) == 1 ~ "Sinovac1",
+                             grepl("SV", dose1, ignore.case = T) + grepl("SV", dose2, ignore.case = T) + grepl("SV", dose3, ignore.case = T) + grepl("SV", dose4, ignore.case = T) == 2 ~ "Sinovac2",
+                             grepl("SV", dose1, ignore.case = T) + grepl("SV", dose2, ignore.case = T) + grepl("SV", dose3, ignore.case = T) + grepl("SV", dose4, ignore.case = T) == 3 ~ "Sinovac3",
+                             grepl("AZ", dose1, ignore.case = T) + grepl("AZ", dose2, ignore.case = T) + grepl("AZ", dose3, ignore.case = T) + grepl("AZ", dose4, ignore.case = T) == 1 ~ "AstraZeneca1",
+                             grepl("AZ", dose1, ignore.case = T) + grepl("AZ", dose2, ignore.case = T) + grepl("AZ", dose3, ignore.case = T) + grepl("AZ", dose4, ignore.case = T) == 2 ~ "AstraZeneca2",
+                             grepl("JS", dose1, ignore.case = T) + grepl("JS", dose2, ignore.case = T) + grepl("JS", dose3, ignore.case = T) + grepl("JS", dose4, ignore.case = T) == 1 ~ "Johnson & Johnson",
+                             grepl("SP", dose1, ignore.case = T) + grepl("SP", dose2, ignore.case = T) + grepl("SP", dose3, ignore.case = T) + grepl("SP", dose4, ignore.case = T) == 1 ~ "Sinopharm1",
+                             grepl("SP", dose1, ignore.case = T) + grepl("SP", dose2, ignore.case = T) + grepl("SP", dose3, ignore.case = T) + grepl("SP", dose4, ignore.case = T) == 2 ~ "Sinopharm2",
+                             TRUE ~ regimen)
+    )
+  return(df)
+}
+
+df_ind <- group_regimen(df_ind)
+
+df_ind <- df_ind %>% 
+  group_by(study_id, group, variant, hybrid) %>% 
+  mutate(subject_id = paste(study_id, row_number(), sep = "_"))
+
+# table(df_ind$naive, df_ind$group)
+# table(df_ind$hybrid, df_ind$group)
+# table(df_ind$vacc, df_ind$group)
+
+# Study without any comparator
+df_ind %>% 
+  group_by(study_id) %>%
+  filter(!any(group == "Convalescent")) %>% 
+  pull(study_id) %>% 
+  unique() # "DB_012" "DB_013"
+
+# Exclude studies with wrong comparator or without comparator (n = 84)
+df_ind <- df_ind %>% 
+  group_by(study_id) %>%
+  filter(any(group == "Convalescent")) %>% 
+  filter(study_id != "PC_008") %>% # comparator isn't test against WT
+  filter(!(study_id == "DB_010" & group == "Convalescent" & variant == "D614G")) %>% # filter only WT since the study provides both titres against WT and D614G
+  filter(!(study_id == "SB_008" & group == "Convalescent" & variant == "D614G")) # filter only WT since the study provides both titres against WT and D614G
+
+# Exclude results reporting 1 dose (n = 263)
+df_ind %<>%
+  filter(group != "Pfizer1" & group != "Moderna1" & group != "Sinovac1")
+
+# Exclude results reporting non-VOC (n = 206), final N = 4124
+df_ind %<>%
+  filter(variant %in% c("WT", "D614G", "B.1.1.7", "B.1.351", "P.1", "B.1.617.2", "BA.1", "BA.2", "BA.3", "BA.4", "BA.5", "Omicron not identify lineage"))
+
+# # Exclude results from 1 specific study (n = 0)
+# df_ind %<>%
+#   filter(study_id != "JS_010")
+
+# Combine D614G and WT together
+df_ind %<>%
+  mutate(variant = if_else(variant == "D614G", "WT", variant))
+
+
+## 3. Prepare aggregated data ####
+## Clean variable names
+remove_paren <- function(x) {gsub("\\s*\\([^\\)]+\\)", "", x)}
+rename_nab <- function(x) {gsub("n_ab", "nab", x)}
+
+df_agg <- doc_agg %>%
+  select(1:39) %>% 
+  rename_all(remove_paren) %>%
+  clean_names() %>%
+  rename_all(rename_nab) %>%
+  rename(study_id = number_study_id,
+         average_1st_interval = average_1st_interval_or_assumed_date_of_vaccine_intake_e_g_between_dose_1_to_dose_2_or_infection_to_dose_1,
+         average_2nd_interval = average_2nd_interval_or_assumed_date_of_vaccine_intake_e_g_between_dose_2_to_dose_3,
+         regimen = immunizing_agent_regimen,
+         variant = variant_neutraliation_assay) %>%
+  separate(x1st_interval_range_min_max_separate_by_hyphen, into = c("interval_1st_min","interval_1st_max")) %>%
+  separate(x2st_interval_range_min_max, into = c("interval_2nd_min","interval_2nd_max")) %>% 
+  separate(day_measure_range_min_max, into = c("day_measure_min","day_measure_max")) %>% 
+  select(-c(immunization_schedule, day_measure_min, day_measure_max, average_3nd_interval_or_assumed_date_of_vaccine_intake_e_g_between_dose_3_dose_4, x3rd_interval_range_min_max, interval_1st_min, interval_1st_max, interval_2nd_min, interval_2nd_max, digiplot, individual_data))
+
+## Check comparator variable
+# df_agg <- df_agg %>% 
+#   filter(!is.na(study_id)) %>% 
+#   group_by(study_id) %>% 
+#   mutate(check_comp = sum(grepl("Yes", comparator, ignore.case = F)))
+# table(df_agg$check_comp) # all studies have only 1 comparator each
+
+## Convert NAb data to mean and SD
+# Estimate SD from CI, code from one of Deborah's github
+estimate_sd_from_CIs <- function(m, low95, high95, CIlim = .95){
+  sdest=NULL
+  # Efficacies
+  vals = log10(c(low95,m,high95))
+  # Estimate the mean and SD of the log10 neut ratios
+  sd_init = mean((diff(vals))/qnorm((1+CIlim)/2))
+  
+  # Now take this back and see if this is the best estimate
+  #sdest[i] = nlm(function(s,m){sum((m+s*c(qnorm((1-CIlim)/2),0,qnorm((1+CIlim)/2))-vals)^2)},p=sd_init,m=m)$estimate
+  sdest = nlm(function(s,m){sum((m+s*c(qnorm((1-CIlim)/2),0,qnorm((1+CIlim)/2))-vals)^2)},p=sd_init,m=m)$estimate
+  
+  return(10^sdest)
+}
+
+# Conversion formula: Wan 2014 https://doi.org/10.1186/1471-2288-14-135
+df_agg <- df_agg %>%
+  mutate(across(c(average_1st_interval:day_measure, nab_mean:lod), as.numeric)) %>%  # Ensure columns for calculations are numeric
+  mutate_at(vars(nab_mean), ~ ifelse(is.na(.) & !is.na(nab_q1)  & !is.na(nab_med) & !is.na(nab_q3), (nab_q1 + nab_med + nab_q3)/3, .)) %>%
+  mutate_at(vars(nab_sd), ~ case_when(
+    !is.na(nab_q1) ~ (nab_q3 - nab_q1) / (2 * qnorm((0.75 * num_ppl - 0.125) / (num_ppl + 0.25))),
+    !is.na(nab_min) ~ (nab_max - nab_min) / (2 * qnorm((num_ppl - 0.375) / (num_ppl + 0.25))),
+    !is.na(.) ~ .
+    )
+  )
+
+for(i in 1:nrow(df_agg)){
+  if(!is.na(df_agg$nab_u95[i]) & !is.na(df_agg$nab_l95[i]) & !is.na(df_agg$nab_mean[i]) & is.na(df_agg$nab_sd[i])){
+    df_agg$nab_sd[i] <- estimate_sd_from_CIs(df_agg$nab_mean[i], df_agg$nab_l95[i], df_agg$nab_u95[i])
+  }
+}
+
+## Clean variant and regimen variables
+# table(df_agg$regimen)
+
+df_agg <- df_agg %>%
+  mutate(regimen = str_replace_all(regimen, c("-" = "_", "Infected" = "ConvWT", "ConWT" = "ConvWT", "ConWt" = "ConvWT", "Conv_WT" = "ConvWT", "Con_" = "Conv_", "Dose1_" = "", "Dose2_" = "", "Dose 2" = "", "Dose3_" = "", "Dose3" = "", "ConvBa.1" = "ConvBA.1", "ConvBA1" = "ConvBA.1", "ConvB16172" = "ConvB.1.617.2")),
+         variant = str_replace_all(variant, c("B.1.671.2" = "B.1.617.2", "Omicron sub-lineage" = "Omicron not identify lineage", "P.1/28" = "P.1", "B1.1.7" = "B.1.1.7", "BA.1.351" = "B.1.351", "Alpha-E484K" = "E484K", "WA1" = "WT")),
+         variant = case_when(variant == "Omicron" ~ "Omicron not identify lineage", 
+                             variant == "B.1" ~ "WT", 
+                             TRUE ~ variant)
+  ) %>% 
+  separate(regimen, into = c("dose1", "dose2", "dose3", "dose4"), sep = "_", remove = F)
+
+df_agg <- group_regimen(df_agg)
+
+# table(df_agg$group)
+# table(df_agg$hybrid)
+# table(df_agg$vacc)
+
+## Fill the missing NAb using individual data
+MeanSD_cal_agg <- unique(df_agg[, c("study_id", "regimen", "variant")])
+
+df_agg$nab_mean_cal <- NA
+df_agg$nab_sd_cal <- NA
+
+for(i in 1:nrow(MeanSD_cal_agg)) {
+  tempdata <- df_ind$nab_titre[df_ind$study_id == MeanSD_cal_agg$study_id[i] & df_ind$regimen == MeanSD_cal_agg$regimen[i] &  df_ind$variant == MeanSD_cal_agg$variant[i]]
+  df_agg$nab_mean_cal[df_agg$study_id == MeanSD_cal_agg$study_id[i] & df_agg$regimen == MeanSD_cal_agg$regimen[i] &  df_agg$variant == MeanSD_cal_agg$variant[i]] <- geomean(tempdata)
+  df_agg$nab_sd_cal[df_agg$study_id == MeanSD_cal_agg$study_id[i] & df_agg$regimen == MeanSD_cal_agg$regimen[i] &  df_agg$variant == MeanSD_cal_agg$variant[i]] <- geosd(tempdata)
+}
+
+rm(MeanSD_cal_agg)
+
+# Comparison between input and calculated values, more reasonable to use calculated values
+# df_agg %>%
+#   filter(!is.na(nab_mean) & !is.na(nab_mean_cal)) %>%
+#   select(study_id, regimen, variant, nab_mean, nab_mean_cal, nab_sd, nab_sd_cal) -> check_meansd_cal
+# 
+# df_agg[is.na(df_agg$num_ppl),]
+# df_agg[is.na(df_agg$nab_mean),]
+# df_agg[is.na(df_agg$nab_sd),]
+
+# Replace mean and sd with calculated values (N = 554)
+df_agg %<>%
+  mutate(nab_mean = if_else(!is.na(nab_mean_cal), nab_mean_cal, nab_mean),
+         nab_sd = if_else(!is.na(nab_sd_cal), nab_sd_cal, nab_sd))
+
+# unique(df_agg$study_id)
+# unique(df_ind$study_id)
+
+# unique(df_agg$study_id[is.na(df_agg$num_ppl)])
+# unique(df_agg$study_id[is.na(df_agg$nab_mean)])
+# unique(df_agg$study_id[is.na(df_agg$nab_sd)])
+
+# Exclude results without number of people (n = 0)
+df_agg %<>%
+  filter(!is.na(df_agg$num_ppl))
+
+# Exclude results without mean NAb titres (n = 39)  
+df_agg %<>%
+  filter(!is.na(df_agg$nab_mean))
+
+# Exclude results without measure of variance (n = 37)
+df_agg %<>%
+  filter(!is.na(df_agg$nab_sd))
+
+# Exclude results without comparator or with wrong comparator (n = 3)
+df_agg %<>%
+  group_by(study_id) %>%
+  filter(any(comparator == "Yes")) %>% 
+  filter(study_id != "PC_008") # comparator isn't test against WT
+
+# Exclude results reporting 1 dose (n = 2)
+df_agg %<>%
+  filter(group != "Pfizer1" & group != "Moderna1" & group != "Sinovac1")
+
+# Exclude results reporting non-VOC (n = 23)
+df_agg %<>%
+  filter(variant %in% c("WT", "D614G", "B.1.1.7", "B.1.351", "P.1", "B.1.617.2", "BA.1", "BA.2", "BA.3", "BA.4", "BA.5", "Omicron not identify lineage"))
+
+# unique(df_agg$study_id)
+
+## Log10 transformed NAb data
+df_agg <- df_agg %>%
+  select(study_id:nab_sd, lod:comparator, -starts_with("log"), group, vacc, hybrid, variant) %>%
+  mutate(across(nab_mean:lod, log10, .names = "log_{col}"))
+
+## Normalise to convalescent reference
+df_agg <- df_agg %>%
+  group_by(study_id) %>%
+  filter(!is.na(log_nab_mean) & !is.na(log_nab_sd) & !is.na(num_ppl)) %>%
+  mutate(across(c(log_nab_mean, log_nab_sd, num_ppl), ~ .[comparator == "Yes"], .names = "{col}_conv"),
+         MeanRatio = log_nab_mean - log_nab_mean_conv,
+         SEM = sqrt((log_nab_sd^2/num_ppl) + (log_nab_sd_conv^2/num_ppl_conv)),
+         Num = num_ppl + num_ppl_conv
+         #SDpooled = sqrt(((num_ppl-1)*log_nab_sd^2 + (num_ppl_conv-1)*log_nab_sd_conv^2) / (num_ppl+num_ppl_conv-2))
+  )
+
+# Exclude results with Inf SEM (n = 2), final N = 277
+df_agg %<>%
+  filter(SEM < Inf)
+
+# Exclude results from 1 specific study (n = 11), final N = 266
+df_agg %<>%
+  filter(study_id != "JS_010")
+
+# Combine D614G and WT together
+df_agg %<>%
+  mutate(variant = if_else(variant == "D614G", "WT", variant))
+
+
+## 4. Prepare individual censoring data ####
+## Codes below are adapted from Khoury & Cromer - COVID19-ProtectiveThreshold-main Github
+## Create table of estimated Means and SD after censoring for each vaccine
+# Negative log likelihood of normal distribution model with censoring
+Likelihood <- function(p, censT, data) {-sum(log(dnorm(data[data > censT], p[1], p[2]))) - sum(log(pnorm(data[data <= censT], p[1], p[2])))}
+
+MeanSD_ind_study <- unique(df_ind[, c("study_id", "group", "hybrid", "variant")])
+
+MeanSD_ind_study$SD <- NA
+MeanSD_ind_study$EstimatedMean <- NA
+MeanSD_ind_study$Num_ppl <- NA
+
+# MeanSD_ind_group <- MeanSD_ind_study
+
+for (i in 1:nrow(MeanSD_ind_study)) {
+  tempdata <- df_ind$log_nab_titre[df_ind$study_id == MeanSD_ind_study$study_id[i] & df_ind$group == MeanSD_ind_study$group[i] & df_ind$hybrid == MeanSD_ind_study$hybrid[i] & df_ind$variant == MeanSD_ind_study$variant[i]]
+  fitmdltemp <- nlm(function(p) {Likelihood(p, df_agg$log_lod[df_agg$study_id == MeanSD_ind_study$study_id[i]], tempdata)}, c(mean(tempdata), sd(tempdata)))
+  MeanSD_ind_study$SD[i] <- fitmdltemp$estimate[2]
+  MeanSD_ind_study$EstimatedMean[i] <- fitmdltemp$estimate[1]
+  MeanSD_ind_study$Num_ppl[i] <- length(tempdata)
+  MeanSD_ind_study$day_measure[i] <- mean(df_ind$day_measure[df_ind$study_id == MeanSD_ind_study$study_id[i] & df_ind$group == MeanSD_ind_study$group[i] & df_ind$hybrid == MeanSD_ind_study$hybrid[i] & df_ind$variant == MeanSD_ind_study$variant[i]])
+}
+
+# for (i in 1:nrow(MeanSD_ind_group)) {
+#   tempdata <- df_ind$log_nab_titre[df_ind$group == MeanSD_ind_group$group[i] & df_ind$hybrid == MeanSD_ind_group$hybrid[i]]
+#   fitmdltemp <- nlm(function(p) {Likelihood(p, df_agg$log_lod[df_agg$study_id == MeanSD_ind_group$study_id[i]], tempdata)}, c(mean(tempdata), sd(tempdata)))
+#   MeanSD_ind_group$SD[i] <- fitmdltemp$estimate[2]
+#   MeanSD_ind_group$EstimatedMean[i] <- fitmdltemp$estimate[1]
+#   MeanSD_ind_group$Num_ppl[i] <- length(tempdata)
+# }
+# 
+# MeanSD_ind_study <- MeanSD_ind_study %>% 
+#   filter(group != "Convalescent") %>% 
+#   bind_rows(MeanSD_ind_group %>% filter(group == "Convalescent"))
+
+## Calculate Mean Ratio (Vaccine to Conv Neut) for each vaccine combination
+calc_mean_ratio <- function(MeanSD_ind) {
+  MeanSD_ind <- MeanSD_ind %>%
+    group_by(study_id) %>% 
+    rename(Num = Num_ppl) %>% 
+    mutate(across(c(EstimatedMean, SD, Num), ~ .[(group == "Convalescent" & variant == "WT") | (group == "Convalescent" & variant == "D614G") | (group == "Convalescent" & variant == "WA1")| (group == "Convalescent" & variant == "B.1")], .names = "{col}Conv"),
+           MeanRatio = EstimatedMean - EstimatedMeanConv, # Ratio Vaccine to Conv Neut
+           SEM = sqrt((SD^2/Num) + (SDConv^2/NumConv))) # SEM of the Ratio Vaccine to Conv Neut
+  return(MeanSD_ind)
+}
+
+MeanSD_ind_study <- calc_mean_ratio(MeanSD_ind_study) %>% 
+  ungroup()
+# MeanSD_ind_group <- calc_mean_ratio(MeanSD_ind_group)
+
+## Calculate Centered Ratio and LOD
+df_ind <- df_ind %>% 
+  select(-day_measure) %>% 
+  left_join(MeanSD_ind_study, by = c("study_id", "group", "hybrid", "variant")) %>% 
+  left_join(unique(df_agg[, c("study_id", "lod")]), by = "study_id") %>% 
+  mutate(log_lod = log10(as.numeric(lod)),
+         RatioTitres = log_nab_titre - EstimatedMeanConv,
+         CenteredRatio = RatioTitres - MeanRatio,
+         CenteredLOD = log_lod - EstimatedMeanConv - MeanRatio)
+
+# ## Exclude results where SD = 0 (n = 126)
+# df_ind %<>%
+#   filter(SD != 0)
+# 
+# ## Exclude results with Inf SEM (n = 0)
+# df_ind %<>%
+#   filter(SEM < Inf)
+
+## Calculate pooled SD
+PooledSDModelFit <- nlm(function(p) {Likelihood(p, df_ind$CenteredLOD, df_ind$CenteredRatio)},
+                        c(mean(df_ind$CenteredRatio, na.rm = T), sd(df_ind$CenteredRatio, na.rm = T)))
+PooledSD <- PooledSDModelFit$estimate[2]
+PooledSD # 0.5265513
+
+SE_PooledSD <- PooledSD/sqrt(length(df_ind))
+SE_PooledSD # 0.09950885
+
+
+## 5. Prepare individual uncensoring data ####
+MeanSD_ind_uncen <- unique(df_ind[, c("study_id", "group", "hybrid", "variant")])
+
+MeanSD_ind_uncen$SD <- NA
+MeanSD_ind_uncen$EstimatedMean <- NA
+MeanSD_ind_uncen$Num_ppl <- NA
+
+for (i in 1:nrow(MeanSD_ind_uncen)) {
+  tempdata <- df_ind$log_nab_titre[df_ind$study_id == MeanSD_ind_uncen$study_id[i] & df_ind$group == MeanSD_ind_uncen$group[i] & df_ind$hybrid == MeanSD_ind_uncen$hybrid[i] & df_ind$variant == MeanSD_ind_uncen$variant[i]]
+  MeanSD_ind_uncen$SD[i] <- sd(tempdata)
+  MeanSD_ind_uncen$EstimatedMean[i] <- mean(tempdata)
+  MeanSD_ind_uncen$Num_ppl[i] <- length(tempdata)
+  MeanSD_ind_uncen$day_measure[i] <- mean(df_ind$day_measure[df_ind$study_id == MeanSD_ind_uncen$study_id[i] & df_ind$group == MeanSD_ind_uncen$group[i] & df_ind$hybrid == MeanSD_ind_uncen$hybrid[i] & df_ind$variant == MeanSD_ind_uncen$variant[i]])
+}
+
+## Calculate Mean Ratio (Vaccine to Conv Neut) for each vaccine combination
+MeanSD_ind_uncen <- calc_mean_ratio(MeanSD_ind_uncen) %>% 
+  ungroup()
