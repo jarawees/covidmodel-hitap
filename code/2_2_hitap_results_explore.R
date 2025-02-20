@@ -1,26 +1,26 @@
-# fn <- list.files("~/Dropbox/Github_Data/HITAP_CovidM/grid_results/")
-# res <- paste0("~/Dropbox/Github_Data/HITAP_CovidM/grid_results/",fn) %>% 
-#   map(read_csv) %>% 
-#   setNames(fn) %>% 
-#   bind_rows(.id = "grid_table_index") 
-#
-# res %>%
-#   mutate(grid_table_index = gsub(".csv", "", grid_table_index)) %>%
-#   left_join(grid_table, by = "grid_table_index") %>%
-#   left_join(out_all %>%
-#               rowid_to_column(var = 'fit_table_index')) %>%
-#   left_join(panel_final %>%
-#               rowid_to_column(var = "panel_final_index")) %>%
-#   write_csv("20250118_Result for CUA.csv")
-#
-# res %<>% 
-#   mutate(grid_table_index = gsub(".csv", "", grid_table_index)) %>% 
-#   left_join(grid_table, by = "grid_table_index") %>% 
-#   group_by(grid_table_index, year, compartment, fit_table_index, panel_final_index) %>% 
-#   summarise(incidence = sum(incidence))
-# 
-# write_rds(res,
-#           "~/Dropbox/Github_Data/HITAP_CovidM/grid_results_combined.rds")
+fn <- list.files("~/Dropbox/Github_Data/HITAP_CovidM/results/")
+res <- paste0("~/Dropbox/Github_Data/HITAP_CovidM/results/",fn) %>%
+  map(read_csv) %>%
+  setNames(fn) %>%
+  bind_rows(.id = "grid_table_index")
+
+res %>%
+  mutate(grid_table_index = gsub(".csv", "", grid_table_index)) %>%
+  left_join(grid_table, by = "grid_table_index") %>%
+  left_join(out_all %>%
+              rowid_to_column(var = 'fit_table_index')) %>%
+  left_join(panel_final %>%
+              rowid_to_column(var = "panel_final_index")) %>%
+  write_csv("20250219_Result for CUA.csv")
+
+res %<>%
+  mutate(grid_table_index = gsub(".csv", "", grid_table_index)) %>%
+  left_join(grid_table, by = "grid_table_index") %>%
+  group_by(grid_table_index, year, compartment, fit_table_index, panel_final_index) %>%
+  summarise(incidence = sum(incidence))
+
+write_rds(res,
+          "~/Dropbox/Github_Data/HITAP_CovidM/20250219_grid_results_combined.rds")
 
 nrow(res)
 
@@ -31,6 +31,19 @@ res %>%
               rowid_to_column(var = "panel_final_index")) %>% 
   dplyr::filter(fit_table_index == 10,
                 compartment == "death") -> p_tab
+
+
+grid_pull <- which(panel_final$scenario %in% c("10 y+", "20 y+", "30 y+", "40 y+", "50 y+", "60 y+", "WHO", "base_case") & panel_final$cov_2024 == 0.4)
+
+res %>% 
+  dplyr::filter(grid_table_index %in% grid_pull) %>% 
+  ggplot(., aes(x = year, y = incidence, group = grid_table_index, color = grid_table_index)) +
+  geom_line() +
+  facet_wrap(~compartment, scales = "free")
+
+
+
+
 
 p_tab %>% 
   ggplot(., aes(x = year, 
@@ -56,3 +69,4 @@ p_tab %>%
                 color = cov_2024)) +
   geom_line() +
   facet_wrap(~scenario)
+

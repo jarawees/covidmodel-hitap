@@ -60,6 +60,15 @@ emerge_voc_burden <- function(para = NULL,
     voc_phases_names <- c(voc_phases_names, severe_strain_definition$voc_name)
   }
   
+  # update the vaccine to change_ve = 1
+  voc_features_tmp %<>% 
+    bind_rows(tail(voc_features_tmp,1) %>% 
+                mutate(change_ve = 1,
+                       voc_name = "update"))
+  
+  date_switch <- c(date_switch, "2024-07-01")
+  voc_phases_names <- c(voc_phases_names, "update")
+  
   #
   change_severity <- voc_features_tmp %>% pull(change_severity)
   

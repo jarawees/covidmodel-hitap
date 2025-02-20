@@ -17,7 +17,7 @@ gen_results_table <- function(i){
                               period_wv_m2l = 1*365, 
                               deterministic = TRUE) %>% 
       update_u_y(para = .,
-                 voc_features_inuse = voc_features_test %>% mutate(change_u = 1), # we have been told that the original version of voc_features_test overestimate changes in transmissibility 
+                 voc_features_inuse = voc_features_test, # we have been told that the original version of voc_features_test overestimate changes in transmissibility 
                  future_severe = F,
                  future_severe_lvl = "mean",
                  efficacy_baseline = efficacy_all 
@@ -25,7 +25,7 @@ gen_results_table <- function(i){
       emerge_voc_burden(para = .,
                         detection_threshold = 0.3,
                         split_E = T,
-                        voc_features_inuse = voc_features_test %>% mutate(change_u = 1), #
+                        voc_features_inuse = voc_features_test, #
                         efficacy_baseline = efficacy_all) %>% 
       vaccinate_primary(para = .,
                         vac_data = owid_vac,
@@ -51,11 +51,7 @@ gen_results_table <- function(i){
 
 cl <- makeCluster(5)
 clusterEvalQ(cl, source("code/0_LoadAll.R"))
-parLapply(cl, 201:1573, gen_results_table) 
-
-res_all[[i]] %>% 
-  dplyr::filter(compartment == "death") %>% 
-  ggplo
+parLapply(cl, 1:1573, gen_results_table) 
 
 tmp %>% 
   dplyr::filter(compartment == "death_o") %>% 
@@ -120,19 +116,19 @@ tmp %>%
   #   geom_point() +
   #   facet_wrap(~age_group, scales = "free") -> p_primary
   # 
-  # setting_list[[i]]$schedule$booster$values %>%
-  #   unlist %>%
-  #   matrix(., ncol = 16, byrow = T) %>%
-  #   data.table %>%
-  #   mutate(t =  setting_list[[i]]$schedule$booster$times,
-  #          date = lubridate::ymd("2020-01-01") + t) %>%
-  #   pivot_longer(cols = starts_with("V"),
-  #                names_to = "age_group",
-  #                values_to = "vaccinated") %>%
-  #   mutate(age_group = factor(age_group, levels = paste0("V",1:16))) %>%
-  #   ggplot(., aes(x = date, y = vaccinated, group = age_group, color = age_group)) +
-  #   geom_line() +
-  #   facet_wrap(~age_group, scales = "free") -> p_booster
+  tmp$schedule$booster$values %>%
+    unlist %>%
+    matrix(., ncol = 16, byrow = T) %>%
+    data.table %>%
+    mutate(t =  tmp$schedule$booster$times,
+           date = lubridate::ymd("2020-01-01") + t) %>%
+    pivot_longer(cols = starts_with("V"),
+                 names_to = "age_group",
+                 values_to = "vaccinated") %>%
+    mutate(age_group = factor(age_group, levels = paste0("V",1:16))) %>%
+    ggplot(., aes(x = date, y = vaccinated, group = age_group, color = age_group)) +
+    geom_line() +
+    facet_wrap(~age_group, scales = "free") -> p_booster
 
 # i = 1
 # tmp <- cm_simulate(setting_list[[i]])$dynamics

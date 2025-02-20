@@ -1,9 +1,8 @@
 source("code/0_LoadAll_hitap.R")
+
 fit_results_dir <- paste0(data_path, "fit/fit_results/")
 out <- paste0(fit_results_dir, list.files(fit_results_dir)) %>% 
   map(read_rds) 
-
-
 
 map(out, "optim") %>% 
   map(., "bestmem") %>% 
@@ -15,11 +14,7 @@ map(out, "optim") %>%
   rename(R0_assumed_2 = par1,
          wn = par4)
 
-
-
-
 out <- read_rds("data/out_20230328.rds")
-
 
 # PANEL for baseline (no vaccination), WHO scenario, annual scenarios
 panel_WHO <- expand.grid(cov_2024 = c(seq(0.1, 0.8, 0.1)), 

@@ -192,7 +192,10 @@ compartment_process_voc <- c("severe", "critical", "death")
 
 voc_phases <- read_rds(paste0(data_path, "voc_phases_thailand.rds"))
 voc_phases_imputation_index <-  read_rds(paste0(data_path, "voc_phases_imputation_index_thailand.rds"))
-voc_features_test <- read_rds(paste0(data_path, "voc_features_test_thailand.rds"))
+voc_features_test <- read_rds(paste0(data_path, "voc_features_test_thailand.rds")) %>% 
+  mutate(change_u = if_else(voc_name == "omicron", 1, change_u),
+         change_severity = if_else(voc_name == "omicron", 0.4, change_severity))
+
 load(paste0(data_path, "severe_strain_thailand.rdata"))
 
 #### move these things here to facilitate parallel ####
@@ -237,3 +240,6 @@ panel_final <- bind_rows(panel_baseline,panel_WHO,panel_additional) %>%
 grid_table <- CJ(fit_table_index = 1:nrow(out_all),
                  panel_final_index = 1:nrow(panel_final)) %>% 
   rownames_to_column(var = "grid_table_index")
+
+label_age <- data.frame(group = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29",
+                                  "30-34", "35-39", "40-44", "45-49", "50-54", "55"))

@@ -56,10 +56,20 @@ update_u_y <- function(para = NULL,
       voc_features_tmp  %<>% 
         bind_rows(severe_strain_definition_high)
     }
-
+    
     date_switch <- c(date_switch, "2024-01-01")
     voc_phases_names <- c(voc_phases_names, severe_strain_definition$voc_name)
+    
   }
+  
+  # update the vaccine to change_ve = 1
+  voc_features_tmp %<>% 
+    bind_rows(tail(voc_features_tmp,1) %>% 
+                mutate(change_ve = 1,
+                       voc_name = "update"))
+  
+  date_switch <- c(date_switch, "2024-07-01")
+  voc_phases_names <- c(voc_phases_names, "update")
   
   change_u <- voc_features_tmp %>% pull(change_u)
   change_y <- voc_features_tmp %>% pull(change_y)  

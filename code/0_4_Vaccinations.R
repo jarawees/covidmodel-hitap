@@ -16,20 +16,38 @@
 # ve_severe, ve_critical, ve_mort: observed VE against different outcomes
 # ve_severe_condition, ve_critical_condition, ve_mort_condition: VE against different outcomes condition on infection
 
-data.table(v_i_o = c(0.33, 0.6, 0.75),
-           vr_i_o = c(0.42, 0.84, 0.99), # update vr_i_o using meta-analysis from Dec2023
-           # r_i_o = c(0.7), # original r_i_o
-           # r_i_o = c(0.85), # from https://www.thelancet.com/article/S0140-6736(22)02465-5/fulltext
-           r_i_o = c(0.76), # update r_i_o using meta-analysis from Dec2023
-           # v_d_o = c(0.44, 0.69, 0.85),
-           v_d_o = c(0.33, 0.72, 0.94), # update v_d_o using meta-analysis from Dec2023
-           v_severe_o = c(0.59, 0.95, 0.99), # update v_severe_o using meta-analysis from Dec2023
-           v_critical_o = c(0.8, 0.95, 0.99),
-           v_mort_o = c(0.85, 0.95, 0.99),
-           protection_level_label = c("l", "m", "h")) %>% 
+# data.table(v_i_o = c(0.33, 0.6, 0.75),
+#            vr_i_o = c(0.42, 0.84, 0.99), # update vr_i_o using meta-analysis from Dec2023
+#            # r_i_o = c(0.7), # original r_i_o
+#            # r_i_o = c(0.85), # from https://www.thelancet.com/article/S0140-6736(22)02465-5/fulltext
+#            r_i_o = c(0.76), # update r_i_o using meta-analysis from Dec2023
+#            # v_d_o = c(0.44, 0.69, 0.85),
+#            v_d_o = c(0.33, 0.72, 0.94), # update v_d_o using meta-analysis from Dec2023
+#            v_severe_o = c(0.59, 0.95, 0.99), # update v_severe_o using meta-analysis from Dec2023
+#            v_critical_o = c(0.8, 0.95, 0.99),
+#            v_mort_o = c(0.85, 0.95, 0.99),
+#            protection_level_label = c("l", "m", "h")) %>% 
+#   # the following lines do not explicit reflect existing changes in infection
+#   # which has been explicitly modelled as changes in u
+#   # This equation is explained in Liu et al. 
+#   # https://www.medrxiv.org/content/10.1101/2022.05.09.22274846v1.supplementary-material
+#   # Supplemental material, p37, version 1
+#   mutate(v_d_condition = 1 - (1-v_d_o)/((1-v_i_o)),
+#          v_severe_condition = 1 - (1-v_severe_o)/((1-v_i_o)),
+#          v_critical_condition = 1 - (1-v_critical_o)/((1-v_i_o)),
+#          v_mort_condition = 1 - (1-v_mort_o)/((1-v_i_o))) -> efficacy_all
+
+data.table(v_i_o = c(0.3, 0.89, 0.98),
+           vr_i_o = c(0.46, 0.96, 0.99),
+           r_i_o = c(0.2, 0.2, 0.2),
+           v_d_o = c(0.7, 0.96, 0.99), 
+           v_severe_o = c(0.9, 0.991, 0.99),
+           v_critical_o = c(0.956, 0.998, 0.999),
+           v_mort_o = c(0.956, 0.998, 0.999),
+           protection_level_label = c("l", "m", "h")) %>%
   # the following lines do not explicit reflect existing changes in infection
   # which has been explicitly modelled as changes in u
-  # This equation is explained in Liu et al. 
+  # This equation is explained in Liu et al.
   # https://www.medrxiv.org/content/10.1101/2022.05.09.22274846v1.supplementary-material
   # Supplemental material, p37, version 1
   mutate(v_d_condition = 1 - (1-v_d_o)/((1-v_i_o)),
@@ -38,7 +56,7 @@ data.table(v_i_o = c(0.33, 0.6, 0.75),
          v_mort_condition = 1 - (1-v_mort_o)/((1-v_i_o))) -> efficacy_all
 
 efficacy_all %>% 
-  mutate(r_d_o = 0.9, r_severe_o = 0.9, r_critical_o = 0.9, r_mort_o = 0.9) %>% 
+  mutate(r_d_o = 0.8, r_severe_o = 0.9, r_critical_o = 0.9, r_mort_o = 0.9) %>% 
   mutate(r_d_condition = 1 - (1-r_d_o)/((1-r_i_o[2])),
          r_severe_condition = 1 - (1-r_severe_o)/((1-r_i_o[2])),
          r_critical_condition = 1 - (1-r_critical_o)/((1-r_i_o[2])),
