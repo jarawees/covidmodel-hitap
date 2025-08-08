@@ -20,10 +20,10 @@ cua_base <- read.csv("cua_bc_2025.csv") %>%
 
 # Figure 1: 2025-2030 for all outcomes and scenarios, assume 40% coverage
 fig1 <- base_case %>% 
-  # filter((cov_2024 == 0.4 | scenario == "base_case") & year > 2023 & 
-  #          compartment %in% c("cases", "severe", "death") &
-  #          fit_end_threshold == 0.2 &
-  #          scenario %in% c("10 y+", "20 y+", "30 y+", "40 y+", "50 y+", "60 y+", "WHO", "base_case")) %>%
+  filter((cov_2024 == 0.4 | scenario == "base_case") & year > 2022 &
+           compartment %in% c("cases", "severe", "death") &
+           fit_end_threshold == 0.2 &
+           scenario %in% c("10 y+", "20 y+", "30 y+", "40 y+", "50 y+", "60 y+", "WHO", "base_case")) %>%
   select(group_index, year, compartment, incidence, scenario) %>%
   pivot_wider(names_from = group_index, values_from = incidence) %>%
   mutate(total = rowSums(across(c(4:19)))) %>%
@@ -64,6 +64,7 @@ legend <- get_legend(fig1c) # get fig 1c legend
 
 fig1_p <- plot_grid(p, legend, rel_widths = c(3, .5))
 
+fig1_p
 
 # Table 1: 2025-2030 summary of averted cases, hospitalisations, and deaths (relative to base case)
 table1 <- fig1 %>% pivot_wider(names_from = year, values_from = total) %>%

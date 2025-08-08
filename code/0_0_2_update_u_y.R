@@ -65,7 +65,7 @@ update_u_y <- function(para = NULL,
   # update the vaccine to change_ve = 1
   voc_features_tmp %<>% 
     bind_rows(tail(voc_features_tmp,1) %>% 
-                mutate(change_ve = 1,
+                mutate(change_ve = 0.5,
                        voc_name = "update"))
   
   date_switch <- c(date_switch, "2024-07-01")
